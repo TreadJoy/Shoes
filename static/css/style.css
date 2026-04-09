@@ -1,0 +1,159 @@
+
+/*
+HEX values used in the website
+ */
+:root {
+  --color-primary: #FF4FA3;      /* Bubblegum Pink */
+  --color-secondary: #3DD9FF;    /* Aqua Blue */
+  --color-accent: #FFD93D;       /* Sunny Yellow */
+  --color-highlight: #FF8A3D;    /* Tangerine */
+  --color-bg: #FFF8E7;           /* Soft Cream */
+
+  --color-text: #1F2937;
+  --color-text-muted: #6B7280;
+  --color-border: #E5E7EB;
+  --color-white: #FFFFFF;
+}
+
+body {
+  margin: 0;
+  font-family: 'Nunito', sans-serif;
+  background-color: var(--color-bg);
+  color: var(--color-text);
+}
+
+/*
+This section edits the look of the topmost bar
+the logo, contact, & sign in
+
+!!! Move survey !!!
+*/
+.top-bar {
+  width: 100%;
+  background-color: var(--color-white);
+  padding: 20px 30px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 4px solid var(--color-secondary);
+  box-sizing: border-box;
+}
+
+/*
+Controls the top left most logo
+Currently says "Do you like my shoes?
+!!!This should probably change
+ */
+.logo {
+    font-size: 48px;
+    color: var(--color-primary);
+    margin: 0;
+    font-family: 'Fredoka', sans-serif;
+}
+
+.nav-buttons {
+  display: flex;
+  gap: 12px;
+}
+
+/* General button style */
+.btn {
+    text-decoration: none;
+    padding: 12px 20px;
+    border-radius: 999px;
+    font-weight: bold;
+    border: 2px solid transparent;
+    transition: 0.2s ease;
+    display: inline-block;
+    font-family: 'Nunito', sans-serif;
+}
+
+
+/* Main action button */
+.btn-primary {
+  background-color: var(--color-primary);
+  color: var(--color-white);
+}
+
+.btn-primary:hover {
+  background-color: #e63c91;
+}
+
+/* Secondary playful button */
+.btn-secondary {
+  background-color: var(--color-secondary);
+  color: var(--color-text);
+}
+
+.btn-secondary:hover {
+  background-color: #24cbed;
+}
+
+/* Accent button */
+.btn-accent {
+  background-color: var(--color-accent);
+  color: var(--color-text);
+}
+
+.btn-accent:hover {
+  background-color: #f5cf24;
+}
+
+/* Hero section */
+.hero {
+    min-height: 650px;
+    background-color: var(--color-bg);
+    background-repeat: no-repeat;
+    background-position: left 60px center;
+    background-size: 340px auto;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 40px 60px;
+    box-sizing: border-box;
+}
+
+/* Content box */
+.hero-content {
+  max-width: 500px;
+  background-color: var(--color-white);
+  padding: 40px;
+  border-radius: 24px;
+  border: 2px solid var(--color-border);
+  box-shadow: 0 8px 22px rgba(0, 0, 0, 0.08);
+}
+
+.hero-content h2{
+    margin-top: 0;
+    margin-bottom: 16px;
+    font-size: 36px;
+    color: var(--color-primary);
+    font-family: 'Fredoka', sans-serif;
+}
+
+.hero-content p {
+    margin-bottom: 24px;
+    font-size: 18px;
+    line-height: 1.6;
+    color: var(--color-text-muted);
+}
+
+/*
+Links to pages and websites
+*/
+a {
+  color: var(--color-primary);
+}
+
+/*
+Color that appears when hovering
+ */
+a:hover {
+  background-color: var(--color-highlight);
+}
+
+
+
+
+
+
