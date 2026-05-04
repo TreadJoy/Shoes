@@ -29,31 +29,48 @@ the logo, contact, & sign in
 !!! Move survey !!!
 */
 .top-bar {
-  width: 100%;
-  background-color: var(--color-white);
-  padding: 20px 30px;
+    width: 100%;
+    background-color: var(--color-white);
+    padding: 20px 30px;
+    display: flex;
+    justify-content: space-between;
+    border-bottom: 4px solid var(--color-secondary);
+    box-sizing: border-box;
+    position: relative;
+}
+
+/*
+Image
+ */
+.top-bar-logo {
+  height: 100px;
+  width: auto;
   display: flex;
-  justify-content: space-between;
-  align-items: center;
-  border-bottom: 4px solid var(--color-secondary);
-  box-sizing: border-box;
 }
 
 /*
 Controls the top left most logo
-Currently says "Do you like my shoes?
+Currently says "TreadJoy"
 !!!This should probably change
  */
 .logo {
-    font-size: 48px;
-    color: var(--color-primary);
-    margin: 0;
-    font-family: 'Fredoka', sans-serif;
+  font-size: 48px;
+  color: var(--color-primary);
+  margin: 0;
+  font-family: 'Fredoka', sans-serif;
+  line-height: 1;
+}
+
+.brand {
+    display: flex;
+    align-items: center;
+    gap: 14px;
 }
 
 .nav-buttons {
-  display: flex;
-  gap: 12px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
 }
 
 /* General button style */
@@ -76,7 +93,7 @@ Currently says "Do you like my shoes?
 }
 
 .btn-primary:hover {
-  background-color: #e63c91;
+  background-color: var(--color-highlight);
 }
 
 /* Secondary playful button */
@@ -149,11 +166,61 @@ a {
 Color that appears when hovering
  */
 a:hover {
-  background-color: var(--color-highlight);
+    background-color: var(--color-highlight);
+    color: var(--color-white);
 }
 
+/* Here down is questionable especially for the the signin/signup page */
+.form-page {
+  min-height: 650px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background-color: var(--color-bg);
+  padding: 40px;
+}
 
+.form-box {
+  background-color: var(--color-white);
+  padding: 40px;
+  border-radius: 24px;
+  width: 100%;
+  max-width: 420px;
+  border: 2px solid var(--color-border);
+  box-shadow: 0 8px 22px rgba(0, 0, 0, 0.08);
+}
 
+.form-box h2 {
+  font-family: 'Fredoka', sans-serif;
+  color: var(--color-primary);
+  font-size: 36px;
+  margin-top: 0;
+}
 
+.form-box form {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
 
+.form-box label {
+  font-weight: bold;
+}
 
+.form-box input {
+  padding: 12px;
+  border-radius: 12px;
+  border: 2px solid var(--color-border);
+  font-size: 16px;
+}
+
+.form-box input:focus {
+  outline: none;
+  border-color: var(--color-primary);
+}
+
+.message {
+  background-color: var(--color-accent);
+  padding: 10px;
+  border-radius: 12px;
+}

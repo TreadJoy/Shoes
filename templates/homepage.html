@@ -2,19 +2,29 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Do you like my shoes?</title>
+    <title>Homepage</title>
     <link rel="stylesheet" href="{% static 'css/style.css' %}">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&family=Nunito:wght@400;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&family=Nunito:wght@400;600;700&
+    display=swap" rel="stylesheet">
 </head>
 <body>
     <header class="top-bar">
-        <h1 class = "logo">Do you like my shoes?</h1>
+        <div class="brand">
+            <img src="{% static 'images/LogoClearBackground.png' %}" class="top-bar-logo">
+            <h1 class = "logo">TreadJoy</h1>
+        </div>
 
-        <div class = "nav-buttons">
-            <a href="contact.html" class="btn">Contact</a>
-            <a href="sign_in.html" class="btn">Sign In</a>
+        <div class="nav-buttons">
+            {% if user.is_authenticated %}
+                <span>Hello, {{ user.username }}</span>
+                <a href="{% url 'signout' %}" class="btn btn-primary">Sign Out</a>
+                <a href="{% url 'cart' %}" class="btn btn-primary">Cart</a>
+            {% else %}
+                <a href="{% url 'signin' %}" class="btn btn-primary">Sign In</a>
+                <a href="{% url 'signup' %}" class="btn btn-primary">Sign Up</a>
+            {% endif %}
         </div>
     </header>
 
@@ -25,7 +35,7 @@
                 We’d love to hear what you think about our shoes. Click below to answer a few
                 quick questions and share your opinion.
             </p>
-            <a href="q_1" class="btn btn-primary">Take the Survey</a>
+            <a href="{% url 'survey' %}" class="btn btn-primary">Take the Survey</a>
         </div>
     </main>
 </body>

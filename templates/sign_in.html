@@ -1,10 +1,39 @@
+{% load static %}
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-    <meta charset="UTF-8">
-    <title>Title</title>
+    <title>Sign In</title>
+    <link rel="stylesheet" href="{% static 'css/style.css' %}">
 </head>
 <body>
+
+<header class="top-bar">
+    <h1 class="logo">TreadJoy</h1>
+</header>
+
+<main class="form-page">
+    <div class="form-box">
+        <h2>Sign In</h2>
+
+        {% for message in messages %}
+            <p class="message">{{ message }}</p>
+        {% endfor %}
+
+        <form method="POST">
+            {% csrf_token %}
+
+            <label>Username</label>
+            <input type="text" name="username" required>
+
+            <label>Password</label>
+            <input type="password" name="password" required>
+
+            <button type="submit" class="btn btn-primary">Sign In</button>
+        </form>
+
+        <p>Need an account? <a href="{% url 'signup' %}">Sign up</a></p>
+    </div>
+</main>
 
 </body>
 </html>

@@ -16,13 +16,20 @@ Including another URLconf
 """
 
 from django.contrib import admin
-from django.urls import path
-
+from django.urls import path, include
 #from web.models import
-from web.views import HomePage
+from web.views import HomePage, Contact, Survey, SignIn, SignUp, SignOut, Cart, Checkout, PaymentSuccess, PaymentCancel
 
 urlpatterns = [
     path("admin/", admin.site.urls),
     path('', HomePage.as_view(), name='home'),
-
+    path("contact/", Contact.as_view(), name="contact"),
+    path("survey/", Survey.as_view(), name="survey"),
+    path("signin/", SignIn.as_view(), name="signin"),
+    path("signup/", SignUp.as_view(), name="signup"),
+    path("signout/", SignOut.as_view(), name="signout"),
+    path("cart/", Cart.as_view(), name="cart"),
+    path("checkout/", Checkout.as_view(), name="checkout"),
+    path("payment-success/", PaymentSuccess.as_view(), name="payment_success"),
+    path("payment-cancel/", PaymentCancel.as_view(), name="payment_cancel"),
 ]
