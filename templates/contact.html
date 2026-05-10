@@ -10,17 +10,9 @@
     display=swap" rel="stylesheet">
 </head>
 <body>
-<header class="top-bar">
-        <div class="brand">
-            <img src="{% static 'images/LogoClearBackground.png' %}" class="top-bar-logo">
-            <h1 class = "logo">TreadJoy</h1>
-        </div>
 
-        <div class = "nav-buttons">
-            <a href="{% url 'contact' %}" class="btn">Contact</a>
-            <a href="{% url 'signin' %}" class="btn">Sign In</a>
-        </div>
-    </header>
+    {% include "header.html" %}
+
     <main class="hero">
         <div class="hero-content">
             <h2>Contact us here!</h2>

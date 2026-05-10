@@ -10,23 +10,8 @@
     display=swap" rel="stylesheet">
 </head>
 <body>
-    <header class="top-bar">
-        <div class="brand">
-            <img src="{% static 'images/LogoClearBackground.png' %}" class="top-bar-logo">
-            <h1 class = "logo">TreadJoy</h1>
-        </div>
 
-        <div class="nav-buttons">
-            {% if user.is_authenticated %}
-                <span>Hello, {{ user.username }}</span>
-                <a href="{% url 'signout' %}" class="btn btn-primary">Sign Out</a>
-                <a href="{% url 'cart' %}" class="btn btn-primary">Cart</a>
-            {% else %}
-                <a href="{% url 'signin' %}" class="btn btn-primary">Sign In</a>
-                <a href="{% url 'signup' %}" class="btn btn-primary">Sign Up</a>
-            {% endif %}
-        </div>
-    </header>
+    {% include "header.html" %}
 
     <main class="hero">
         <div class="hero-content">
@@ -37,6 +22,14 @@
             </p>
             <a href="{% url 'survey' %}" class="btn btn-primary">Take the Survey</a>
         </div>
+    </main>
+    <main class="hero">
+        <div class="hero-content">
+            <h2>Take a look at our products!</h2>
+            <p>
+                 We have a wide range of shoes to choose from. Check out our products page to see what we have to offer.
+            </p>
+            <a href="{% url 'products' %}" class="btn btn-primary">Shop Now</a>        </div>
     </main>
 </body>
 </html>

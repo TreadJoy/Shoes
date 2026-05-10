@@ -3,9 +3,18 @@
 <html>
 <head>
     <title>Survey</title>
+    <link rel="stylesheet" href="{% static 'css/style.css' %}">
 </head>
 <body>
-    <h1>Survey Page</h1>
-    <p>This is the survey page.</p>
+
+    {% include "header.html" %}
+
+<main class="survey-page">
+    <div class="survey-form">
+        <h1>Survey Page</h1>
+        <p>This is the survey page.</p>
+    </div>
+</main>
+
 </body>
 </html>

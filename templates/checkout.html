@@ -1,10 +1,24 @@
+{% load static %}
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-    <meta charset="UTF-8">
-    <title>Title</title>
+    <title>Checkout</title>
+    <link rel="stylesheet" href="{% static 'css/style.css' %}">
 </head>
+
 <body>
+
+    {% include "header.html" %}
+
+<main class="form-page">
+    <div class="form-box">
+        <h2>Checkout</h2>
+        <p>Thank you for your order!</p>
+        <p>Total: ${{ total }}</p>
+        <a href="{% url 'home' %}" class="btn btn-primary">Continue Shopping</a>
+    </div>
+</main>
+
 
 </body>
 </html>

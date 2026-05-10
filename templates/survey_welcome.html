@@ -1,0 +1,33 @@
+<!-- templates/survey_welcome.html -->
+
+{% load static %}
+
+<!DOCTYPE html>
+<html>
+<head>
+    <title>TreadJoy Survey</title>
+    <link rel="stylesheet" href="{% static 'css/style.css' %}">
+</head>
+<body>
+
+{% include "header.html" %}
+
+<main class="form-page">
+    <div class="form-box">
+        <h2>Welcome to the TreadJoy Survey</h2>
+
+        <p>
+            We would love to hear your thoughts.
+        </p>
+
+        <form method="post">
+            {% csrf_token %}
+            <button type="submit" name="action" value="start" class="btn btn-primary">
+                Start Survey
+            </button>
+        </form>
+    </div>
+</main>
+
+</body>
+</html>

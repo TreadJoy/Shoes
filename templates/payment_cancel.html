@@ -1,14 +1,28 @@
+<!-- templates/success.html -->
+
+{% load static %}
+
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-    <meta charset="UTF-8">
-    <title>Title</title>
+    <title>Payment Canceled</title>
+    <link rel="stylesheet" href="{% static 'css/style.css' %}">
 </head>
 <body>
 
-<h1>Payment Canceled</h1>
-<p>Your payment was not completed.</p>
-<a href="{% url 'home' %}">Back to Home</a>
+    {% include "header.html" %}
+
+    <main class="form-page">
+        <div class="form-box">
+            <h2>Payment Canceled</h2>
+
+            <p>Thank you for considering TreadJoy! We hope you'll come back soon to complete your order.</p>
+
+            <a href="{% url 'products' %}" class="btn btn-secondary">
+                Continue Shopping
+            </a>
+        </div>
+    </main>
 
 </body>
 </html>

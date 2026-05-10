@@ -17,19 +17,32 @@ Including another URLconf
 
 from django.contrib import admin
 from django.urls import path, include
-#from web.models import
-from web.views import HomePage, Contact, Survey, SignIn, SignUp, SignOut, Cart, Checkout, PaymentSuccess, PaymentCancel
+from web.views import (HomePage, Contact, Survey, SignIn,
+                       SignOut, Cart, Checkout, PaymentSuccess, PaymentCancel,
+                       AddToCart, ClearCart, Products, SurveyThankYou, signup, verify_email, VerificationSentView)
 
 urlpatterns = [
     path("admin/", admin.site.urls),
-    path('', HomePage.as_view(), name='home'),
+    path("", HomePage.as_view(), name="home"),
     path("contact/", Contact.as_view(), name="contact"),
     path("survey/", Survey.as_view(), name="survey"),
+    path("survey/thank-you/", SurveyThankYou.as_view(), name="survey_thank_you"),
+
     path("signin/", SignIn.as_view(), name="signin"),
-    path("signup/", SignUp.as_view(), name="signup"),
     path("signout/", SignOut.as_view(), name="signout"),
+    path("signup/", signup, name="signup"),
+
+    path("verify-email/<uidb64>/<token>/", verify_email, name="verify_email"),
+    path("verification-sent/", VerificationSentView.as_view(), name="verification_sent"),
+
     path("cart/", Cart.as_view(), name="cart"),
     path("checkout/", Checkout.as_view(), name="checkout"),
     path("payment-success/", PaymentSuccess.as_view(), name="payment_success"),
     path("payment-cancel/", PaymentCancel.as_view(), name="payment_cancel"),
+    path("add-to-cart/", AddToCart.as_view(), name="add_to_cart"),
+    path("clear-cart/", ClearCart.as_view(), name="clear_cart"),
+    path("products/", Products.as_view(), name="products"),
+
+    path("accounts/", include("allauth.urls")),
 ]
+

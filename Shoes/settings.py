@@ -33,14 +33,24 @@ ALLOWED_HOSTS = []
 # Application definition
 
 INSTALLED_APPS = [
+    #django
     'django.contrib.admin',
     "django.contrib.auth",
     "django.contrib.contenttypes",
     "django.contrib.sessions",
     "django.contrib.messages",
     "django.contrib.staticfiles",
+    "django.contrib.sites",
+
+    # allauth
+    "allauth",
+    "allauth.account",
+    "allauth.socialaccount",
+    "allauth.socialaccount.providers.google",
+
     "web",
 ]
+
 
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
@@ -50,6 +60,8 @@ MIDDLEWARE = [
     "django.contrib.auth.middleware.AuthenticationMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
+    "allauth.account.middleware.AccountMiddleware",
+
 ]
 
 ROOT_URLCONF = "Shoes.urls"
@@ -97,6 +109,7 @@ AUTH_PASSWORD_VALIDATORS = [
     },
     {
         "NAME": "django.contrib.auth.password_validation.MinimumLengthValidator",
+        "OPTIONS": {"min_length": 8}
     },
     {
         "NAME": "django.contrib.auth.password_validation.CommonPasswordValidator",
@@ -135,5 +148,35 @@ STATICFILES_DIRS = [
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
 #Payment Processing Keys
-STRIPE_SECRET_KEY = "sk_test_your_secret_key_here"
-STRIPE_PUBLISHABLE_KEY = "pk_test_your_publishable_key_here"
+###ABSOLUTELY NOT SECURE, USE FOR TESTING PURPOSES ONLY###
+###DO NOT PUSH TO GITHUB WITH THIS KEY###
+STRIPE_SECRET_KEY = ""
+STRIPE_PUBLISHABLE_KEY = "pk_test_51TUBdgBVKVHVhCDilkO09Z20gTJPgkigR0oAbFdiw1ZRVLNgJzej3eIGYKLo4Lo2iILbC8l1lNDcI624CsKjyqnH00poc56x11"
+
+#Email
+EMAIL_BACKEND = "django.core.mail.backends.console.EmailBackend"
+DEFAULT_FROM_EMAIL = "noreply@treadjoy.com"
+
+SITE_ID = 1
+
+AUTHENTICATION_BACKENDS = [
+    "django.contrib.auth.backends.ModelBackend",
+    "allauth.account.auth_backends.AuthenticationBackend",
+]
+
+LOGIN_REDIRECT_URL = "home"
+LOGOUT_REDIRECT_URL = "home"
+
+SOCIALACCOUNT_PROVIDERS = {
+    "google": {
+        "APP": {
+            "client_id": "1002222222222-000000000000000000000.apps.googleusercontent.com",
+            "secret": "YOUR_SECRET_KEY",
+            "key": "YOUR_KEY"
+        },
+        "SCOPE": ["profile", "email"],
+        "AUTH_PARAMS": {
+            "access_type": "online"
+        },
+    }
+}

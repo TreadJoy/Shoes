@@ -1,0 +1,25 @@
+{% load static %}
+
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Verification Failed</title>
+    <link rel="stylesheet" href="{% static 'css/style.css' %}">
+</head>
+<body>
+
+{% include "header.html" %}
+
+<main class="form-page">
+    <div class="form-box">
+        <h2>Verification Failed</h2>
+        <p>This verification link is invalid or expired.</p>
+
+        <a href="{% url 'signup' %}" class="btn btn-primary">
+            Try Again
+        </a>
+    </div>
+</main>
+
+</body>
+</html>
