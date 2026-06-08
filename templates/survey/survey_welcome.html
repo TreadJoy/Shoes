@@ -1,0 +1,26 @@
+{% extends "base.html" %}
+
+{% block title %}Survey | TreadJoy{% endblock %}
+
+{% block content %}
+
+<div class="survey-page">
+
+    <div class="survey-card">
+        <p class="eyebrow">Quick Survey</p>
+
+        <h1>Help Us Build Better Shoes</h1>
+
+        <p>
+            Tell us what matters most to you in a shoe so we can make
+            TreadJoy more comfortable, stylish, and fun.
+        </p>
+
+        <a href="{% url 'survey:survey_question' 1 %}" class="btn-primary">
+            Start Survey
+        </a>
+    </div>
+
+</div>
+
+{% endblock %}

@@ -1,26 +1,31 @@
-{% load static %}
-<!DOCTYPE html>
-<html>
-<head>
-    <title>Contact</title>
-    <link rel="stylesheet" href="{% static 'css/style.css' %}">
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&family=Nunito:wght@400;600;700&
-    display=swap" rel="stylesheet">
-</head>
-<body>
+{% extends "base.html" %}
 
-    {% include "header.html" %}
+{% block title %}Contact | TreadJoy{% endblock %}
 
-    <main class="hero">
-        <div class="hero-content">
-            <h2>Contact us here!</h2>
-            <p>
-                If there is anything you would like to know about our products, please feel free to contact us.
-                We are here to help! The best way to reach us is at <EMAIL>example@email.com</EMAIL>.
-            </p>
-        </div>
-    </main>
-</body>
-</html>
+{% block content %}
+
+<div class="contact-page">
+
+    <section class="brand-hero">
+        <p class="eyebrow">Contact</p>
+
+        <h1>Get in Touch</h1>
+
+        <p>
+            Have a question about TreadJoy? We’d love to hear from you.
+        </p>
+    </section>
+
+    <section class="content-card">
+        <h2>Contact Information</h2>
+
+        <p>Email: hello@treadjoy.com</p>
+
+        <a href="{% url 'core:home' %}" class="btn-secondary">
+            Back to Home
+        </a>
+    </section>
+
+</div>
+
+{% endblock %}

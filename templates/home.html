@@ -1,0 +1,40 @@
+{% extends "base.html" %}
+
+{% block title %}Home | TreadJoy{% endblock %}
+
+{% block content %}
+
+<div class="home-page">
+
+    <section class="hero-section">
+        <div class="hero-content">
+            <h1>Welcome to TreadJoy</h1>
+            <p>Fun, comfortable shoes built for everyday movement.</p>
+
+            <a href="{% url 'products:product_list' %}" class="btn-primary">
+                Shop Products
+            </a>
+        </div>
+    </section>
+
+    <section class="home-section">
+        <h2>Help Us Build Better Shoes</h2>
+        <p>Take our quick survey and tell us what you look for in a shoe.</p>
+
+        <a href="{% url 'survey:survey_welcome' %}" class="btn-secondary">
+            Take the Survey
+        </a>
+    </section>
+
+    <section class="home-section">
+        <h2>Join the Waitlist</h2>
+        <p>Be the first to hear about new drops and product launches.</p>
+
+        <a href="{% url 'waitlist:join_waitlist' %}" class="btn-secondary">
+            Join Waitlist
+        </a>
+    </section>
+
+</div>
+
+{% endblock %}

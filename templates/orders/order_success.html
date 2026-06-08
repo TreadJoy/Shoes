@@ -1,0 +1,43 @@
+{% extends "base.html" %}
+
+{% block title %}Order Success | TreadJoy{% endblock %}
+
+{% block content %}
+
+<div class="order-success-page">
+
+    <div class="success-card">
+        <div class="success-icon">✓</div>
+
+        <h1>Order Placed Successfully!</h1>
+
+        <p>Thank you for your order. Your purchase has been received.</p>
+
+        {% if order %}
+            <div class="order-summary-box">
+                <p><strong>Order Number:</strong> #{{ order.id }}</p>
+                <p><strong>Total:</strong> ${{ order.total }}</p>
+                <p><strong>Status:</strong> {{ order.get_status_display }}</p>
+            </div>
+        {% endif %}
+
+        <div class="success-actions">
+            {% if user.is_authenticated %}
+                <a href="{% url 'orders:order_detail' order.id %}" class="btn-secondary">
+                    View Order Details
+                </a>
+            {% endif %}
+
+            <a href="{% url 'products:product_list' %}" class="btn-primary">
+                Continue Shopping
+            </a>
+
+            <a href="{% url 'core:home' %}" class="btn-secondary">
+                Back to Home
+            </a>
+        </div>
+    </div>
+
+</div>
+
+{% endblock %}

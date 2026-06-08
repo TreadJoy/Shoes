@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+
+{% block title %}Survey Question {{ question_number }} | TreadJoy{% endblock %}
+
+{% block content %}
+
+<div class="survey-page">
+
+    <div class="survey-card">
+        <p class="eyebrow">Question {{ question_number }}</p>
+
+        <h1>Survey Question {{ question_number }}</h1>
+
+        <p>The real survey question content will go here.</p>
+
+        <a href="{% url 'survey:survey_thank_you' %}" class="btn-primary">
+            Finish Survey
+        </a>
+    </div>
+
+</div>
+
+{% endblock %}

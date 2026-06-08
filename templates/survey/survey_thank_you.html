@@ -1,0 +1,26 @@
+{% extends "base.html" %}
+
+{% block title %}Survey Complete | TreadJoy{% endblock %}
+
+{% block content %}
+
+<div class="survey-page">
+
+    <div class="survey-card">
+        <div class="success-icon">✓</div>
+
+        <h1>Thank You!</h1>
+
+        <p>
+            Thanks for helping us improve TreadJoy.
+            Your feedback helps shape the brand.
+        </p>
+
+        <a href="{% url 'core:home' %}" class="btn-primary">
+            Back to Home
+        </a>
+    </div>
+
+</div>
+
+{% endblock %}

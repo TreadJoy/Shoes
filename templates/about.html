@@ -1,0 +1,40 @@
+{% extends "base.html" %}
+
+{% block title %}About | TreadJoy{% endblock %}
+
+{% block content %}
+
+<div class="about-page">
+
+    <section class="brand-hero">
+        <p class="eyebrow">Our Story</p>
+
+        <h1>About TreadJoy</h1>
+
+        <p>
+            TreadJoy is a fun shoe brand focused on comfort, personality,
+            and everyday movement.
+        </p>
+    </section>
+
+    <section class="content-card">
+        <h2>What We’re Building</h2>
+
+        <p>
+            Our goal is to create shoes that feel good, look unique,
+            and make people excited to wear them.
+        </p>
+
+        <p>
+            We care about playful design, practical comfort, and building
+            a brand that people feel connected to.
+        </p>
+
+        <a href="{% url 'products:product_list' %}" class="btn-primary">
+            Shop Products
+        </a>
+    </section>
+
+</div>
+
+{% endblock %}

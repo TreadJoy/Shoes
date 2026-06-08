@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+
+{% block title %}Sign Out | TreadJoy{% endblock %}
+
+{% block content %}
+
+<div class="auth-page">
+
+    <div class="auth-card">
+        <h1>Sign Out</h1>
+
+        <p>Are you sure you want to sign out of your TreadJoy account?</p>
+
+        <form method="post" action="{% url 'account_logout' %}" class="auth-form">
+            {% csrf_token %}
+
+            {% if redirect_field_value %}
+                <input type="hidden" name="{{ redirect_field_name }}" value="{{ redirect_field_value }}">
+            {% endif %}
+
+            <button type="submit" class="btn-primary">
+                Yes, Sign Out
+            </button>
+        </form>
+
+        <p class="auth-switch">
+            <a href="{% url 'core:home' %}">Cancel and return home</a>
+        </p>
+    </div>
+
+</div>
+
+{% endblock %}

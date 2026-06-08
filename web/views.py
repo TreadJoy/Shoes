@@ -5,7 +5,6 @@ from django.contrib.auth import authenticate, login, logout
 from django.contrib import messages
 from django.conf import settings
 import stripe
-from web.models import SurveyResponse
 from django.views.generic import TemplateView
 from django.contrib.auth.password_validation import validate_password
 from django.core.exceptions import ValidationError
@@ -13,7 +12,7 @@ from django.core.mail import send_mail
 from django.urls import reverse
 from django.utils.http import urlsafe_base64_encode, urlsafe_base64_decode
 from django.utils.encoding import force_bytes, force_str
-from .tokens import email_verification_token
+from web.accounts.tokens import email_verification_token
 
 # from web.models import
 
@@ -35,7 +34,7 @@ class Survey(View):
         step = int(request.GET.get("step", 0))
 
         if step == 0:
-            return render(request, "survey_welcome.html")
+            return render(request, "survey/survey_welcome.html")
 
         question_index = step - 1
 
@@ -46,7 +45,7 @@ class Survey(View):
 
         saved_answers = request.session.get("survey_answers", {})
 
-        return render(request, "survey_question.html", {
+        return render(request, "survey/survey_question.html", {
             "question": question,
             "step": step,
             "total_steps": len(QUESTIONS),
@@ -127,10 +126,10 @@ QUESTIONS = [
 ]
 
 class SurveyThankYou(TemplateView):
-    template_name = "survey_thank_you.html"
+    template_name = "survey/survey_thank_you.html"
 
 #User Signup, login, and logout.
-#Collects just basic user data to ensure account.
+#Collects just basic user data to ensure accounts.
 #Currently very simple.
 def signup(request):
     if request.method == "POST":

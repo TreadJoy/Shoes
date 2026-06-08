@@ -1,0 +1,83 @@
+{% extends "base.html" %}
+
+{% block title %}Manage Email | TreadJoy{% endblock %}
+
+{% block content %}
+
+<div class="auth-page">
+
+    <div class="auth-card">
+        <h1>Manage Email</h1>
+
+        {% if user.emailaddress_set.all %}
+            <p>Your current email addresses:</p>
+
+            <form method="post" action="{% url 'account_email' %}" class="auth-form">
+                {% csrf_token %}
+
+                {% for emailaddress in user.emailaddress_set.all %}
+                    <div class="form-check">
+                        <input
+                            type="radio"
+                            name="email"
+                            id="email-{{ forloop.counter }}"
+                            value="{{ emailaddress.email }}"
+                            {% if emailaddress.primary %}checked{% endif %}
+                        >
+
+                        <label for="email-{{ forloop.counter }}">
+                            {{ emailaddress.email }}
+
+                            {% if emailaddress.verified %}
+                                <strong>Verified</strong>
+                            {% else %}
+                                <strong>Unverified</strong>
+                            {% endif %}
+
+                            {% if emailaddress.primary %}
+                                <strong>Primary</strong>
+                            {% endif %}
+                        </label>
+                    </div>
+                {% endfor %}
+
+                <button type="submit" name="action_primary" class="btn-primary">
+                    Make Primary
+                </button>
+
+                <button type="submit" name="action_send" class="btn-secondary">
+                    Re-send Verification
+                </button>
+
+                <button type="submit" name="action_remove" class="btn-secondary">
+                    Remove
+                </button>
+            </form>
+        {% else %}
+            <p>No email addresses are connected to this account yet.</p>
+        {% endif %}
+
+        <hr>
+
+        <h2>Add Email</h2>
+
+        <form method="post" action="{% url 'account_email' %}" class="auth-form">
+            {% csrf_token %}
+
+            {{ form.non_field_errors }}
+
+            <div class="form-group">
+                <label for="id_email">New Email</label>
+                {{ form.email }}
+                {{ form.email.errors }}
+            </div>
+
+            <button type="submit" name="action_add" class="btn-primary">
+                Add Email
+            </button>
+        </form>
+    </div>
+
+</div>
+
+{% endblock %}

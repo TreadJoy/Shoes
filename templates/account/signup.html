@@ -1,0 +1,68 @@
+{% extends "base.html" %}
+
+{% block title %}Sign Up | TreadJoy{% endblock %}
+
+{% block content %}
+
+<div class="auth-page">
+
+    <div class="auth-card">
+        <h1>Create Account</h1>
+
+        <p>Create an account to view your orders and manage your profile.</p>
+
+        <form method="post" action="{% url 'account_signup' %}" class="auth-form">
+            {% csrf_token %}
+
+            {{ form.non_field_errors }}
+
+            {% if redirect_field_value %}
+                <input type="hidden" name="{{ redirect_field_name }}" value="{{ redirect_field_value }}">
+            {% endif %}
+
+            <div class="form-group">
+                <label for="id_username">Username</label>
+                {{ form.username }}
+                {{ form.username.errors }}
+            </div>
+
+            <div class="form-group">
+                <label for="id_email">Email</label>
+                {{ form.email }}
+                {{ form.email.errors }}
+            </div>
+
+            <div class="form-group">
+                <label for="id_password1">Password</label>
+                {{ form.password1 }}
+                {{ form.password1.errors }}
+            </div>
+
+            <div class="form-group">
+                <label for="id_password2">Confirm Password</label>
+                {{ form.password2 }}
+                {{ form.password2.errors }}
+            </div>
+
+            {% if redirect_field_value %}
+                <input
+                        type="hidden"
+                        name="{{ redirect_field_name }}"
+                        value="{{ redirect_field_value }}"
+                >
+            {% endif %}
+
+            <button type="submit" class="btn-primary">
+                Sign Up
+            </button>
+        </form>
+
+        <p class="auth-switch">
+            Already have an account?
+            <a href="{% url 'account_login' %}">Sign in</a>
+        </p>
+    </div>
+
+</div>
+
+{% endblock %}

@@ -1,0 +1,65 @@
+{% extends "base.html" %}
+
+{% block title %}{{ product.name }} | TreadJoy{% endblock %}
+
+{% block content %}
+
+<div class="product-detail-page">
+
+    <div class="product-detail-grid">
+
+        <div class="product-detail-image">
+            {% if product.image %}
+                <img src="{{ product.image.url }}" alt="{{ product.name }}">
+            {% else %}
+                <div class="image-placeholder">
+                    No image available
+                </div>
+            {% endif %}
+        </div>
+
+        <div class="product-detail-info">
+            <p class="product-category">
+                {{ product.get_category_display }}
+            </p>
+
+            <h1>{{ product.name }}</h1>
+
+            {% if product.sale_price %}
+                <p class="product-detail-price">
+                    <span class="old-price">${{ product.price }}</span>
+                    <strong>${{ product.sale_price }}</strong>
+                </p>
+            {% else %}
+                <p class="product-detail-price">${{ product.price }}</p>
+            {% endif %}
+
+            <p class="product-detail-description">
+                {{ product.description }}
+            </p>
+
+            <div class="product-meta">
+                <p><strong>Audience:</strong> {{ product.get_audience_display }}</p>
+                <p><strong>Category:</strong> {{ product.get_category_display }}</p>
+                <p><strong>Stock:</strong> {{ product.stock_quantity }}</p>
+            </div>
+
+            <form method="post" action="{% url 'cart:add_to_cart' %}" class="add-to-cart-form">
+                {% csrf_token %}
+                <input type="hidden" name="product_id" value="{{ product.id }}">
+
+                <button type="submit" class="btn-primary">
+                    Add to Cart
+                </button>
+            </form>
+
+            <a href="{% url 'products:product_list' %}" class="back-link">
+                ← Back to Products
+            </a>
+        </div>
+
+    </div>
+
+</div>
+
+{% endblock %}

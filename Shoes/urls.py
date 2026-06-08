@@ -14,35 +14,27 @@ Including another URLconf
     1. Import the include() function: from django.urls import include, path
     2. Add a URL to urlpatterns:  path('blog/', include('blog.urls'))
 """
-
 from django.contrib import admin
 from django.urls import path, include
-from web.views import (HomePage, Contact, Survey, SignIn,
-                       SignOut, Cart, Checkout, PaymentSuccess, PaymentCancel,
-                       AddToCart, ClearCart, Products, SurveyThankYou, signup, verify_email, VerificationSentView)
+from django.conf import settings
+from django.conf.urls.static import static
 
 urlpatterns = [
     path("admin/", admin.site.urls),
-    path("", HomePage.as_view(), name="home"),
-    path("contact/", Contact.as_view(), name="contact"),
-    path("survey/", Survey.as_view(), name="survey"),
-    path("survey/thank-you/", SurveyThankYou.as_view(), name="survey_thank_you"),
 
-    path("signin/", SignIn.as_view(), name="signin"),
-    path("signout/", SignOut.as_view(), name="signout"),
-    path("signup/", signup, name="signup"),
+    path("", include("web.core.urls")),
+    path("products/", include("web.products.urls")),
+    path("cart/", include("web.cart.urls")),
+    path("orders/", include("web.orders.urls")),
+    path("survey/", include("web.survey.urls")),
+    path("waitlist/", include("web.waitlist.urls")),
 
-    path("verify-email/<uidb64>/<token>/", verify_email, name="verify_email"),
-    path("verification-sent/", VerificationSentView.as_view(), name="verification_sent"),
+    # Your custom accounts/profile pages
+    path("accounts/profile/", include("web.accounts.urls")),
 
-    path("cart/", Cart.as_view(), name="cart"),
-    path("checkout/", Checkout.as_view(), name="checkout"),
-    path("payment-success/", PaymentSuccess.as_view(), name="payment_success"),
-    path("payment-cancel/", PaymentCancel.as_view(), name="payment_cancel"),
-    path("add-to-cart/", AddToCart.as_view(), name="add_to_cart"),
-    path("clear-cart/", ClearCart.as_view(), name="clear_cart"),
-    path("products/", Products.as_view(), name="products"),
-
+    # Django allauth login/signup/logout pages
     path("accounts/", include("allauth.urls")),
 ]
 
+if settings.DEBUG:
+    urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

@@ -1,0 +1,92 @@
+{% extends "base.html" %}
+
+{% block title %}Your Cart | TreadJoy{% endblock %}
+
+{% block content %}
+
+<div class="cart-page">
+
+    <div class="page-heading">
+        <h1>Your Cart</h1>
+        <p>Review your items before checkout.</p>
+    </div>
+
+    {% if cart.items.all %}
+        <div class="cart-layout">
+
+            <div class="cart-items">
+                {% for item in cart.items.all %}
+                    <div class="cart-item">
+
+                        {% if item.product.image %}
+                            <img src="{{ item.product.image.url }}" alt="{{ item.product.name }}">
+                        {% endif %}
+
+                        <div class="cart-item-info">
+                            <h2>{{ item.product.name }}</h2>
+
+                            <p>Price: ${{ item.product.current_price }}</p>
+                            <form method="post" action="{% url 'cart:update_cart_item' item.id %}" class="quantity-form">
+                                {% csrf_token %}
+
+                                <label for="quantity-{{ item.id }}">Quantity</label>
+                                <input
+                                        type="number"
+                                        name="quantity"
+                                        id="quantity-{{ item.id }}"
+                                        value="{{ item.quantity }}"
+                                        min="0"
+                                >
+
+                                <button type="submit">Update</button>
+                            </form>
+
+                            {% if item.size %}
+                                <p>Size: {{ item.size }}</p>
+                            {% endif %}
+
+                            {% if item.color %}
+                                <p>Color: {{ item.color }}</p>
+                            {% endif %}
+
+                            <p><strong>Subtotal:</strong> ${{ item.subtotal }}</p>
+
+                            <a href="{% url 'cart:remove_from_cart' item.id %}" class="remove-link">
+                                Remove
+                            </a>
+                        </div>
+
+                    </div>
+                {% endfor %}
+            </div>
+
+            <aside class="cart-summary">
+                <h2>Order Summary</h2>
+
+                <p>Total Items: {{ cart.total_items }}</p>
+                <p class="cart-total">Total: ${{ cart.total_price }}</p>
+
+                <a href="{% url 'orders:checkout' %}" class="btn-primary">
+                    Checkout
+                </a>
+
+                <a href="{% url 'cart:clear_cart' %}" class="clear-cart-link">
+                    Clear Cart
+                </a>
+            </aside>
+
+        </div>
+    {% else %}
+        <div class="empty-cart">
+            <h2>Your cart is empty.</h2>
+            <p>Find something fun to add to your cart.</p>
+
+            <a href="{% url 'products:product_list' %}" class="btn-primary">
+                Continue Shopping
+            </a>
+        </div>
+    {% endif %}
+
+</div>
+
+{% endblock %}

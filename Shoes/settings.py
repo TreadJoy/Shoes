@@ -48,7 +48,14 @@ INSTALLED_APPS = [
     "allauth.socialaccount",
     "allauth.socialaccount.providers.google",
 
-    "web",
+    #Apps
+    "web.core",
+    "web.cart",
+    "web.products",
+    "web.orders",
+    "web.survey",
+    "web.waitlist",
+    "web.accounts"
 ]
 
 
@@ -77,6 +84,7 @@ TEMPLATES = [
                 "django.template.context_processors.request",
                 "django.contrib.auth.context_processors.auth",
                 "django.contrib.messages.context_processors.messages",
+                "web.cart.context_processors.cart_summary",
             ],
         },
     },
@@ -164,8 +172,16 @@ AUTHENTICATION_BACKENDS = [
     "allauth.account.auth_backends.AuthenticationBackend",
 ]
 
-LOGIN_REDIRECT_URL = "home"
-LOGOUT_REDIRECT_URL = "home"
+LOGIN_URL = "account_login"
+
+LOGIN_REDIRECT_URL = "core:home"
+LOGOUT_REDIRECT_URL = "core:home"
+
+ACCOUNT_LOGIN_REDIRECT_URL = "core:home"
+ACCOUNT_LOGOUT_REDIRECT_URL = "core:home"
+ACCOUNT_SIGNUP_REDIRECT_URL = "core:home"
+
+SITE_ID = 1
 
 SOCIALACCOUNT_PROVIDERS = {
     "google": {
@@ -180,3 +196,6 @@ SOCIALACCOUNT_PROVIDERS = {
         },
     }
 }
+
+MEDIA_URL = "/media/"
+MEDIA_ROOT = BASE_DIR / "media"

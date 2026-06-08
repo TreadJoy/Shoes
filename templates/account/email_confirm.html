@@ -1,0 +1,39 @@
+{% extends "base.html" %}
+
+{% block title %}Confirm Email | TreadJoy{% endblock %}
+
+{% block content %}
+
+<div class="auth-page">
+
+    <div class="auth-card">
+        <h1>Confirm Your Email</h1>
+
+        {% if confirmation %}
+            <p>
+                Please confirm that 
+                <strong>{{ confirmation.email_address.email }}</strong>
+                is your email address.
+            </p>
+
+            <form method="post" action="{% url 'account_confirm_email' confirmation.key %}">
+                {% csrf_token %}
+
+                <button type="submit" class="btn-primary">
+                    Confirm Email
+                </button>
+            </form>
+        {% else %}
+            <p>
+                This email confirmation link is invalid or has expired.
+            </p>
+
+            <a href="{% url 'account_email' %}" class="btn-primary">
+                Manage Email
+            </a>
+        {% endif %}
+    </div>
+
+</div>
+
+{% endblock %}

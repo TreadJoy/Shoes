@@ -1,0 +1,45 @@
+<header class="site-header">
+
+    <!-- KEEP YOUR EXISTING TOP BAR HERE -->
+    <div class="top-bar">
+        <!-- whatever you already had in your top bar -->
+        <p>Free shipping / brand message / announcement</p>
+    </div>
+
+    <!-- MAIN NAVIGATION -->
+    <div class="header-inner">
+
+        <a href="{% url 'core:home' %}" class="brand-logo">
+            TreadJoy
+        </a>
+
+        <nav class="main-nav">
+            <a href="{% url 'core:home' %}">Home</a>
+            <a href="{% url 'products:product_list' %}">Products</a>
+            <a href="{% url 'core:about' %}">About</a>
+            <a href="{% url 'core:contact' %}">Contact</a>
+            <a href="{% url 'cart:cart_detail' %}">
+                Cart
+                {% if cart_count > 0 %}
+                    <span class="cart-badge">{{ cart_count }}</span>
+                {% endif %}
+            </a>
+        </nav>
+
+        <div class="header-actions">
+            {% if user.is_authenticated %}
+                <a href="{% url 'accounts:profile' %}">Profile</a>
+                <form method="post" action="{% url 'account_logout' %}" class="logout-form">
+                    {% csrf_token %}
+                    <button type="submit" class="logout-button">
+                        Sign Out
+                    </button>
+                </form>            {% else %}
+                <a href="{% url 'account_login' %}">Sign In</a>
+                <a href="{% url 'account_signup' %}" class="btn-small">Sign Up</a>
+            {% endif %}
+        </div>
+
+    </div>
+
+</header>

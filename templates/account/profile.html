@@ -1,0 +1,40 @@
+{% extends "base.html" %}
+
+{% block title %}Profile | TreadJoy{% endblock %}
+
+{% block content %}
+
+<div class="auth-page">
+
+    <div class="auth-card">
+        <h1>Your Profile</h1>
+
+        {% if user.is_authenticated %}
+            <p><strong>Username:</strong> {{ user.username }}</p>
+            <p><strong>Email:</strong> {{ user.email }}</p>
+
+            <div class="profile-actions">
+                <a href="{% url 'orders:order_history' %}" class="btn-primary">
+                    View Order History
+                </a>
+
+                <a href="{% url 'account_email' %}" class="btn-secondary">
+                    Manage Email
+                </a>
+
+                <a href="{% url 'account_change_password' %}" class="btn-secondary">
+                    Change Password
+                </a>
+            </div>
+        {% else %}
+            <p>You are not signed in.</p>
+
+            <a href="{% url 'account_login' %}" class="btn-primary">
+                Sign In
+            </a>
+        {% endif %}
+    </div>
+
+</div>
+
+{% endblock %}
