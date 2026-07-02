@@ -4,7 +4,6 @@ from web.products.models import Product
 
 
 class Cart(models.Model):
-    objects = None
     user = models.OneToOneField(
         settings.AUTH_USER_MODEL,
         on_delete=models.CASCADE,

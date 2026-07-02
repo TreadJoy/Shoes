@@ -2,6 +2,9 @@ from django.shortcuts import render, redirect, get_object_or_404
 from web.products.models import Product
 from .models import Cart, CartItem
 from django.contrib import messages
+from django.views.decorators.http import require_POST
+
+
 
 def get_or_create_cart(request):
     if request.user.is_authenticated:
@@ -25,7 +28,7 @@ def cart_detail(request):
         "cart": cart,
     })
 
-
+@require_POST
 def add_to_cart(request):
     if request.method == "POST":
         product_id = request.POST.get("product_id")
@@ -60,6 +63,7 @@ def add_to_cart(request):
 
     return redirect("cart:cart_detail")
 
+@require_POST
 def remove_from_cart(request, item_id):
     cart = get_or_create_cart(request)
     item = get_object_or_404(CartItem, id=item_id, cart=cart)
@@ -71,7 +75,7 @@ def remove_from_cart(request, item_id):
 
     return redirect("cart:cart_detail")
 
-
+@require_POST
 def clear_cart(request):
     cart = get_or_create_cart(request)
     cart.items.all().delete()
@@ -80,6 +84,7 @@ def clear_cart(request):
 
     return redirect("cart:cart_detail")
 
+@require_POST
 def update_cart_item(request, item_id):
     cart = get_or_create_cart(request)
     item = get_object_or_404(CartItem, id=item_id, cart=cart)

@@ -1,7 +1,22 @@
+from django.conf import settings
 from django.db import models
 
-
 class SurveyResponse(models.Model):
+
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="survey_responses",
+    )
+
+    session_key = models.CharField(
+        max_length=40,
+        blank=True,
+        db_index=True,
+    )
+
     STYLE_CHOICES = [
         ("athletic", "Athletic"),
         ("casual", "Casual"),
@@ -31,5 +46,8 @@ class SurveyResponse(models.Model):
     additional_feedback = models.TextField(blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
 
+
     def __str__(self):
-        return f"Survey Response #{self.id}"
+        if self.user:
+            return f"Survey response from {self.user}"
+        return f"Survey Response #{self.pk}"

@@ -12,22 +12,20 @@ https://docs.djangoproject.com/en/5.2/ref/settings/
 
 from pathlib import Path
 import os
+from decouple import config, Csv
 
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 
-# Quick-start development settings - unsuitable for production
-# See https://docs.djangoproject.com/en/5.2/howto/deployment/checklist/
-
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = "django-insecure-l1cw2^0s7o0#b-a7j%8kc-vm%vtmf6rl*782$oncfs)#7d)5g4"
+SECRET_KEY = config("SECRET_KEY")
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = config("DEBUG", default=False, cast=bool)
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = config("ALLOWED_HOSTS", default="localhost,127.0.0.1", cast=Csv())
 
 
 # Application definition
@@ -98,12 +96,12 @@ WSGI_APPLICATION = "Shoes.wsgi.application"
 
 DATABASES = {
     'default': {
-       'ENGINE': 'django.db.backends.mysql',
-       'NAME': 'shoes',
-       'USER': 'root',
-       'PASSWORD': 'NewStrongPass123!',
-       'HOST': 'localhost',
-       'PORT': '3306',
+       'ENGINE': 'django.db.backends.postgresql',
+       'NAME': config('DB_NAME'),
+       'USER': config('DB_USER'),
+       'PASSWORD': config('DB_PASSWORD'),
+       'HOST': config('DB_HOST', default='127.0.0.1'),
+       'PORT': config('DB_PORT', default=5432)
    }
 }
 
@@ -158,8 +156,8 @@ DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 #Payment Processing Keys
 ###ABSOLUTELY NOT SECURE, USE FOR TESTING PURPOSES ONLY###
 ###DO NOT PUSH TO GITHUB WITH THIS KEY###
-STRIPE_SECRET_KEY = ""
-STRIPE_PUBLISHABLE_KEY = "pk_test_51TUBdgBVKVHVhCDilkO09Z20gTJPgkigR0oAbFdiw1ZRVLNgJzej3eIGYKLo4Lo2iILbC8l1lNDcI624CsKjyqnH00poc56x11"
+STRIPE_SECRET_KEY = config("STRIPE_SECRET_KEY", default="")
+STRIPE_PUBLISHABLE_KEY = config("STRIPE_PUBLISHABLE_KEY", default="")
 
 #Email
 EMAIL_BACKEND = "django.core.mail.backends.console.EmailBackend"
@@ -187,7 +185,7 @@ SOCIALACCOUNT_PROVIDERS = {
     "google": {
         "APP": {
             "client_id": "1002222222222-000000000000000000000.apps.googleusercontent.com",
-            "secret": "YOUR_SECRET_KEY",
+            "secret": "",
             "key": "YOUR_KEY"
         },
         "SCOPE": ["profile", "email"],
@@ -199,3 +197,18 @@ SOCIALACCOUNT_PROVIDERS = {
 
 MEDIA_URL = "/media/"
 MEDIA_ROOT = BASE_DIR / "media"
+
+if not DEBUG:
+    SECURE_SSL_REDIRECT = True
+
+    SESSION_COOKIE_SECURE = True
+    CSRF_COOKIE_SECURE = True
+
+    SESSION_COOKIE_HTTPONLY = True
+    CSRF_COOKIE_HTTPONLY = True
+
+    SECURE_HSTS_SECONDS = 31536000
+    SECURE_HSTS_INCLUDE_SUBDOMAINS = True
+    SECURE_HSTS_PRELOAD = True
+
+    SECURE_REFERRER_POLICY = "same-origin"

@@ -3,8 +3,6 @@ from django.db import models
 
 class Product(models.Model):
 
-    objects = None
-
     AUDIENCE_CHOICES = [
         ("men", "Men"),
         ("women", "Women"),

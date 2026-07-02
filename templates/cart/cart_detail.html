@@ -51,9 +51,11 @@
 
                             <p><strong>Subtotal:</strong> ${{ item.subtotal }}</p>
 
-                            <a href="{% url 'cart:remove_from_cart' item.id %}" class="remove-link">
-                                Remove
-                            </a>
+                            <form method="post"
+                                  action="{% url 'cart:remove_from_cart' item.id %}" class="remove-form">
+                                {% csrf_token %}
+                                <button type="submit" class="remove-btn">Remove</button>
+                            </form>
                         </div>
 
                     </div>
@@ -70,9 +72,10 @@
                     Checkout
                 </a>
 
-                <a href="{% url 'cart:clear_cart' %}" class="clear-cart-link">
-                    Clear Cart
-                </a>
+                <form method="post" action="{% url 'cart:clear_cart' %}">
+                    {% csrf_token %}
+                    <button type="submit" class="btn-secondary">Clear Cart</button>
+                </form>
             </aside>
 
         </div>

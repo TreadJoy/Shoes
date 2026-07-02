@@ -67,7 +67,6 @@ class Order(models.Model):
 
 
 class OrderItem(models.Model):
-    objects = None
     order = models.ForeignKey(
         Order,
         on_delete=models.CASCADE,
