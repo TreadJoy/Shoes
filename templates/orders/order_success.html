@@ -1,43 +1,95 @@
 {% extends "base.html" %}
 
-{% block title %}Order Success | TreadJoy{% endblock %}
-
 {% block content %}
+<section class="order-success-page">
+    {% if is_paid %}
+        <h1>Thank you for your order!</h1>
 
-<div class="order-success-page">
+        <p>
+            Your payment was successful and your order has been placed.
+        </p>
+    {% else %}
+        <h1>Order received</h1>
 
-    <div class="success-card">
-        <div class="success-icon">✓</div>
+        <p>
+            Your order was created and your payment is still processing.
+            This page may update after Stripe confirms the payment.
+        </p>
+    {% endif %}
 
-        <h1>Order Placed Successfully!</h1>
+    <div class="order-summary-card">
+        <h2>Order #{{ order.id }}</h2>
 
-        <p>Thank you for your order. Your purchase has been received.</p>
+        <p>
+            <strong>Status:</strong>
+            {{ order.get_status_display }}
+        </p>
 
-        {% if order %}
-            <div class="order-summary-box">
-                <p><strong>Order Number:</strong> #{{ order.id }}</p>
-                <p><strong>Total:</strong> ${{ order.total }}</p>
-                <p><strong>Status:</strong> {{ order.get_status_display }}</p>
-            </div>
+        <p>
+            <strong>Email:</strong>
+            {{ order.email }}
+        </p>
+
+        <p>
+            <strong>Subtotal:</strong>
+            ${{ order.subtotal|floatformat:2 }}
+        </p>
+
+        <p>
+            <strong>Shipping:</strong>
+            ${{ order.shipping_total|floatformat:2 }}
+        </p>
+
+        <p>
+            <strong>Tax:</strong>
+            ${{ order.tax_total|floatformat:2 }}
+        </p>
+
+        <p>
+            <strong>Total:</strong>
+            ${{ order.grand_total|floatformat:2 }}
+        </p>
+
+        {% if payment %}
+            <p>
+                <strong>Payment status:</strong>
+                {{ payment.get_status_display }}
+            </p>
         {% endif %}
-
-        <div class="success-actions">
-            {% if user.is_authenticated %}
-                <a href="{% url 'orders:order_detail' order.id %}" class="btn-secondary">
-                    View Order Details
-                </a>
-            {% endif %}
-
-            <a href="{% url 'products:product_list' %}" class="btn-primary">
-                Continue Shopping
-            </a>
-
-            <a href="{% url 'core:home' %}" class="btn-secondary">
-                Back to Home
-            </a>
-        </div>
     </div>
 
-</div>
+    <h2>Items</h2>
 
+    {% for item in order.items.all %}
+        <div class="order-item">
+            <h3>{{ item.product_name }}</h3>
+
+            <p>
+                {{ item.color }}
+                — Size {{ item.size }}
+                — SKU: {{ item.sku }}
+            </p>
+
+            <p>
+                Quantity: {{ item.quantity }}
+            </p>
+
+            <p>
+                Unit price: ${{ item.unit_price|floatformat:2 }}
+            </p>
+
+            <p>
+                Line total: ${{ item.line_total|floatformat:2 }}
+            </p>
+        </div>
+    {% empty %}
+        <p>No order items found.</p>
+    {% endfor %}
+
+    {% if not is_paid %}
+        <p>
+            Refresh this page in a few seconds if your payment has already completed.
+        </p>
+    {% endif %}
+</section>
 {% endblock %}

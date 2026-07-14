@@ -25,20 +25,31 @@
                         <div class="cart-item-info">
                             <h2>{{ item.product.name }}</h2>
 
-                            <p>Price: ${{ item.product.current_price }}</p>
-                            <form method="post" action="{% url 'cart:update_cart_item' item.id %}" class="quantity-form">
+                            <p>Price: ${{ item.unit_price|floatformat:2 }}</p>
+                            <form
+                                    method="post"
+                                    action="{% url 'cart:update_cart_item' item.id %}"
+                            >
                                 {% csrf_token %}
 
-                                <label for="quantity-{{ item.id }}">Quantity</label>
+                                <label for="quantity-{{ item.id }}">
+                                    Quantity:
+                                </label>
+
                                 <input
+                                        id="quantity-{{ item.id }}"
                                         type="number"
                                         name="quantity"
-                                        id="quantity-{{ item.id }}"
                                         value="{{ item.quantity }}"
                                         min="0"
+                                        {% if item.variant %}
+                                        max="{{ item.variant.stock_quantity }}"
+                                        {% endif %}
                                 >
 
-                                <button type="submit">Update</button>
+                                <button type="submit">
+                                    Update
+                                </button>
                             </form>
 
                             {% if item.size %}
@@ -49,7 +60,7 @@
                                 <p>Color: {{ item.color }}</p>
                             {% endif %}
 
-                            <p><strong>Subtotal:</strong> ${{ item.subtotal }}</p>
+                            <p><strong>Subtotal:</strong> ${{ item.line_total|floatformat:2 }}</p>
 
                             <form method="post"
                                   action="{% url 'cart:remove_from_cart' item.id %}" class="remove-form">
@@ -66,7 +77,7 @@
                 <h2>Order Summary</h2>
 
                 <p>Total Items: {{ cart.total_items }}</p>
-                <p class="cart-total">Total: ${{ cart.total_price }}</p>
+                <p class="cart-total">Total: ${{ cart.total_price|floatformat:2 }}</p>
 
                 <a href="{% url 'orders:checkout' %}" class="btn-primary">
                     Checkout

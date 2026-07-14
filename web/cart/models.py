@@ -1,6 +1,6 @@
 from django.conf import settings
 from django.db import models
-from web.products.models import Product
+from web.products.models import Product, ProductVariant
 
 
 class Cart(models.Model):
@@ -16,7 +16,14 @@ class Cart(models.Model):
     updated_at = models.DateTimeField(auto_now=True)
 
     def total_price(self):
-        return sum(item.subtotal() for item in self.items.all())
+        return sum(
+            item.subtotal()
+            for item in self.items.select_related(
+                "product",
+                "variant",
+                "variant__product",
+            )
+        )
 
     def total_items(self):
         return sum(item.quantity for item in self.items.all())
@@ -37,13 +44,39 @@ class CartItem(models.Model):
         Product,
         on_delete=models.CASCADE,
     )
-    quantity = models.PositiveIntegerField(default=1)
-    size = models.CharField(max_length=20, blank=True)
-    color = models.CharField(max_length=50, blank=True)
-    added_at = models.DateTimeField(auto_now_add=True)
+    variant = models.ForeignKey(
+        ProductVariant,
+        on_delete=models.PROTECT,
+        related_name="cart_items",
+        null=True,
+        blank=True,
+    )
+    quantity = models.PositiveIntegerField(
+        default=1
+    )
+    size = models.CharField(
+        max_length=20,
+        blank=True
+    )
+    color = models.CharField(
+        max_length=50,
+        blank=True
+    )
+    added_at = models.DateTimeField(
+        auto_now_add=True
+    )
+
+    def unit_price(self):
+        if self.variant is not None:
+            return self.variant.current_price()
+
+        return self.product.current_price()
+
+    def line_total(self):
+        return self.unit_price() * self.quantity
 
     def subtotal(self):
-        return self.product.current_price() * self.quantity
+        return self.line_total()
 
     def __str__(self):
         return f"{self.quantity} x {self.product.name}"

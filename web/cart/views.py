@@ -1,8 +1,11 @@
 from django.shortcuts import render, redirect, get_object_or_404
-from web.products.models import Product
-from .models import Cart, CartItem
 from django.contrib import messages
 from django.views.decorators.http import require_POST
+from scipy.stats import variation
+
+from .models import Cart, CartItem
+from web.products.models import Product, ProductVariant
+
 
 
 
@@ -30,38 +33,64 @@ def cart_detail(request):
 
 @require_POST
 def add_to_cart(request):
-    if request.method == "POST":
-        product_id = request.POST.get("product_id")
-        product = get_object_or_404(Product, id=product_id, is_active=True)
+    if request.method != "POST":
+        return redirect("products:product_list")
 
-        cart = get_or_create_cart(request)
+    variant_id = request.POST.get("variant_id")
 
-        cart_item, created = CartItem.objects.get_or_create(
-            cart=cart,
-            product=product,
-            defaults={"quantity": 1},
+    if not variant_id:
+        messages.error(request, "Please select a size and color.")
+        return redirect(request.META.get("HTTP_REFERER", "/"))
+
+    variant = get_object_or_404(
+        ProductVariant.objects.select_related("product"),
+        id=variant_id,
+        is_active=True,
+    )
+
+    if variant.stock_quantity < 1:
+        messages.error(
+            request,
+            "That size and color is currently out of stock.",
+        )
+        return redirect(
+            "products:product_detail",
+            slug=variant.product.slug,
         )
 
-        if created:
-            if product.stock_quantity <= 0:
-                cart_item.delete()
-                messages.error(request, f"{product.name} is currently out of stock.")
-                return redirect("products:product_detail", slug=product.slug)
+    cart = get_or_create_cart(request)
 
-            messages.success(request, f"Added {product.name} to your cart.")
-        else:
-            if cart_item.quantity >= product.stock_quantity:
-                messages.error(
-                    request,
-                    f"Only {product.stock_quantity} of {product.name} available."
-                )
-                return redirect("cart:cart_detail")
+    cart_item, created = CartItem.objects.get_or_create(
+        cart=cart,
+        variant=variant,
+        defaults={
+            "product": variant.product,
+            "size": variant.size,
+            "color": variant.color,
+            "quantity": 1,
+        },
+    )
 
-            cart_item.quantity += 1
-            cart_item.save()
-            messages.success(request, f"Updated {product.name} quantity in your cart.")
+    if not created:
+        new_quantity = cart_item.quantity + 1
+
+        if new_quantity > variant.stock_quantity:
+            messages.error(
+                request,
+                "You cannot add more than the available inventory.",
+            )
+            return redirect("cart:cart_detail")
+
+        cart_item.quantity = new_quantity
+        cart_item.save(update_fields=["quantity"])
+
+    messages.success(
+        request,
+        f"{variant.product.name} was added to your cart.",
+    )
 
     return redirect("cart:cart_detail")
+
 
 @require_POST
 def remove_from_cart(request, item_id):
