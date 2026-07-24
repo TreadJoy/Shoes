@@ -1,85 +1,101 @@
 {% extends "base.html" %}
 
-{% block title %}Order #{{ order.id }} | TreadJoy{% endblock %}
-
 {% block content %}
+<h1>Order #{{ order.id }}</h1>
 
-<div class="order-detail-page">
+<p><strong>Status:</strong> {{ order.get_status_display }}</p>
+<p><strong>Total:</strong> ${{ order.grand_total }}</p>
+<p><strong>Placed:</strong> {{ order.created_at|date:"M d, Y g:i A" }}</p>
 
-    <div class="page-heading">
-        <h1>Order #{{ order.id }}</h1>
-        <p>Review the details for this order.</p>
-    </div>
+<hr>
 
-    <div class="order-detail-layout">
+<h2>Items</h2>
 
-        <section class="order-detail-main">
-            <div class="detail-card">
-                <h2>Order Information</h2>
+<table>
+    <thead>
+        <tr>
+            <th>Product</th>
+            <th>SKU</th>
+            <th>Size</th>
+            <th>Color</th>
+            <th>Quantity</th>
+            <th>Total</th>
+        </tr>
+    </thead>
 
-                <p><strong>Status:</strong> {{ order.get_status_display }}</p>
-                <p><strong>Total:</strong> ${{ order.total }}</p>
-                <p><strong>Date:</strong> {{ order.created_at }}</p>
-            </div>
+    <tbody>
+        {% for item in order.items.all %}
+            <tr>
+                <td>{{ item.product_name }}</td>
+                <td>{{ item.sku }}</td>
+                <td>{{ item.size }}</td>
+                <td>{{ item.color }}</td>
+                <td>{{ item.quantity }}</td>
+                <td>${{ item.line_total }}</td>
+            </tr>
+        {% endfor %}
+    </tbody>
+</table>
 
-            <div class="detail-card">
-                <h2>Items</h2>
+<hr>
 
-                {% for item in order.items.all %}
-                    <div class="order-item-row">
-                        <div>
-                            <h3>{{ item.product_name }}</h3>
-                            <p>Quantity: {{ item.quantity }}</p>
+<h2>Order Summary</h2>
 
-                            {% if item.size %}
-                                <p>Size: {{ item.size }}</p>
-                            {% endif %}
+<p><strong>Subtotal:</strong> ${{ order.subtotal }}</p>
+<p><strong>Shipping:</strong> ${{ order.shipping_total }}</p>
+<p><strong>Tax:</strong> ${{ order.tax_total }}</p>
+<p><strong>Discount:</strong> ${{ order.discount_total }}</p>
+<p><strong>Grand Total:</strong> ${{ order.grand_total }}</p>
 
-                            {% if item.color %}
-                                <p>Color: {{ item.color }}</p>
-                            {% endif %}
-                        </div>
+<hr>
 
-                        <div class="order-item-price">
-                            <p>${{ item.price }}</p>
-                            <strong>${{ item.subtotal }}</strong>
-                        </div>
-                    </div>
-                {% empty %}
-                    <p>No items found for this order.</p>
-                {% endfor %}
-            </div>
-        </section>
+<h2>Shipping</h2>
 
-        <aside class="detail-card shipping-card">
-            <h2>Shipping Address</h2>
+{% if order.shipments.all %}
+    {% for shipment in order.shipments.all %}
+        <div>
+            <p><strong>Carrier:</strong> {{ shipment.carrier|default:"Not listed" }}</p>
+            <p><strong>Tracking number:</strong> {{ shipment.tracking_number|default:"Not available" }}</p>
 
-            {% if order.shipping_address %}
-                <p>{{ order.shipping_address.full_name }}</p>
-                <p>{{ order.shipping_address.address_line_1 }}</p>
-
-                {% if order.shipping_address.address_line_2 %}
-                    <p>{{ order.shipping_address.address_line_2 }}</p>
-                {% endif %}
-
+            {% if shipment.tracking_url %}
                 <p>
-                    {{ order.shipping_address.city }},
-                    {{ order.shipping_address.state }}
-                    {{ order.shipping_address.postal_code }}
+                    <a href="{{ shipment.tracking_url }}" target="_blank">
+                        Track shipment
+                    </a>
                 </p>
-
-                <p>{{ order.shipping_address.country }}</p>
-            {% else %}
-                <p>No shipping address found.</p>
             {% endif %}
-        </aside>
 
-    </div>
+            <p><strong>Shipped:</strong> {{ shipment.shipped_at|default:"Not shipped yet" }}</p>
+            <p><strong>Delivered:</strong> {{ shipment.delivered_at|default:"Not delivered yet" }}</p>
+        </div>
+    {% endfor %}
+{% else %}
+    <p>No shipment information is available yet.</p>
+{% endif %}
 
-    <a href="{% url 'orders:order_history' %}" class="back-link">
-        ← Back to Order History
-    </a>
+<hr>
 
-</div>
+<h2>Status History</h2>
 
+{% if order.status_events.all %}
+    <ul>
+        {% for event in order.status_events.all %}
+            <li>
+                {{ event.created_at|date:"M d, Y g:i A" }}:
+                {{ event.from_status|default:"new" }}
+                →
+                {{ event.to_status }}
+                {% if event.note %}
+                    — {{ event.note }}
+                {% endif %}
+            </li>
+        {% endfor %}
+    </ul>
+{% else %}
+    <p>No status history available.</p>
+{% endif %}
+
+<p>
+    <a href="{% url 'orders:order_list' %}">Back to my orders</a>
+</p>
 {% endblock %}

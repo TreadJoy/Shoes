@@ -19,7 +19,6 @@ class Cart(models.Model):
         return sum(
             item.subtotal()
             for item in self.items.select_related(
-                "product",
                 "variant",
                 "variant__product",
             )
@@ -40,31 +39,31 @@ class CartItem(models.Model):
         on_delete=models.CASCADE,
         related_name="items",
     )
-    product = models.ForeignKey(
-        Product,
-        on_delete=models.CASCADE,
-    )
+
     variant = models.ForeignKey(
         ProductVariant,
         on_delete=models.PROTECT,
         related_name="cart_items",
-        null=True,
-        blank=True,
     )
     quantity = models.PositiveIntegerField(
         default=1
     )
-    size = models.CharField(
-        max_length=20,
-        blank=True
-    )
-    color = models.CharField(
-        max_length=50,
-        blank=True
-    )
+
     added_at = models.DateTimeField(
         auto_now_add=True
     )
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(
+                fields=["cart", "variant"],
+                name="unique_cart_variant",
+            ),
+            models.CheckConstraint(
+                check=models.Q(quantity__gte=1),
+                name="cartitem_quantity_at_least_one",
+            ),
+        ]
 
     def unit_price(self):
         if self.variant is not None:
@@ -78,5 +77,18 @@ class CartItem(models.Model):
     def subtotal(self):
         return self.line_total()
 
+    def product_name(self):
+        return self.variant.product.name
+
+    def sku(self):
+        return self.variant.sku
+
+    def size(self):
+        return self.variant.size
+
+    def color(self):
+        return self.variant.color
+
     def __str__(self):
         return f"{self.quantity} x {self.product.name}"
+

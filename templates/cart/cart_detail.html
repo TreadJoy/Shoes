@@ -18,12 +18,12 @@
                 {% for item in cart.items.all %}
                     <div class="cart-item">
 
-                        {% if item.product.image %}
-                            <img src="{{ item.product.image.url }}" alt="{{ item.product.name }}">
+                        {% if item.variant.product.image %}
+                            <img src="{{ item.variant.product.image.url }}" alt="{{ item.variant.product.name }}">
                         {% endif %}
 
                         <div class="cart-item-info">
-                            <h2>{{ item.product.name }}</h2>
+                            <h2>{{ item.variant.product.name }}</h2>
 
                             <p>Price: ${{ item.unit_price|floatformat:2 }}</p>
                             <form
@@ -52,12 +52,12 @@
                                 </button>
                             </form>
 
-                            {% if item.size %}
-                                <p>Size: {{ item.size }}</p>
+                            {% if item.variant.size %}
+                                <p>Size: {{ item.variant.size }}</p>
                             {% endif %}
 
-                            {% if item.color %}
-                                <p>Color: {{ item.color }}</p>
+                            {% if item.variant.color %}
+                                <p>Color: {{ item.variant.color }}</p>
                             {% endif %}
 
                             <p><strong>Subtotal:</strong> ${{ item.line_total|floatformat:2 }}</p>

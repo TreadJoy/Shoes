@@ -51,9 +51,6 @@ class Product(models.Model):
         blank=True,
         null=True
     )
-    stock_quantity = models.PositiveIntegerField(
-        default=0
-    )
     is_active = models.BooleanField(
         default=True
     )
@@ -72,6 +69,17 @@ class Product(models.Model):
             return self.sale_price
 
         return self.price
+
+    def total_stock(self):
+        result = self.variants.filter(
+            is_active=True,
+        ).aggregate(
+            total=models.Sum("stock_quantity")
+        )
+        return result["total"] or 0
+
+    def is_in_stock(self):
+        return self.total_stock() > 0
 
     def __str__(self):
         return self.name
@@ -115,8 +123,19 @@ class ProductVariant(models.Model):
         constraints = [
             models.UniqueConstraint(
                 fields=["product", "size", "color"],
-                name="unique_variant_for_product",
-            )
+                name="unique_product_size_color",
+            ),
+            models.CheckConstraint(
+                check=models.Q(stock_quantity__gte=0),
+                name="variant_stock_nonnegative",
+            ),
+            models.CheckConstraint(
+                check=(
+                        models.Q(price_override__gte=0)
+                        | models.Q(price_override__isnull=True)
+                ),
+                name="variant_price_override_nonnegative",
+            ),
         ]
         ordering = ["product", "color", "size"]
 

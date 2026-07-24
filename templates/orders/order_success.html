@@ -1,21 +1,25 @@
 {% extends "base.html" %}
 
+{% if not is_paid %}
+    <meta http-equiv="refresh" content="3">
+{% endif %}
+
 {% block content %}
-<section class="order-success-page">
-    {% if is_paid %}
-        <h1>Thank you for your order!</h1>
+    <section class="order-success-page">
+        {% if is_paid %}
+            <h1>Thank you for your order!</h1>
 
-        <p>
-            Your payment was successful and your order has been placed.
-        </p>
-    {% else %}
-        <h1>Order received</h1>
+            <p>
+                Your payment was successful and your order has been placed.
+            </p>
+        {% else %}
+            <h1>Order received</h1>
 
-        <p>
-            Your order was created and your payment is still processing.
-            This page may update after Stripe confirms the payment.
-        </p>
-    {% endif %}
+            <p>
+                Your order was created and your payment is still processing.
+                This page may update after Stripe confirms the payment.
+            </p>
+        {% endif %}
 
     <div class="order-summary-card">
         <h2>Order #{{ order.id }}</h2>

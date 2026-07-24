@@ -64,9 +64,6 @@ def add_to_cart(request):
         cart=cart,
         variant=variant,
         defaults={
-            "product": variant.product,
-            "size": variant.size,
-            "color": variant.color,
             "quantity": 1,
         },
     )
@@ -97,7 +94,7 @@ def remove_from_cart(request, item_id):
     cart = get_or_create_cart(request)
     item = get_object_or_404(CartItem, id=item_id, cart=cart)
 
-    product_name = item.product.name
+    product_name = item.variant.product.name
     item.delete()
 
     messages.success(request, f"Removed {product_name} from your cart.")
@@ -128,17 +125,20 @@ def update_cart_item(request, item_id):
             return redirect("cart:cart_detail")
 
         if quantity <= 0:
-            product_name = item.product.name
+            product_name = item.variant.product.name
             item.delete()
             messages.success(request, f"Removed {product_name} from your cart.")
-        elif quantity > item.product.stock_quantity:
+        elif quantity > item.variant.stock_quantity:
             messages.error(
                 request,
-                f"Only {item.product.stock_quantity} of {item.product.name} available."
+                f"Only {item.variant.stock_quantity} of "
+                        f"{item.variant.product.name} - {item.variant.color}, "
+                        f"Size {item.variant.size} available."
             )
+
         else:
             item.quantity = quantity
             item.save()
-            messages.success(request, f"Updated {item.product.name} quantity.")
+            messages.success(request, f"Updated {item.variant.product.name} quantity.")
 
     return redirect("cart:cart_detail")

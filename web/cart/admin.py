@@ -30,16 +30,11 @@ class CartItemAdmin(admin.ModelAdmin):
     list_display = (
         "id",
         "cart",
-        "product",
         "quantity",
-        "size",
-        "color",
         "subtotal",
         "added_at",
     )
     list_filter = (
-        "size",
-        "color",
         "added_at",
     )
     search_fields = (

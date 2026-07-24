@@ -1,6 +1,7 @@
 from decimal import Decimal
 import stripe
 import json
+import logging
 
 from django.contrib.auth.decorators import login_required
 from django.shortcuts import render, redirect, get_object_or_404
@@ -19,12 +20,89 @@ from web.cart.models import CartItem
 from .models import (
     Order,
     OrderItem,
+    OrderStatusEvent,
     ShippingAddress,
     Payment,
     StripeEvent
 )
 
 stripe.api_key = settings.STRIPE_SECRET_KEY
+
+logger = logging.getLogger(__name__)
+
+def create_order_status_event(order, from_status, to_status, note=""):
+
+    OrderStatusEvent.objects.create(
+        order=order,
+        from_status=from_status or "",
+        to_status=to_status,
+        note=note,
+    )
+
+def mark_order_as_paid(
+    order,
+    *,
+    amount_total_cents,
+    amount_subtotal_cents=None,
+    payment_intent_id="",
+    checkout_session_id="",
+    currency="usd",
+    raw_response=None,
+    status_note="Payment succeeded.",
+):
+    logger.info("mark_order_as_paid called for order %s.", order.id)
+    logger.info("order status before payment update: %s", order.status)
+
+    if order.status == Order.Status.PAID:
+        return False
+
+    previous_status = order.status
+
+    order.status = Order.Status.PAID
+    order.grand_total = Decimal(amount_total_cents or 0) / Decimal("100")
+
+    update_fields = [
+        "status",
+        "grand_total",
+        "updated_at",
+    ]
+
+    if amount_subtotal_cents is not None:
+        order.subtotal = Decimal(amount_subtotal_cents or 0) / Decimal("100")
+        update_fields.append("subtotal")
+
+    if checkout_session_id:
+        order.stripe_checkout_session_id = checkout_session_id
+        update_fields.append("stripe_checkout_session_id")
+
+    if payment_intent_id:
+        order.stripe_payment_intent_id = payment_intent_id
+        update_fields.append("stripe_payment_intent_id")
+
+    order.save(update_fields=update_fields)
+
+    create_order_status_event(
+        order=order,
+        from_status=previous_status,
+        to_status=Order.Status.PAID,
+        note=status_note,
+    )
+
+    Payment.objects.update_or_create(
+        order=order,
+        defaults={
+            "stripe_payment_intent_id": payment_intent_id or None,
+            "stripe_checkout_session_id": checkout_session_id or order.stripe_checkout_session_id or None,
+            "amount": order.grand_total,
+            "currency": currency,
+            "status": Payment.Status.SUCCEEDED,
+            "raw_response": raw_response or {},
+        },
+    )
+
+    reduce_inventory_for_order(order)
+
+    return True
 
 def checkout(request):
     cart = get_or_create_cart(request)
@@ -60,7 +138,6 @@ def checkout(request):
             with transaction.atomic():
                 cart_items = list(
                     cart.items.select_related(
-                        "product",
                         "variant",
                         "variant__product",
                     )
@@ -73,14 +150,14 @@ def checkout(request):
                 for cart_item in cart_items:
                     if cart_item.variant is None:
                         raise ValueError(
-                            f"{cart_item.product.name} does not have a valid size/color option."
+                            "This cart item does not have a valid size/color option."
                         )
 
                     variant = cart_item.variant
 
                     if not variant.is_active:
                         raise ValueError(
-                            f"{cart_item.product.name} — {variant.color}, Size {variant.size} is no longer available."
+                            f"{variant.product.name} — {variant.color}, Size {variant.size} is no longer available."
                         )
 
                     if not variant.product.is_active:
@@ -116,12 +193,26 @@ def checkout(request):
                     email=shipping_address.email,
                     full_name=shipping_address.full_name,
                     status=Order.Status.PENDING_PAYMENT,
-                    line_total=order_line_total,
+                    subtotal=order_line_total,
                     shipping_total=Decimal("0.00"),
                     tax_total=Decimal("0.00"),
                     discount_total=Decimal("0.00"),
                     grand_total=order_line_total,
                 )
+                create_order_status_event(
+                    order=order,
+                    from_status="",
+                    to_status=Order.Status.PENDING_PAYMENT,
+                    note="Order created at checkout."
+                )
+
+                checkout_order_ids = request.session.get("checkout_order_ids", [])
+
+                if order.id not in checkout_order_ids:
+                    checkout_order_ids.append(order.id)
+
+                request.session["checkout_order_ids"] = checkout_order_ids
+                request.session.modified = True
 
                 for cart_item in cart_items:
                     unit_price = cart_item.unit_price()
@@ -130,9 +221,9 @@ def checkout(request):
 
                     OrderItem.objects.create(
                         order=order,
-                        product=cart_item.product,
+                        product=variant.product,
                         variant=variant,
-                        product_name=cart_item.product.name,
+                        product_name=variant.product.name,
                         sku=variant.sku,
                         size=variant.size,
                         color=variant.color,
@@ -177,7 +268,7 @@ def checkout(request):
                     "enabled": False,
                 },
                 shipping_address_collection={
-                    "allowed_countries": ["US", "CA"],
+                    "allowed_countries": ["US"],
                 }
             )
         except stripe.error.StripeError as error:
@@ -200,30 +291,38 @@ def checkout(request):
     })
 def order_success(request, order_id):
     order = get_object_or_404(
-        Order.objects.select_related("payment").prefetch_related("items"),
+        Order.objects.prefetch_related("items__variant"),
         id=order_id,
     )
 
-    if request.user.is_authenticated:
-        if order.user_id != request.user.id:
-            raise PermissionDenied
-    else:
-        completed_order_id = request.session.get("completed_order_id")
+    checkout_order_ids = request.session.get("checkout_order_ids", [])
 
-        if completed_order_id != order_id:
-            raise PermissionDenied
+    user_owns_order = (
+        request.user.is_authenticated and
+        order.user_id == request.user.id
+    )
+
+    guest_session_owns_order = (
+        order.user_id is None and
+        order.id in checkout_order_ids
+    )
+
+    if not user_owns_order and not guest_session_owns_order:
+        raise PermissionDenied
 
     is_paid = order.status == Order.Status.PAID
-    payment = getattr(order, "payment", None)
 
     if is_paid:
         remove_paid_order_items_from_cart(request, order)
 
-    return render(request, "orders/order_success.html", {
-        "order": order,
-        "is_paid": is_paid,
-        "payment": payment,
-    })
+    return render(
+        request,
+        "orders/order_success.html",
+        {
+            "order": order,
+            "is_paid": is_paid,
+        },
+    )
 
 @login_required
 def order_history(request):
@@ -249,12 +348,15 @@ def order_detail(request, order_id):
 def build_stripe_line_items(order):
     line_items = []
 
-    for item in order.items.all():
+    for item in order.items.select_related(
+        "variant",
+        "variant__product",
+    ):
         line_items.append({
             "price_data": {
                 "currency": "usd",
                 "product_data": {
-                    "name": item.product.name,
+                    "name": item.product_name,
                     "metadata": {
                         "sku": item.sku,
                         "size": item.size,
@@ -269,10 +371,13 @@ def build_stripe_line_items(order):
 
 @csrf_exempt
 def stripe_webhook(request):
-
     payload = request.body
     sig_header = request.META.get("HTTP_STRIPE_SIGNATURE")
     endpoint_secret = settings.STRIPE_WEBHOOK_SECRET
+
+    logger.info("Stripe webhook received.")
+    logger.debug("Stripe signature present: %s", bool(sig_header))
+    logger.debug("Stripe webhook secret configured: %s", bool(endpoint_secret))
 
     try:
         event = stripe.Webhook.construct_event(
@@ -281,14 +386,22 @@ def stripe_webhook(request):
             endpoint_secret,
         )
     except ValueError as error:
+        logger.warning("Invalid Stripe webhook payload: %s", error)
         return HttpResponse(status=400)
     except stripe.error.SignatureVerificationError as error:
+        logger.warning("Invalid Stripe webhook signature: %s", error)
         return HttpResponse(status=400)
 
     event_data = json.loads(payload.decode("utf-8"))
 
-    stripe_event_id = event["id"]
-    event_type = event["type"]
+    stripe_event_id = event_data["id"]
+    event_type = event_data["type"]
+
+    logger.info(
+        "Stripe webhook event received: %s %s",
+        event_type,
+        stripe_event_id,
+    )
 
     with transaction.atomic():
         stripe_event, created = StripeEvent.objects.get_or_create(
@@ -300,6 +413,10 @@ def stripe_webhook(request):
         )
 
         if not created and stripe_event.processed:
+            logger.info(
+                "Stripe webhook event already processed: %s",
+                stripe_event_id,
+            )
             return HttpResponse(status=200)
 
         if event_type == "checkout.session.completed":
@@ -335,10 +452,13 @@ def get_order_id_from_metadata(stripe_object):
     return int(order_id)
 
 def handle_checkout_session_completed(session):
+    logger.info("handle_checkout_session_completed called.")
+    logger.info("Checkout session metadata: %s", session.get("metadata"))
+
     order_id = get_order_id_from_metadata(session)
 
     if order_id is None:
-        print("No order_id found on checkout session metadata.")
+        logger.warning("No order_id found on checkout session metadata.")
         return
 
     order = (
@@ -348,49 +468,26 @@ def handle_checkout_session_completed(session):
         .get(id=order_id)
     )
 
-    if order.status == Order.Status.PAID:
-        return
-
-    amount_total = session.get("amount_total") or 0
-    amount_subtotal = session.get("amount_subtotal") or 0
-    payment_intent_id = session.get("payment_intent", "")
-    checkout_session_id = session.get("id", "")
-
-    order.status = Order.Status.PAID
-    order.subtotal = Decimal(amount_subtotal) / Decimal("100")
-    order.grand_total = Decimal(amount_total) / Decimal("100")
-    order.stripe_checkout_session_id = checkout_session_id
-    order.stripe_payment_intent_id = payment_intent_id or ""
-
-    order.save(
-        update_fields=[
-            "status",
-            "subtotal",
-            "grand_total",
-            "stripe_checkout_session_id",
-            "stripe_payment_intent_id",
-            "updated_at",
-        ]
+    mark_order_as_paid(
+        order,
+        amount_total_cents=session.get("amount_total") or 0,
+        amount_line_total_cents=session.get("amount_line_total") or 0,
+        payment_intent_id=session.get("payment_intent", "") or "",
+        checkout_session_id=session.get("id", "") or "",
+        currency=session.get("currency", "usd"),
+        raw_response=session,
+        status_note="Stripe checkout session completed.",
     )
 
-    Payment.objects.update_or_create(
-        order=order,
-        defaults={
-            "stripe_payment_intent_id": payment_intent_id or None,
-            "stripe_checkout_session_id": checkout_session_id or None,
-            "amount": order.grand_total,
-            "currency": session.get("currency", "usd"),
-            "status": Payment.Status.SUCCEEDED,
-            "raw_response": session,
-        },
-    )
-    reduce_inventory_for_order(order)
 
 def handle_payment_intent_succeeded(payment_intent):
+    logger.info("handle_payment_intent_succeeded called.")
+    logger.info("Payment intent metadata: %s", payment_intent.get("metadata"))
+
     order_id = get_order_id_from_metadata(payment_intent)
 
     if order_id is None:
-        print("No order_id found on payment intent metadata.")
+        logger.warning("No order_id found on payment intent metadata.")
         return
 
     order = (
@@ -400,59 +497,30 @@ def handle_payment_intent_succeeded(payment_intent):
         .get(id=order_id)
     )
 
-    if order.status == Order.Status.PAID:
-        return
-
-    amount_received = payment_intent.get("amount_received") or 0
-    payment_intent_id = payment_intent.get("id", "")
-
-    order.status = Order.Status.PAID
-    order.grand_total = Decimal(amount_received) / Decimal("100")
-    order.stripe_payment_intent_id = payment_intent_id
-
-    order.save(
-        update_fields=[
-            "status",
-            "grand_total",
-            "stripe_payment_intent_id",
-            "updated_at",
-        ]
+    mark_order_as_paid(
+        order,
+        amount_total_cents=payment_intent.get("amount_received") or 0,
+        payment_intent_id=payment_intent.get("id", "") or "",
+        checkout_session_id=order.stripe_checkout_session_id or "",
+        currency=payment_intent.get("currency", "usd"),
+        raw_response=payment_intent,
+        status_note="Stripe payment intent succeeded.",
     )
-
-    Payment.objects.update_or_create(
-        order=order,
-        defaults={
-            "stripe_payment_intent_id": payment_intent_id or None,
-            "stripe_checkout_session_id": order.stripe_checkout_session_id or None,
-            "amount": order.grand_total,
-            "currency": payment_intent.get("currency", "usd"),
-            "status": Payment.Status.SUCCEEDED,
-            "raw_response": payment_intent,
-        },
-    )
-
-    reduce_inventory_for_order(order)
 
 def remove_paid_order_items_from_cart(request, order):
     cart = get_or_create_cart(request)
 
-    for order_item in order.items.select_related("variant"):
-        if order_item.variant is None:
-            continue
+    purchased_variant_ids = order.items.exclude(
+        variant__isnull=True
+    ).values_list(
+        "variant_id",
+        flat=True
+    )
 
-        cart_item = CartItem.objects.filter(
-            cart=cart,
-            variant=order_item.variant,
-        ).first()
-
-        if cart_item is None:
-            continue
-
-        if cart_item.quantity <= order_item.quantity:
-            cart_item.delete()
-        else:
-            cart_item.quantity -= order_item.quantity
-            cart_item.save(update_fields=["quantity"])
+    CartItem.objects.filter(
+        cart=cart,
+        variant_id__in=purchased_variant_ids,
+    ).delete()
 
 def reduce_inventory_for_order(order):
     for item in order.items.select_related("variant"):
@@ -468,3 +536,40 @@ def reduce_inventory_for_order(order):
 
         variant.stock_quantity -= item.quantity
         variant.save(update_fields=["stock_quantity"])
+
+@login_required
+def order_list(request):
+    orders = (
+        Order.objects
+        .filter(user=request.user)
+        .order_by("-created_at")
+    )
+
+    return render(
+        request,
+        "orders/order_list.html",
+        {
+            "orders": orders,
+        },
+    )
+
+@login_required
+def order_detail_view(request, order_id):
+    order = get_object_or_404(
+        Order.objects
+        .prefetch_related(
+            "items",
+            "shipments",
+            "status_events",
+        ),
+        id=order_id,
+        user=request.user,
+    )
+
+    return render(
+        request,
+        "orders/order_detail.html",
+        {
+            "order": order,
+        },
+    )

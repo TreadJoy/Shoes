@@ -61,7 +61,7 @@ class Order(models.Model):
         default=Status.PENDING_PAYMENT,
         db_index=True,
     )
-    line_total = models.DecimalField(
+    subtotal = models.DecimalField(
         max_digits=10,
         decimal_places=2,
         default=0,
@@ -107,6 +107,134 @@ class Order(models.Model):
     def __str__(self):
         return f"Order #{self.id} - {self.status}"
 
+class Shipment(models.Model):
+    order = models.ForeignKey(
+        Order,
+        on_delete=models.CASCADE,
+        related_name="shipments",
+    )
+
+    carrier = models.CharField(
+        max_length=20,
+        blank=True,
+    )
+
+    tracking_number = models.CharField(
+        max_length=50,
+        blank=True,
+    )
+
+    tracking_url = models.URLField(
+        blank=True,
+    )
+
+    estimated_delivery = models.DateField(
+        blank=True,
+    )
+
+    shipped_at = models.DateTimeField(
+        null=True,
+        blank=True,
+    )
+
+    delivered_at = models.DateTimeField(
+        null=True,
+        blank=True,
+    )
+
+    notes = models.TextField(
+        blank=True,
+    )
+
+    created_at = models.DateTimeField(
+        auto_now_add=True,
+    )
+
+    updated_at = models.DateTimeField(
+        auto_now=True,
+    )
+
+    class Meta:
+        ordering = ["-created_at"]
+
+    def save(self, *args, **kwargs):
+        is_new = self.pk is None
+
+        previous_shipped_at = None
+        previous_delivered_at = None
+
+        if not is_new:
+            previous = Shipment.objects.only(
+                "shipped_at",
+                "delivered_at",
+            ).get(pk=self.pk)
+
+            previous_shipped_at = previous.shipped_at
+            previous_delivered_at = previous.delivered_at
+
+            super().save(*args, **kwargs)
+
+            if self.shipped_at and not previous_shipped_at:
+                self.mark_order_shipped()
+
+            if self.delivered_at and not previous_delivered_at:
+                self.mark_order_delivered()
+
+    def mark_order_shipped(self):
+        order = self.order
+
+        if order.status in [
+            Order.Status.SHIPPED,
+            Order.Status.DELIVERED,
+            Order.Status.CANCELED,
+        ]:
+            return
+
+        previous_status = order.status
+
+        order.status = Order.Status.SHIPPED
+        order.save(
+            update_fields=[
+                "status",
+                "updated_at",
+            ]
+        )
+
+        OrderStatusEvent.objects.create(
+            order=order,
+            from_status=previous_status,
+            to_status=Order.Status.SHIPPED,
+            note=f"Order marked shipped from shipment #{self.id}.",
+        )
+
+    def mark_order_delivered(self):
+        order = self.order
+
+        if order.status in [
+            Order.Status.DELIVERED,
+            Order.Status.CANCELED,
+        ]:
+            return
+
+        previous_status = order.status
+
+        order.status = Order.Status.DELIVERED
+        order.save(
+            update_fields=[
+                "status",
+                "updated_at",
+            ]
+        )
+
+        OrderStatusEvent.objects.create(
+            order=order,
+            from_status=previous_status,
+            to_status=Order.Status.DELIVERED,
+            note=f"Order marked delivered from shipment #{self.id}.",
+        )
+
+    def __str__(self):
+        return f"Shipment for Order #{self.order_id}"
 
 class OrderItem(models.Model):
     order = models.ForeignKey(
@@ -245,3 +373,36 @@ class StripeEvent(models.Model):
 
     def __str__(self):
         return f"Stripe Event {self.event_type} - {self.stripe_id}"
+
+class OrderStatusEvent(models.Model):
+    order = models.ForeignKey(
+        Order,
+        on_delete=models.CASCADE,
+        related_name="status_events"
+    )
+
+    from_status = models.CharField(
+        max_length=30,
+        blank=True,
+    )
+
+    to_status = models.CharField(
+        max_length=30,
+    )
+
+    note = models.TextField(
+        blank=True,
+    )
+
+    created_at = models.DateTimeField(
+        auto_now_add=True,
+    )
+
+    class Meta:
+        ordering = ["-created_at"]
+
+    def __str__(self):
+        return (
+            f"Order #{self.order_id}: "
+            f"{self.from_status or 'new'} -> {self.to_status}"
+        )

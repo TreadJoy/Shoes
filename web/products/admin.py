@@ -21,7 +21,7 @@ class ProductAdmin(admin.ModelAdmin):
         "audience",
         "price",
         "sale_price",
-        "stock_quantity",
+        "total_stock_display",
         "is_active",
         "is_featured",
     )
@@ -40,6 +40,10 @@ class ProductAdmin(admin.ModelAdmin):
         "slug": ("name",)
     }
     inlines = [ProductVariantInLine]
+
+    @admin.display(description="Total Variant Stock")
+    def total_stock_display(self, obj):
+        return obj.total_stock()
 
 @admin.register(ProductVariant)
 class ProductVariantAdmin(admin.ModelAdmin):
