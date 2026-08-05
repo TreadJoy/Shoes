@@ -154,11 +154,11 @@ STATICFILES_DIRS = [
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
 #Payment Processing Keys
-###ABSOLUTELY NOT SECURE, USE FOR TESTING PURPOSES ONLY###
-###DO NOT PUSH TO GITHUB WITH THIS KEY###
-STRIPE_SECRET_KEY = config("STRIPE_SECRET_KEY", default="")
-STRIPE_PUBLISHABLE_KEY = config("STRIPE_PUBLISHABLE_KEY", default="")
-STRIPE_WEBHOOK_SECRET = config("STRIPE_WEBHOOK_SECRET", default="")
+# Stripe credentials are loaded from the environment
+### NEVER EXPOSE SECRET KEYS TO THE PUBLIC ###
+STRIPE_SECRET_KEY = config("STRIPE_SECRET_KEY")
+STRIPE_PUBLISHABLE_KEY = config("STRIPE_PUBLISHABLE_KEY")
+STRIPE_WEBHOOK_SECRET = config("STRIPE_WEBHOOK_SECRET")
 
 #Email
 EMAIL_BACKEND = "django.core.mail.backends.console.EmailBackend"
@@ -182,12 +182,15 @@ ACCOUNT_SIGNUP_REDIRECT_URL = "core:home"
 
 SITE_ID = 1
 
+GOOGLE_CLIENT_ID = config("GOOGLE_CLIENT_ID", default="")
+GOOGLE_CLIENT_SECRET = config("GOOGLE_CLIENT_SECRET", default="")
+
 SOCIALACCOUNT_PROVIDERS = {
     "google": {
         "APP": {
-            "client_id": "1002222222222-000000000000000000000.apps.googleusercontent.com",
-            "secret": "",
-            "key": "YOUR_KEY"
+            "client_id": GOOGLE_CLIENT_ID,
+            "secret": GOOGLE_CLIENT_SECRET,
+            "key": ""
         },
         "SCOPE": ["profile", "email"],
         "AUTH_PARAMS": {
