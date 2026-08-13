@@ -44,7 +44,15 @@ The project must support two public-facing outcomes while the venture is being v
 
 Branding and the final storefront experience are expected to evolve as market evidence improves. Preserve the ability to revise presentation without destabilizing authoritative commerce records or core domain rules.
 
-The project owner initially described these outcomes as separate branches. Treat the source-control/deployment mechanism as an architecture decision requiring approval; do not assume long-lived branches are the correct implementation. Prefer minimizing code divergence and preventing research deployments from enabling payments by mistake.
+These outcomes use an approved single-codebase, two-deployment architecture:
+
+- Build both deployments from the same tested release commit. Use branches for development and release management, not to maintain divergent product implementations.
+- Configure the operating mode per deployment and fail closed. Research mode must not register order-taking or checkout routes, initialize Stripe, or possess Stripe credentials.
+- Give commerce and research deployments separate databases. The commerce database is authoritative for orders, inventory, payments, and customer records; the research database contains only data required for research-mode features.
+- Share domain code, security fixes, migrations, and adaptable presentation components where applicable without allowing research mode to create commerce records.
+- Maintain automated tests for both modes, including a negative test proving that research mode cannot initiate payment or create an order.
+
+Do not introduce long-lived commerce and research branches. Any proposed exception requires explicit approval and a plan for preventing code, schema, and security-fix drift.
 
 ### Approval boundaries
 
@@ -82,6 +90,47 @@ Treat this as the pre-validation beachhead hypothesis, not established customer 
 - Initial acquisition and validation should focus on those local partners and communities rather than broad national advertising.
 
 Do not store inferred tastes, income, cultural identity, or community affiliation as customer profile fields merely because they appear in this thesis. Collect personal data only for a defined operational purpose and with appropriate approval.
+
+## Initial fulfillment policy
+
+The approved launch operating model is:
+
+- Support both stocked products and clearly identified preorders. The initial product run will be sold by preorder to reduce unsold-inventory risk; preorders are expected to remain part of the business model.
+- The project owner will pack orders and tender packages to a shipping carrier after receiving goods from the manufacturer.
+- Ship only to addresses in the contiguous United States at launch.
+- Let customers pay for available shipping-service levels and provide carrier tracking after shipment.
+- Handle fulfillment failures and unusual customer problems through human review rather than automatic substitutions or automatic resolution.
+- Tender paid stocked-product orders to the carrier by the end of the next business day. Do not promise next-calendar-day shipment.
+- Give each preorder a clear estimated shipping window supported by current manufacturer information and display it before payment.
+- Describe customer-selected shipping speed as estimated carrier transit time beginning after carrier tender, not from the purchase date.
+- If a preorder cannot ship within its stated window, notify the customer before that window expires and offer a documented choice: explicitly accept the revised date or cancel for a full refund.
+- Do not allow stocked and preorder products in the same cart at launch. Mixed carts and split fulfillment require a later approved design.
+- Cap preorder sales using the approved production allocation; preorder supply is not unlimited.
+- Record manual exception, delay, consent, cancellation, refund, shipment, and tracking actions in order history.
+
+The stocked-order cutoff, business-day holiday calendar, exact preorder date representation, supported carriers, shipping-rate source, and unclaimed delay-consent behavior remain unresolved business policies. Ask for decisions before implementing them.
+
+## Product customization model
+
+TreadJoy customization means selecting interchangeable, standardized components—not engraving, one-off fabrication, or customer-specific manufacturing. An eligible returned configuration can be inspected, disassembled when appropriate, and its acceptable components returned to inventory. Do not classify a product as final sale solely because the customer selected its standard components.
+
+## Cancellation, return, and exchange policy
+
+The approved launch policy is:
+
+- Allow cancellation of stocked orders for a full refund, including outbound shipping, until carrier tender.
+- Allow cancellation of preorders for a full refund until carrier tender, including after production begins. Once tendered, an order cannot be canceled and instead follows the return policy.
+- Accept eligible returns requested within 30 calendar days after confirmed delivery.
+- Require returned items to be unworn outdoors, undamaged, and accompanied by their original packaging. Indoor fit testing is allowed.
+- Offer one free size exchange per order within the contiguous United States, subject to available inventory. TreadJoy pays return and replacement shipping for that exchange. If no suitable replacement is available, offer a refund.
+- For preference-based returns, the customer pays return shipping and original outbound shipping is nonrefundable.
+- For defective, damaged, or incorrect items, TreadJoy pays return and replacement shipping and offers either a replacement or full refund.
+- Issue approved refunds to the original payment method after inspection. Approve the refund or explain the decision within five business days after receiving the return.
+- Do not charge a restocking fee and do not make automatic substitutions.
+- Require human review for cancellations, returns, exchanges, inspections, and refunds at launch, and record every decision and state change in order history.
+- Inspect returned customized configurations at the component level. Return only complete, safe, undamaged, resellable components to available inventory; quarantine all others.
+
+Do not silently weaken these promises based on product type, sale status, or customization. Any final-sale category or policy exception requires explicit approval and clear disclosure before purchase.
 
 ## Repository map
 

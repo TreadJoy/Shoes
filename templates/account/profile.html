@@ -14,9 +14,11 @@
             <p><strong>Email:</strong> {{ user.email }}</p>
 
             <div class="profile-actions">
-                <a href="{% url 'orders:order_history' %}" class="btn-primary">
-                    View Order History
-                </a>
+                {% if is_commerce_mode %}
+                    <a href="{% url 'orders:order_history' %}" class="btn-primary">
+                        View Order History
+                    </a>
+                {% endif %}
 
                 <a href="{% url 'account_email' %}" class="btn-secondary">
                     Manage Email

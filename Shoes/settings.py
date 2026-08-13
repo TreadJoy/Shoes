@@ -13,17 +13,29 @@ https://docs.djangoproject.com/en/5.2/ref/settings/
 from pathlib import Path
 import os
 from decouple import config, Csv
+from django.core.exceptions import ImproperlyConfigured
 
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 
+_VALID_TREADJOY_MODES = {"commerce", "research"}
+TREADJOY_MODE = config("TREADJOY_MODE", default="").strip()
+
+if TREADJOY_MODE not in _VALID_TREADJOY_MODES:
+    raise ImproperlyConfigured(
+        "TREADJOY_MODE must be set to either 'commerce' or 'research'."
+    )
+
+IS_COMMERCE_MODE = TREADJOY_MODE == "commerce"
+
+
 # SECURITY WARNING: keep the secret key used in production secret!
 SECRET_KEY = config("SECRET_KEY")
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = config("DEBUG", default=False, cast=bool)
+DEBUG = config("DJANGO_DEBUG", default=False, cast=bool)
 
 ALLOWED_HOSTS = config("ALLOWED_HOSTS", default="localhost,127.0.0.1", cast=Csv())
 
@@ -48,13 +60,17 @@ INSTALLED_APPS = [
 
     #Apps
     "web.core",
-    "web.cart",
     "web.products",
-    "web.orders",
     "web.survey",
     "web.waitlist",
-    "web.accounts"
+    "web.accounts",
 ]
+
+if IS_COMMERCE_MODE:
+    INSTALLED_APPS += [
+        "web.cart",
+        "web.orders",
+    ]
 
 
 MIDDLEWARE = [
@@ -71,6 +87,18 @@ MIDDLEWARE = [
 
 ROOT_URLCONF = "Shoes.urls"
 
+TEMPLATE_CONTEXT_PROCESSORS = [
+    "django.template.context_processors.request",
+    "django.contrib.auth.context_processors.auth",
+    "django.contrib.messages.context_processors.messages",
+    "web.core.context_processors.deployment_mode",
+]
+
+if IS_COMMERCE_MODE:
+    TEMPLATE_CONTEXT_PROCESSORS.append(
+        "web.cart.context_processors.cart_summary"
+    )
+
 TEMPLATES = [
     {
         "BACKEND": "django.template.backends.django.DjangoTemplates",
@@ -78,12 +106,7 @@ TEMPLATES = [
         ,
         "APP_DIRS": True,
         "OPTIONS": {
-            "context_processors": [
-                "django.template.context_processors.request",
-                "django.contrib.auth.context_processors.auth",
-                "django.contrib.messages.context_processors.messages",
-                "web.cart.context_processors.cart_summary",
-            ],
+            "context_processors": TEMPLATE_CONTEXT_PROCESSORS,
         },
     },
 ]
@@ -153,12 +176,49 @@ STATICFILES_DIRS = [
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
-#Payment Processing Keys
-# Stripe credentials are loaded from the environment
-### NEVER EXPOSE SECRET KEYS TO THE PUBLIC ###
-STRIPE_SECRET_KEY = config("STRIPE_SECRET_KEY")
-STRIPE_PUBLISHABLE_KEY = config("STRIPE_PUBLISHABLE_KEY")
-STRIPE_WEBHOOK_SECRET = config("STRIPE_WEBHOOK_SECRET")
+# Payment processing keys
+# Stripe credentials exist only in commerce mode. Research mode fails closed if
+# any are configured, preventing an accidental research deployment from gaining
+# payment capability.
+_STRIPE_SETTING_NAMES = (
+    "STRIPE_SECRET_KEY",
+    "STRIPE_PUBLISHABLE_KEY",
+    "STRIPE_WEBHOOK_SECRET",
+)
+
+
+def _required_commerce_setting(name):
+    value = config(name, default="").strip()
+
+    if not value:
+        raise ImproperlyConfigured(
+            f"{name} is required when TREADJOY_MODE='commerce'."
+        )
+
+    return value
+
+
+if IS_COMMERCE_MODE:
+    STRIPE_SECRET_KEY = _required_commerce_setting("STRIPE_SECRET_KEY")
+    STRIPE_PUBLISHABLE_KEY = _required_commerce_setting(
+        "STRIPE_PUBLISHABLE_KEY"
+    )
+    STRIPE_WEBHOOK_SECRET = _required_commerce_setting(
+        "STRIPE_WEBHOOK_SECRET"
+    )
+else:
+    _configured_stripe_settings = [
+        name
+        for name in _STRIPE_SETTING_NAMES
+        if config(name, default="").strip()
+    ]
+
+    if _configured_stripe_settings:
+        names = ", ".join(_configured_stripe_settings)
+        raise ImproperlyConfigured(
+            "Stripe credentials must not be configured when "
+            f"TREADJOY_MODE='research': {names}."
+        )
 
 #Email
 EMAIL_BACKEND = "django.core.mail.backends.console.EmailBackend"

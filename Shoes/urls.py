@@ -24,8 +24,6 @@ urlpatterns = [
 
     path("", include("web.core.urls")),
     path("products/", include("web.products.urls")),
-    path("cart/", include("web.cart.urls")),
-    path("orders/", include("web.orders.urls")),
     path("survey/", include("web.survey.urls")),
     path("waitlist/", include("web.waitlist.urls")),
 
@@ -35,6 +33,12 @@ urlpatterns = [
     # Django allauth login/signup/logout pages
     path("accounts/", include("allauth.urls")),
 ]
+
+if settings.IS_COMMERCE_MODE:
+    urlpatterns += [
+        path("cart/", include("web.cart.urls")),
+        path("orders/", include("web.orders.urls")),
+    ]
 
 if settings.DEBUG:
     urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

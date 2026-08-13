@@ -47,11 +47,12 @@
                 </p>
             </div>
 
-            <form method="post"
-                  action="{% url 'cart:add_to_cart' %}"
-                  class="add-to-cart-form">
+            {% if is_commerce_mode %}
+                <form method="post"
+                      action="{% url 'cart:add_to_cart' %}"
+                      class="add-to-cart-form">
 
-                  {% csrf_token %}
+                    {% csrf_token %}
 
                     <input
                         type="hidden"
@@ -59,51 +60,52 @@
                         value="{{ product.id }}"
                     >
 
-                {% with available_variants=product.variants.all %}
-                    {% if available_variants %}
-                        <label for="variant_id">
-                            Choose size and color:
-                        </label>
+                    {% with available_variants=product.variants.all %}
+                        {% if available_variants %}
+                            <label for="variant_id">
+                                Choose size and color:
+                            </label>
 
-                        <select
-                                id="variant_id"
-                                name="variant_id"
-                                required
-                        >
-                            <option value="">
-                                Select an option
-                            </option>
+                            <select
+                                    id="variant_id"
+                                    name="variant_id"
+                                    required
+                            >
+                                <option value="">
+                                    Select an option
+                                </option>
 
-                            {% for variant in available_variants %}
-                                {% if variant.is_active and variant.stock_quantity > 0 %}
-                                    <option value="{{ variant.id }}">
-                                        {{ variant.color }}
-                                        — Size {{ variant.size }}
-                                        — {{ variant.stock_quantity }} available
-                                        — ${{ variant.current_price }}
-                                    </option>
-                                {% endif %}
-                            {% endfor %}
-                        </select>
+                                {% for variant in available_variants %}
+                                    {% if variant.is_active and variant.stock_quantity > 0 %}
+                                        <option value="{{ variant.id }}">
+                                            {{ variant.color }}
+                                            — Size {{ variant.size }}
+                                            — {{ variant.stock_quantity }} available
+                                            — ${{ variant.current_price }}
+                                        </option>
+                                    {% endif %}
+                                {% endfor %}
+                            </select>
 
-                        <button type="submit" class="btn-primary">
-                            Add to Cart
-                        </button>
-                    {% else %}
-                        <p>
-                            This product does not currently have any available options.
-                        </p>
+                            <button type="submit" class="btn-primary">
+                                Add to Cart
+                            </button>
+                        {% else %}
+                            <p>
+                                This product does not currently have any available options.
+                            </p>
 
-                        <button
-                                type="button"
-                                class="btn-primary"
-                                disabled
-                        >
-                            Out of Stock
-                        </button>
-                    {% endif %}
-                {% endwith %}
-            </form>
+                            <button
+                                    type="button"
+                                    class="btn-primary"
+                                    disabled
+                            >
+                                Out of Stock
+                            </button>
+                        {% endif %}
+                    {% endwith %}
+                </form>
+            {% endif %}
 
             <a href="{% url 'products:product_list' %}" class="back-link">
                 ← Back to Products
