@@ -53,7 +53,12 @@ def mark_order_as_paid(
     logger.info("mark_order_as_paid called for order %s.", order.id)
     logger.info("order status before payment update: %s", order.status)
 
-    if order.status == Order.Status.PAID:
+    payment_already_recorded = Payment.objects.filter(
+        order=order,
+        status=Payment.Status.SUCCEEDED,
+    ).exists()
+
+    if order.status == Order.Status.PAID or payment_already_recorded:
         return False
 
     previous_status = order.status
@@ -471,7 +476,7 @@ def handle_checkout_session_completed(session):
     mark_order_as_paid(
         order,
         amount_total_cents=session.get("amount_total") or 0,
-        amount_line_total_cents=session.get("amount_line_total") or 0,
+        amount_subtotal_cents=session.get("amount_subtotal"),
         payment_intent_id=session.get("payment_intent", "") or "",
         checkout_session_id=session.get("id", "") or "",
         currency=session.get("currency", "usd"),
