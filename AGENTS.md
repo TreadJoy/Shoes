@@ -486,6 +486,258 @@ The settings module requires the environment variables documented in `.env.examp
 - Treat PostgreSQL as the authoritative transactional store. Caches, search indexes, analytics, and task queues are derived systems and must not become the only record of business state.
 - Do not add Redis, Elasticsearch, Celery, a REST API, analytics, or a frontend framework speculatively. Introduce infrastructure only after identifying the concrete requirement, failure mode, operational cost, and verification plan.
 
+## Testing and owner acceptance protocol
+
+Testing is part of the implementation, not a cleanup task after the feature is written. Every meaningful change must be evaluated against the behavior the project owner actually approved. Automated tests prove that explicit rules remain true; manual acceptance testing proves that the customer-facing result, workflow, and business intent match what the project owner intended. Do not treat either layer as a substitute for the other.
+
+### 1. Define the behavior before writing tests
+
+Before implementing a feature, bug fix, or behavior change, translate the approved requirement into a small set of observable acceptance criteria. State them in plain language before or alongside the implementation plan.
+
+For each acceptance criterion, identify:
+
+- the starting state or prerequisite data;
+- the user or system action;
+- the expected visible result;
+- the expected database or domain-state result, when applicable;
+- the expected behavior for invalid, unauthorized, duplicate, or boundary inputs;
+- whether the criterion can be verified automatically, manually, or both.
+
+Do not invent business rules merely to make a test convenient. If an expected result depends on an unresolved policy, stop at that boundary and ask for the policy decision before encoding the behavior or its test.
+
+For bug fixes, first identify the behavior that was wrong and add a regression test that would fail for the bug whenever the defect can be reproduced reliably in an automated test.
+
+### 2. Automated-test strategy
+
+Use Django's built-in test tools by default. Do not introduce pytest, factory_boy, Selenium, Playwright, Axe, snapshot libraries, or another testing dependency solely for convenience without first identifying the requirement and receiving any approval required by the dependency rules in this file.
+
+Place tests in the Django app that owns the behavior. As coverage grows, prefer an app-local `tests/` package organized by concern, for example:
+
+```text
+web/orders/tests/
+    test_checkout.py
+    test_payments.py
+    test_cancellations.py
+    test_permissions.py
+```
+
+Prefer focused tests over large end-to-end tests that obscure the cause of a failure. Use the smallest test level that proves the rule, while adding integration tests where multiple components must work together.
+
+#### Model and domain-rule tests
+
+Test model constraints, service/domain functions, state transitions, calculations, and invariants directly. Important examples include:
+
+- price and money calculations;
+- inventory availability and adjustments;
+- compatibility and modular-part rules;
+- order-status transitions;
+- preorder versus stocked-product rules;
+- cancellation, return, exchange, and refund eligibility once implemented;
+- snapshot behavior for historical `OrderItem` data;
+- uniqueness, required relationships, and database constraints.
+
+Where correctness depends on a database transaction, use the appropriate transactional test style and explicitly verify rollback or atomic behavior when failure occurs.
+
+#### View, form, URL, and permission tests
+
+For server-rendered flows, test the HTTP contract as well as the resulting state. Verify as applicable:
+
+- expected status codes and redirects;
+- correct URL namespace and route behavior;
+- valid form submission;
+- invalid-input rejection with useful errors;
+- authentication requirements;
+- authorization and ownership checks;
+- POST-only mutation endpoints;
+- protection against changing another customer's resources;
+- relevant template and context behavior without asserting fragile presentation details.
+
+Do not test CSS implementation details with Django unit tests. Test semantic behavior in Python and reserve visual layout verification for browser/manual testing.
+
+#### Cart, checkout, Stripe, and webhook tests
+
+Treat commerce tests as high priority. Mock external Stripe and email network calls in the automated suite. At minimum, affected checkout/payment work should test the relevant success path plus material failure and duplicate cases, including where applicable:
+
+- guest versus authenticated carts;
+- quantity and availability validation;
+- prevention of mixed stocked/preorder carts at launch;
+- server-side price authority rather than trusting browser-submitted prices;
+- creation of the correct order snapshot;
+- payment confirmation before inventory reduction;
+- webhook signature handling at the integration boundary;
+- `StripeEvent` idempotency and duplicate-event behavior;
+- repeated requests not producing duplicate orders, payments, refunds, or inventory changes;
+- transaction rollback if a multi-record operation fails;
+- authorization around order, payment, refund, and fulfillment actions.
+
+Automated tests must never contact Stripe's live API or use live credentials.
+
+#### Commerce-mode and research-mode tests
+
+Any change touching routing, checkout, products, waitlist, survey, navigation, or deployment-mode configuration must consider both approved deployment modes.
+
+Maintain tests proving that:
+
+- commerce mode exposes only the intended commerce behavior;
+- research mode does not register or expose checkout/order-taking behavior;
+- research mode cannot create an order or initiate payment even through a crafted direct request;
+- research mode does not require or initialize Stripe credentials;
+- shared presentation or domain changes do not accidentally cross the database or capability boundary between deployments.
+
+Negative tests for the research-mode restrictions are mandatory when the affected code could weaken those restrictions.
+
+#### Security and privacy tests
+
+When a change touches authentication, authorization, PII, secrets, staff actions, file upload, payment, customer data, or security configuration, add tests for the concrete security property being changed whenever it is practical to automate it. Examples include unauthorized access, cross-user access, unsafe mutation methods, duplicate processing, and validation of sensitive inputs.
+
+A passing security test is evidence for a specific invariant, not a general claim that the application is secure.
+
+#### Frontend behavior tests
+
+Use automated browser tests only when the project has an approved browser-testing setup and the behavior benefits from automation. Good candidates include:
+
+- opening and closing navigation menus;
+- keyboard-accessible dropdown behavior;
+- cart-count changes;
+- form submission and visible validation;
+- critical checkout navigation before the external payment boundary;
+- research-mode absence of checkout controls;
+- repeated high-value interactions that are expensive to retest manually.
+
+If Playwright or another approved browser tool is available, prefer stable selectors based on accessible roles, labels, names, or dedicated test attributes rather than brittle CSS structure. Do not make production markup worse solely to satisfy a test.
+
+Visual appearance still requires manual review even when browser automation passes. Automated screenshots or visual-regression tests may supplement owner review but do not replace it for intentional design changes.
+
+#### Test data
+
+Create the minimum deterministic data required to prove the behavior. Prefer `setUpTestData`, local helper/builders, or existing project test utilities before adding a fixture/factory dependency.
+
+Tests must not depend on:
+
+- production customer data;
+- the developer's local database contents;
+- execution order of other tests;
+- external network availability;
+- real email delivery;
+- current wall-clock timing when a controlled/fixed value can be used.
+
+Make edge cases explicit. For numeric, quantity, date, inventory, or price rules, test relevant boundaries rather than only an ordinary middle value.
+
+### 3. What every implementation step should test
+
+Do not aim for a meaningless coverage percentage. Test the decisions and failure modes that would matter if they regressed.
+
+For each changed behavior, choose the relevant cases from this set:
+
+1. **Happy path** — the approved normal workflow succeeds.
+2. **Invalid input** — malformed or disallowed input is rejected safely and clearly.
+3. **Boundary case** — zero/one/maximum quantities, stock boundary, date boundary, price boundary, or another rule edge is correct.
+4. **Unauthorized case** — a guest, different customer, or insufficiently privileged staff user cannot perform a protected action.
+5. **Duplicate/retry case** — repeated POSTs, webhook delivery, refreshes, or retries do not create duplicate irreversible state.
+6. **Failure/rollback case** — partial failure does not leave inconsistent authoritative records.
+7. **Mode case** — commerce and research deployments behave according to their separate capabilities when relevant.
+8. **Regression case** — a previously observed defect remains fixed.
+
+Not every change needs all eight. The agent must state which cases are relevant and why omitted cases are not material.
+
+### 4. Manual owner-acceptance testing
+
+After automated checks pass, provide the project owner with a concise, numbered manual test script for every customer-facing change and for internal workflows whose usability or business meaning cannot be proven by unit tests.
+
+The manual script must be specific enough that the project owner does not need to infer what to click or what success looks like. For each scenario, include:
+
+- **Purpose:** what behavior is being validated;
+- **Setup:** mode, account type, required test data, browser/device width, and any local-server prerequisites;
+- **Steps:** exact actions to perform in order;
+- **Expected result after each important step:** visible behavior and, when useful, the expected authoritative state;
+- **Failure signs:** what would indicate the implementation does not match the approved behavior;
+- **Cleanup/reset:** how to return test data to a reusable state when manual testing creates records.
+
+Use Stripe test mode only for manual payment testing. When a Stripe test card or documented test scenario is needed, identify that it is test-only and never request or use real card information.
+
+### 5. Manual frontend and design review
+
+For visible frontend changes, the project owner must verify both function and presentation. The agent should tell the owner exactly what to inspect rather than saying only "check that it looks right."
+
+At minimum, review the changed experience at these viewport classes when relevant:
+
+- small phone;
+- large phone;
+- tablet;
+- laptop/desktop;
+- wide desktop.
+
+The manual visual review should check:
+
+- content hierarchy matches the approved intent;
+- navigation and CTA priority are clear;
+- no text, imagery, menus, or controls overlap unintentionally;
+- no horizontal scrolling occurs unless intentionally designed;
+- typography remains readable and responsive;
+- imagery crops correctly and preserves the intended focal point;
+- interactive states are visible: hover, focus-visible, pressed, open, selected, disabled, loading, error, and success where relevant;
+- keyboard navigation reaches controls in a logical order;
+- menus, drawers, and dialogs can be dismissed as intended, including `Escape` where applicable;
+- reduced-motion behavior is acceptable when `prefers-reduced-motion` is enabled;
+- meaningful images have appropriate alt text and decorative images do not create noise;
+- the page still communicates the approved TreadJoy brand system rather than merely being technically responsive.
+
+When a change has an approved Figma/reference design, compare the implementation against that reference at representative widths. Record intentional deviations rather than silently accepting them.
+
+### 6. Manual workflow and business-rule review
+
+For commerce or staff workflows, manual testing should follow the lifecycle rather than testing only an isolated screen. Where relevant, walk through the full sequence, for example:
+
+```text
+catalog -> configuration -> cart -> checkout -> payment confirmation
+-> order history -> fulfillment -> shipment/tracking
+```
+
+or the corresponding preorder, cancellation, return, exchange, or refund path once those workflows exist.
+
+At key points, verify that what the customer sees agrees with the authoritative database state and that history/audit records are created where the business rules require them.
+
+For destructive or financially meaningful actions, also manually attempt at least one disallowed path when practical—for example canceling after the allowed state, accessing another customer's order, submitting the action twice, or attempting checkout in research mode.
+
+### 7. Acceptance evidence and handoff
+
+Do not tell the project owner a feature "works" solely because code compiles or the test suite passes. At handoff, report:
+
+- the acceptance criteria implemented;
+- automated tests added or changed;
+- commands run and their results;
+- any test that could not be run and why;
+- the manual test scenarios the owner should perform;
+- known limitations, untested environments, or assumptions;
+- any behavior that still requires owner acceptance.
+
+For a customer-facing change, distinguish these states clearly:
+
+- **Automated verification passed** — the implemented rules passed the relevant automated checks.
+- **Ready for owner acceptance** — the agent has completed its verification and provided the manual script.
+- **Accepted** — the project owner has manually confirmed that the behavior and presentation match the intended result.
+
+Do not mark an approved customer-facing behavior as fully complete before owner acceptance when the change materially affects presentation, interaction, checkout, or another workflow where human judgment is part of the requirement.
+
+If manual testing reveals a mismatch, treat the observed mismatch as the new debugging target. Reproduce it, add or improve an automated regression test when practical, implement the correction, rerun the relevant automated checks, and provide the updated manual retest steps.
+
+### 8. Required testing cadence during agent work
+
+Follow this sequence for each agreed implementation step:
+
+1. Restate the approved observable behavior and important edge cases.
+2. Identify the automated tests that should prove those rules.
+3. Implement the smallest coherent change.
+4. Add or update the tests in the owning app.
+5. Run the narrow affected test module/app first for fast feedback.
+6. Fix failures caused by the change; do not weaken assertions merely to make tests pass.
+7. Run the broader project checks required by the Verification section below.
+8. Start the application when manual/browser verification is relevant and inspect the changed behavior directly when tooling permits.
+9. Give the project owner the numbered manual acceptance script.
+10. Stop after the agreed step and wait for `next` or acceptance before beginning the next step.
+
+Tests should make future changes safer, not lock accidental implementation details in place. Assert public behavior, business invariants, permissions, and durable state; avoid overfitting tests to internal helper structure, exact HTML whitespace, or other details that can change without changing the intended behavior.
+
 ## Verification
 
 Run the checks relevant to every change:
