@@ -7,6 +7,7 @@ from django.contrib.auth.decorators import login_required
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib import messages
 from django.db import transaction
+from django.db.models import Sum
 from django.core.exceptions import PermissionDenied
 from django.conf import settings
 from django.urls import reverse
@@ -16,6 +17,7 @@ from django.views.decorators.csrf import csrf_exempt
 
 from web.cart.views import get_or_create_cart
 from web.cart.models import CartItem
+from web.products.models import ProductVariant
 
 from .models import (
     Order,
@@ -528,19 +530,48 @@ def remove_paid_order_items_from_cart(request, order):
     ).delete()
 
 def reduce_inventory_for_order(order):
-    for item in order.items.select_related("variant"):
-        variant = item.variant
+    with transaction.atomic():
+        requirements = list(
+            order.items
+            .exclude(variant_id__isnull=True)
+            .values("variant_id")
+            .annotate(required_quantity=Sum("quantity"))
+            .order_by("variant_id")
+        )
 
-        if variant is None:
-            continue
+        if not requirements:
+            return
 
-        if variant.stock_quantity < item.quantity:
-            raise ValueError(
-                f"Not enough inventory for {variant.sku}."
+        variants = {
+            variant.id: variant
+            for variant in (
+                ProductVariant.objects
+                .select_for_update()
+                .filter(id__in=[
+                    requirement["variant_id"]
+                    for requirement in requirements
+                ])
+                .order_by("id")
             )
+        }
 
-        variant.stock_quantity -= item.quantity
-        variant.save(update_fields=["stock_quantity"])
+        for requirement in requirements:
+            variant = variants.get(requirement["variant_id"])
+
+            if variant is None:
+                raise ValueError(
+                    "An order item references an unavailable product variant."
+                )
+
+            if variant.stock_quantity < requirement["required_quantity"]:
+                raise ValueError(
+                    f"Not enough inventory for {variant.sku}."
+                )
+
+        for requirement in requirements:
+            variant = variants[requirement["variant_id"]]
+            variant.stock_quantity -= requirement["required_quantity"]
+            variant.save(update_fields=["stock_quantity"])
 
 @login_required
 def order_list(request):
