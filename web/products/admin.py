@@ -137,7 +137,7 @@ class ProductVariantInLine(admin.TabularInline):
     fields = (
         "sku",
         "size",
-        "compatability_group",
+        "compatibility_group",
         "color",
         "stock_quantity",
         "price_override",

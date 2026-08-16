@@ -1,6 +1,7 @@
 
 from django.conf import settings
-from django.db import models
+from django.core.exceptions import ValidationError
+from django.db import models, transaction
 from web.products.models import Product, ProductVariant
 
 
@@ -129,6 +130,7 @@ class Shipment(models.Model):
     )
 
     estimated_delivery = models.DateField(
+        null=True,
         blank=True,
     )
 
@@ -157,38 +159,159 @@ class Shipment(models.Model):
     class Meta:
         ordering = ["-created_at"]
 
-    def save(self, *args, **kwargs):
-        is_new = self.pk is None
+    def clean(self):
+        super().clean()
+
+        if not self.order_id:
+            return
 
         previous_shipped_at = None
         previous_delivered_at = None
 
-        if not is_new:
+        if not self._state.adding:
             previous = Shipment.objects.only(
                 "shipped_at",
                 "delivered_at",
             ).get(pk=self.pk)
-
             previous_shipped_at = previous.shipped_at
             previous_delivered_at = previous.delivered_at
 
+        shipped_at_added, delivered_at_added = self._timestamp_transitions(
+            previous_shipped_at,
+            previous_delivered_at,
+        )
+
+        if shipped_at_added or delivered_at_added:
+            order_status = (
+                Order.objects.only("status").get(pk=self.order_id).status
+            )
+            self._validate_timestamp_transitions(
+                order_status,
+                shipped_at_added,
+                delivered_at_added,
+            )
+
+    def save(self, *args, **kwargs):
+        with transaction.atomic():
+            previous_shipped_at = None
+            previous_delivered_at = None
+
+            if not self._state.adding:
+                previous = (
+                    Shipment.objects.select_for_update()
+                    .only("shipped_at", "delivered_at")
+                    .get(pk=self.pk)
+                )
+                previous_shipped_at = previous.shipped_at
+                previous_delivered_at = previous.delivered_at
+
+            shipped_at_added, delivered_at_added = self._timestamp_transitions(
+                previous_shipped_at,
+                previous_delivered_at,
+                update_fields=kwargs.get("update_fields"),
+            )
+
+            order = None
+            if shipped_at_added or delivered_at_added:
+                order = Order.objects.select_for_update().get(pk=self.order_id)
+                self._validate_timestamp_transitions(
+                    order.status,
+                    shipped_at_added,
+                    delivered_at_added,
+                )
+
             super().save(*args, **kwargs)
 
-            if self.shipped_at and not previous_shipped_at:
-                self.mark_order_shipped()
+            if shipped_at_added:
+                self.mark_order_shipped(order=order)
 
-            if self.delivered_at and not previous_delivered_at:
-                self.mark_order_delivered()
+            if delivered_at_added:
+                self.mark_order_delivered(order=order)
 
-    def mark_order_shipped(self):
-        order = self.order
+    def _timestamp_transitions(
+        self,
+        previous_shipped_at,
+        previous_delivered_at,
+        update_fields=None,
+    ):
+        fields_being_saved = None
+        if update_fields is not None:
+            fields_being_saved = set(update_fields)
+
+        shipped_at_is_saved = (
+            fields_being_saved is None or "shipped_at" in fields_being_saved
+        )
+        delivered_at_is_saved = (
+            fields_being_saved is None or "delivered_at" in fields_being_saved
+        )
+
+        shipped_at_added = (
+            shipped_at_is_saved
+            and self.shipped_at is not None
+            and previous_shipped_at is None
+        )
+        delivered_at_added = (
+            delivered_at_is_saved
+            and self.delivered_at is not None
+            and previous_delivered_at is None
+        )
+
+        return shipped_at_added, delivered_at_added
+
+    @staticmethod
+    def _validate_timestamp_transitions(
+        order_status,
+        shipped_at_added,
+        delivered_at_added,
+    ):
+        errors = {}
+        effective_status = order_status
+
+        if shipped_at_added:
+            if effective_status in [
+                Order.Status.PAID,
+                Order.Status.PROCESSING,
+            ]:
+                effective_status = Order.Status.SHIPPED
+            elif effective_status not in [
+                Order.Status.SHIPPED,
+                Order.Status.DELIVERED,
+            ]:
+                errors["shipped_at"] = (
+                    "Only paid or processing orders can be marked shipped."
+                )
+
+        if delivered_at_added:
+            if effective_status == Order.Status.SHIPPED:
+                effective_status = Order.Status.DELIVERED
+            elif effective_status != Order.Status.DELIVERED:
+                errors["delivered_at"] = (
+                    "An order must be shipped before it can be marked delivered."
+                )
+
+        if errors:
+            raise ValidationError(errors)
+
+    def mark_order_shipped(self, order=None):
+        order = order or self.order
 
         if order.status in [
             Order.Status.SHIPPED,
             Order.Status.DELIVERED,
-            Order.Status.CANCELED,
         ]:
             return
+
+        if order.status not in [
+            Order.Status.PAID,
+            Order.Status.PROCESSING,
+        ]:
+            raise ValidationError(
+                {
+                    "shipped_at": (
+                        "Only paid or processing orders can be marked shipped."
+                    )
+                }
+            )
 
         previous_status = order.status
 
@@ -207,14 +330,20 @@ class Shipment(models.Model):
             note=f"Order marked shipped from shipment #{self.id}.",
         )
 
-    def mark_order_delivered(self):
-        order = self.order
+    def mark_order_delivered(self, order=None):
+        order = order or self.order
 
-        if order.status in [
-            Order.Status.DELIVERED,
-            Order.Status.CANCELED,
-        ]:
+        if order.status == Order.Status.DELIVERED:
             return
+
+        if order.status != Order.Status.SHIPPED:
+            raise ValidationError(
+                {
+                    "delivered_at": (
+                        "An order must be shipped before it can be marked delivered."
+                    )
+                }
+            )
 
         previous_status = order.status
 
