@@ -68,6 +68,13 @@
                     <div>
                         <h3>{{ item.variant.product.name }}</h3>
                         <p>Qty: {{ item.quantity }}</p>
+                        {% if item.preorder_batch %}
+                            <p>
+                                Preorder — estimated to ship
+                                {{ item.preorder_batch.estimated_tender_start|date:"M j" }}–{{ item.preorder_batch.estimated_tender_end|date:"M j, Y" }}.
+                                Delivery time begins after the package is handed to the carrier.
+                            </p>
+                        {% endif %}
                     </div>
 
                     <strong>${{ item.subtotal }}</strong>

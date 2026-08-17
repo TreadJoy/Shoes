@@ -26,6 +26,13 @@
                             <h2>{{ item.variant.product.name }}</h2>
 
                             <p>Price: ${{ item.unit_price|floatformat:2 }}</p>
+                            {% if item.preorder_batch %}
+                                <p>
+                                    <strong>Preorder</strong> — estimated to ship
+                                    {{ item.preorder_batch.estimated_tender_start|date:"M j" }}–{{ item.preorder_batch.estimated_tender_end|date:"M j, Y" }}.
+                                    Delivery time begins after the package is handed to the carrier.
+                                </p>
+                            {% endif %}
                             <form
                                     method="post"
                                     action="{% url 'cart:update_cart_item' item.id %}"
@@ -42,7 +49,7 @@
                                         name="quantity"
                                         value="{{ item.quantity }}"
                                         min="0"
-                                        {% if item.variant %}
+                                        {% if item.variant and not item.preorder_batch %}
                                         max="{{ item.variant.stock_quantity }}"
                                         {% endif %}
                                 >

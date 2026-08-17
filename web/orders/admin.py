@@ -77,6 +77,10 @@ class OrderItemInline(admin.TabularInline):
         "variant",
         "product_name",
         "sku",
+        "fulfillment_type",
+        "preorder_batch_code",
+        "estimated_tender_start",
+        "estimated_tender_end",
         "size",
         "color",
         "unit_price",
@@ -89,6 +93,10 @@ class OrderItemInline(admin.TabularInline):
         "variant",
         "product_name",
         "sku",
+        "fulfillment_type",
+        "preorder_batch_code",
+        "estimated_tender_start",
+        "estimated_tender_end",
         "size",
         "color",
         "unit_price",
@@ -150,6 +158,8 @@ class OrderAdmin(admin.ModelAdmin):
         "email",
         "full_name",
         "status",
+        "fulfillment_type",
+        "preorder_batch",
         "inventory_status_display",
         "inventory_review_due_at",
         "subtotal",
@@ -161,6 +171,8 @@ class OrderAdmin(admin.ModelAdmin):
     )
     list_filter = (
         "status",
+        "fulfillment_type",
+        "preorder_batch",
         "inventory_allocation__status",
         "created_at",
     )
@@ -172,6 +184,10 @@ class OrderAdmin(admin.ModelAdmin):
     readonly_fields = (
         "created_at",
         "updated_at",
+        "fulfillment_type",
+        "preorder_batch",
+        "estimated_tender_start",
+        "estimated_tender_end",
     )
     actions = (
         "mark_as_shipped",
@@ -437,11 +453,15 @@ class InventoryAllocationItemInline(admin.TabularInline):
     can_delete = False
     fields = (
         "variant",
+        "fulfillment_type",
+        "preorder_batch",
         "sku",
         "required_quantity",
         "allocated_quantity",
-        "stock_before",
-        "stock_after",
+        "variant_available_before",
+        "variant_available_after",
+        "batch_available_before",
+        "batch_available_after",
     )
     readonly_fields = fields
 
@@ -537,7 +557,8 @@ class InventoryAllocationAdmin(admin.ModelAdmin):
             (
                 f"{item.sku}: {item.allocated_quantity}/"
                 f"{item.required_quantity} allocated "
-                f"(stock {item.stock_before} to {item.stock_after})"
+                f"(SKU availability {item.variant_available_before} to "
+                f"{item.variant_available_after})"
             )
             for item in obj.items.all()
         )

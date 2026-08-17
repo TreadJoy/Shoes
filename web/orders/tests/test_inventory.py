@@ -95,11 +95,23 @@ class InventoryAllocationTests(InventoryTestDataMixin, TestCase):
             item.variant_id: item
             for item in allocation.items.all()
         }
-        self.assertEqual(audit_items[available_variant.id].stock_before, 3)
-        self.assertEqual(audit_items[available_variant.id].stock_after, 3)
+        self.assertEqual(
+            audit_items[available_variant.id].variant_available_before,
+            3,
+        )
+        self.assertEqual(
+            audit_items[available_variant.id].variant_available_after,
+            3,
+        )
         self.assertEqual(audit_items[available_variant.id].allocated_quantity, 0)
-        self.assertEqual(audit_items[unavailable_variant.id].stock_before, 0)
-        self.assertEqual(audit_items[unavailable_variant.id].stock_after, 0)
+        self.assertEqual(
+            audit_items[unavailable_variant.id].variant_available_before,
+            0,
+        )
+        self.assertEqual(
+            audit_items[unavailable_variant.id].variant_available_after,
+            0,
+        )
         self.assertEqual(audit_items[unavailable_variant.id].allocated_quantity, 0)
 
     def test_multiple_order_lines_for_one_variant_are_combined(self):
@@ -124,8 +136,8 @@ class InventoryAllocationTests(InventoryTestDataMixin, TestCase):
         audit_item = allocation.items.get()
         self.assertEqual(audit_item.required_quantity, 3)
         self.assertEqual(audit_item.allocated_quantity, 3)
-        self.assertEqual(audit_item.stock_before, 5)
-        self.assertEqual(audit_item.stock_after, 2)
+        self.assertEqual(audit_item.variant_available_before, 5)
+        self.assertEqual(audit_item.variant_available_after, 2)
 
     def test_repeated_allocation_is_idempotent(self):
         variant = self.create_variant(

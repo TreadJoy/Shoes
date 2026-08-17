@@ -30,6 +30,10 @@ class ShippingAddress(models.Model):
 
 
 class Order(models.Model):
+    class FulfillmentType(models.TextChoices):
+        STOCKED = "stocked", "Stocked"
+        PREORDER = "preorder", "Preorder"
+
     class Status(models.TextChoices):
         PENDING_PAYMENT = "pending_payment", "Pending Payment"
         PAID = "paid", "Paid"
@@ -63,6 +67,21 @@ class Order(models.Model):
         default=Status.PENDING_PAYMENT,
         db_index=True,
     )
+    fulfillment_type = models.CharField(
+        max_length=20,
+        choices=FulfillmentType.choices,
+        default=FulfillmentType.STOCKED,
+        db_index=True,
+    )
+    preorder_batch = models.ForeignKey(
+        "products.PreorderBatch",
+        on_delete=models.PROTECT,
+        related_name="orders",
+        blank=True,
+        null=True,
+    )
+    estimated_tender_start = models.DateField(blank=True, null=True)
+    estimated_tender_end = models.DateField(blank=True, null=True)
     subtotal = models.DecimalField(
         max_digits=10,
         decimal_places=2,
@@ -102,6 +121,27 @@ class Order(models.Model):
     )
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        constraints = [
+            models.CheckConstraint(
+                condition=(
+                    models.Q(
+                        fulfillment_type="stocked",
+                        preorder_batch__isnull=True,
+                        estimated_tender_start__isnull=True,
+                        estimated_tender_end__isnull=True,
+                    )
+                    | models.Q(
+                        fulfillment_type="preorder",
+                        preorder_batch__isnull=False,
+                        estimated_tender_start__isnull=False,
+                        estimated_tender_end__isnull=False,
+                    )
+                ),
+                name="order_fulfillment_snapshot_consistent",
+            ),
+        ]
 
     def total_items(self):
         return sum(item.quantity for item in self.items.all())
@@ -428,6 +468,21 @@ class OrderItem(models.Model):
         blank=True,
         null=True,
     )
+    fulfillment_type = models.CharField(
+        max_length=20,
+        choices=Order.FulfillmentType.choices,
+        default=Order.FulfillmentType.STOCKED,
+    )
+    preorder_batch = models.ForeignKey(
+        "products.PreorderBatch",
+        on_delete=models.PROTECT,
+        related_name="order_items",
+        blank=True,
+        null=True,
+    )
+    preorder_batch_code = models.CharField(max_length=50, blank=True)
+    estimated_tender_start = models.DateField(blank=True, null=True)
+    estimated_tender_end = models.DateField(blank=True, null=True)
 
     product_name = models.CharField(
         max_length=255,
@@ -466,6 +521,28 @@ class OrderItem(models.Model):
     created_at = models.DateTimeField(
         auto_now_add=True,
     )
+
+    class Meta:
+        constraints = [
+            models.CheckConstraint(
+                condition=(
+                    models.Q(
+                        fulfillment_type=Order.FulfillmentType.STOCKED,
+                        preorder_batch__isnull=True,
+                        preorder_batch_code="",
+                        estimated_tender_start__isnull=True,
+                        estimated_tender_end__isnull=True,
+                    )
+                    | models.Q(
+                        fulfillment_type=Order.FulfillmentType.PREORDER,
+                        preorder_batch__isnull=False,
+                        estimated_tender_start__isnull=False,
+                        estimated_tender_end__isnull=False,
+                    )
+                ),
+                name="order_item_fulfillment_snapshot_consistent",
+            ),
+        ]
 
     def __str__(self):
         return f"{self.quantity} x {self.product_name}"
@@ -557,11 +634,25 @@ class InventoryAllocationItem(models.Model):
         on_delete=models.PROTECT,
         related_name="inventory_allocation_items",
     )
+    fulfillment_type = models.CharField(
+        max_length=20,
+        choices=Order.FulfillmentType.choices,
+        default=Order.FulfillmentType.STOCKED,
+    )
+    preorder_batch = models.ForeignKey(
+        "products.PreorderBatch",
+        on_delete=models.PROTECT,
+        related_name="inventory_allocation_items",
+        blank=True,
+        null=True,
+    )
     sku = models.CharField(max_length=50)
     required_quantity = models.PositiveIntegerField()
     allocated_quantity = models.PositiveIntegerField(default=0)
-    stock_before = models.PositiveIntegerField()
-    stock_after = models.PositiveIntegerField()
+    variant_available_before = models.PositiveIntegerField()
+    variant_available_after = models.PositiveIntegerField()
+    batch_available_before = models.PositiveIntegerField(blank=True, null=True)
+    batch_available_after = models.PositiveIntegerField(blank=True, null=True)
 
     class Meta:
         ordering = ["variant_id"]

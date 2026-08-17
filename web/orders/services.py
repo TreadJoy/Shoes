@@ -7,7 +7,11 @@ from django.db import transaction
 from django.db.models import Min, Sum
 from django.utils import timezone
 
-from web.products.models import ProductVariant
+from web.products.models import (
+    PreorderBatch,
+    PreorderVariantAllocation,
+    ProductVariant,
+)
 
 from .models import (
     InventoryAllocation,
@@ -89,11 +93,54 @@ def allocate_inventory_for_paid_order(order):
             "An order item references an unavailable product variant."
         )
 
-    has_shortfall = any(
-        variants[requirement["variant_id"]].stock_quantity
-        < requirement["required_quantity"]
-        for requirement in requirements
-    )
+    preorder_batch = None
+    preorder_allocations = {}
+    batch_available_before = None
+    batch_available_after = None
+
+    if order.fulfillment_type == Order.FulfillmentType.PREORDER:
+        preorder_batch = (
+            PreorderBatch.objects.select_for_update()
+            .get(pk=order.preorder_batch_id)
+        )
+        preorder_allocations = {
+            item.variant_id: item
+            for item in (
+                PreorderVariantAllocation.objects.select_for_update()
+                .filter(
+                    batch=preorder_batch,
+                    variant_id__in=variant_ids,
+                )
+                .order_by("variant_id")
+            )
+        }
+        total_required = sum(
+            requirement["required_quantity"]
+            for requirement in requirements
+        )
+        batch_available_before = preorder_batch.remaining_quantity
+        has_shortfall = (
+            preorder_batch.status != PreorderBatch.Status.OPEN
+            or batch_available_before < total_required
+            or any(
+                requirement["variant_id"] not in preorder_allocations
+                or preorder_allocations[
+                    requirement["variant_id"]
+                ].remaining_quantity < requirement["required_quantity"]
+                for requirement in requirements
+            )
+        )
+        batch_available_after = (
+            batch_available_before
+            if has_shortfall
+            else batch_available_before - total_required
+        )
+    else:
+        has_shortfall = any(
+            variants[requirement["variant_id"]].stock_quantity
+            < requirement["required_quantity"]
+            for requirement in requirements
+        )
     allocation = InventoryAllocation.objects.create(
         order=order,
         status=(
@@ -112,25 +159,54 @@ def allocate_inventory_for_paid_order(order):
     for requirement in requirements:
         variant = variants[requirement["variant_id"]]
         required_quantity = requirement["required_quantity"]
-        stock_before = variant.stock_quantity
+        if preorder_batch is not None:
+            preorder_allocation = preorder_allocations.get(variant.id)
+            variant_available_before = (
+                preorder_allocation.remaining_quantity
+                if preorder_allocation is not None
+                else 0
+            )
+        else:
+            preorder_allocation = None
+            variant_available_before = variant.stock_quantity
         allocated_quantity = 0 if has_shortfall else required_quantity
-        stock_after = stock_before - allocated_quantity
+        variant_available_after = (
+            variant_available_before - allocated_quantity
+        )
 
         allocation_items.append(
             InventoryAllocationItem(
                 allocation=allocation,
                 variant=variant,
+                fulfillment_type=order.fulfillment_type,
+                preorder_batch=preorder_batch,
                 sku=requirement["sku"] or variant.sku,
                 required_quantity=required_quantity,
                 allocated_quantity=allocated_quantity,
-                stock_before=stock_before,
-                stock_after=stock_after,
+                variant_available_before=variant_available_before,
+                variant_available_after=variant_available_after,
+                batch_available_before=batch_available_before,
+                batch_available_after=batch_available_after,
             )
         )
 
-        if not has_shortfall:
-            variant.stock_quantity = stock_after
+        if not has_shortfall and preorder_batch is not None:
+            preorder_allocation.committed_quantity += required_quantity
+            preorder_allocation.save(
+                update_fields=["committed_quantity", "updated_at"]
+            )
+        elif not has_shortfall:
+            variant.stock_quantity = variant_available_after
             variant.save(update_fields=["stock_quantity"])
+
+    if not has_shortfall and preorder_batch is not None:
+        preorder_batch.committed_quantity += sum(
+            requirement["required_quantity"]
+            for requirement in requirements
+        )
+        preorder_batch.save(
+            update_fields=["committed_quantity", "updated_at"]
+        )
 
     InventoryAllocationItem.objects.bulk_create(allocation_items)
     return allocation

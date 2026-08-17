@@ -1,9 +1,11 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib import messages
+from django.db.models import Sum
 from django.views.decorators.http import require_POST
 
 from .models import Cart, CartItem
-from web.products.models import Product, ProductVariant
+from web.products.models import ProductVariant
+from web.products.services import PREORDER, variant_availability
 
 
 
@@ -47,10 +49,16 @@ def add_to_cart(request):
         is_active=True,
     )
 
-    if variant.stock_quantity < 1:
+    availability = variant_availability(variant)
+
+    if not availability.is_available:
         messages.error(
             request,
-            "That size and color is currently out of stock.",
+            (
+                "That preorder option is not currently available."
+                if availability.fulfillment_type == PREORDER
+                else "That size and color is currently out of stock."
+            ),
         )
         return redirect(
             "products:product_detail",
@@ -59,21 +67,61 @@ def add_to_cart(request):
 
     cart = get_or_create_cart(request)
 
+    if availability.fulfillment_type == PREORDER:
+        incompatible_item_exists = cart.items.exclude(
+            preorder_batch=availability.preorder_batch,
+        ).exists()
+        if incompatible_item_exists:
+            messages.error(
+                request,
+                "Your cart can contain items from only one preorder batch.",
+            )
+            return redirect("cart:cart_detail")
+    elif cart.items.filter(preorder_batch__isnull=False).exists():
+        messages.error(
+            request,
+            "Stocked products and preorders cannot be purchased together.",
+        )
+        return redirect("cart:cart_detail")
+
+    existing_item = cart.items.filter(variant=variant).first()
+    new_quantity = existing_item.quantity + 1 if existing_item else 1
+    other_cart_quantity = (
+        cart.items.exclude(variant=variant).aggregate(total=Sum("quantity"))[
+            "total"
+        ]
+        or 0
+    )
+    if (
+        availability.fulfillment_type == PREORDER
+        and other_cart_quantity + new_quantity
+        > availability.preorder_batch.remaining_quantity
+    ):
+        messages.error(
+            request,
+            "The selected preorder quantities exceed the remaining batch "
+            "availability.",
+        )
+        return redirect("cart:cart_detail")
+
     cart_item, created = CartItem.objects.get_or_create(
         cart=cart,
         variant=variant,
         defaults={
             "quantity": 1,
+            "preorder_batch": availability.preorder_batch,
         },
     )
 
     if not created:
-        new_quantity = cart_item.quantity + 1
-
-        if new_quantity > variant.stock_quantity:
+        if new_quantity > availability.available_quantity:
             messages.error(
                 request,
-                "You cannot add more than the available inventory.",
+                (
+                    "That preorder quantity is no longer available."
+                    if availability.fulfillment_type == PREORDER
+                    else "You cannot add more than the available inventory."
+                ),
             )
             return redirect("cart:cart_detail")
 
@@ -127,14 +175,54 @@ def update_cart_item(request, item_id):
             product_name = item.variant.product.name
             item.delete()
             messages.success(request, f"Removed {product_name} from your cart.")
-        elif quantity > item.variant.stock_quantity:
+            return redirect("cart:cart_detail")
+
+        availability = variant_availability(item.variant)
+        batch_is_current = (
+            item.preorder_batch_id
+            == (
+                availability.preorder_batch.id
+                if availability.preorder_batch is not None
+                else None
+            )
+        )
+        preorder_cart_total = (
+            cart.items.exclude(pk=item.pk).aggregate(total=Sum("quantity"))[
+                "total"
+            ]
+            or 0
+        ) + quantity
+
+        if not batch_is_current:
             messages.error(
                 request,
-                f"Only {item.variant.stock_quantity} of "
+                "This cart item is no longer current. Remove it and select "
+                "the current offer.",
+            )
+        elif quantity > availability.available_quantity:
+            messages.error(
+                request,
+                (
+                    f"The selected preorder quantity for "
+                    f"{item.variant.product.name} is no longer available."
+                    if availability.fulfillment_type == PREORDER
+                    else (
+                        f"Only {availability.available_quantity} of "
                         f"{item.variant.product.name} - {item.variant.color}, "
                         f"Size {item.variant.size} available."
+                    )
+                )
             )
-
+        elif (
+            availability.fulfillment_type == PREORDER
+            and preorder_cart_total
+            > availability.preorder_batch.remaining_quantity
+        ):
+            messages.error(
+                request,
+                "The selected preorder quantities exceed the remaining batch "
+                "availability.",
+            )
         else:
             item.quantity = quantity
             item.save()

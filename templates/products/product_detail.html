@@ -38,6 +38,20 @@
                 {{ product.description }}
             </p>
 
+            {% if preorder_batch %}
+                <div class="preorder-notice">
+                    {% if preorder_batch.status == "open" %}
+                        <p>
+                            <strong>Preorder</strong> — estimated to ship
+                            {{ preorder_batch.estimated_tender_start|date:"M j" }}–{{ preorder_batch.estimated_tender_end|date:"M j, Y" }}.
+                            Delivery time begins after the package is handed to the carrier.
+                        </p>
+                    {% else %}
+                        <p><strong>Preorder</strong> — temporarily unavailable.</p>
+                    {% endif %}
+                </div>
+            {% endif %}
+
             <div class="product-meta">
                 <p><strong>Audience:</strong> {{ product.get_audience_display }}</p>
                 <p><strong>Category:</strong> {{ product.get_category_display }}</p>
@@ -60,8 +74,7 @@
                         value="{{ product.id }}"
                     >
 
-                    {% with available_variants=product.variants.all %}
-                        {% if available_variants %}
+                    {% if variant_options and has_available_variants %}
                             <label for="variant_id">
                                 Choose size and color:
                             </label>
@@ -75,13 +88,17 @@
                                     Select an option
                                 </option>
 
-                                {% for variant in available_variants %}
-                                    {% if variant.is_active and variant.stock_quantity > 0 %}
-                                        <option value="{{ variant.id }}">
-                                            {{ variant.color }}
-                                            — Size {{ variant.size }}
-                                            — {{ variant.stock_quantity }} available
-                                            — ${{ variant.current_price }}
+                                {% for option in variant_options %}
+                                    {% if option.availability.is_available %}
+                                        <option value="{{ option.variant.id }}">
+                                            {{ option.variant.color }}
+                                            — Size {{ option.variant.size }}
+                                            {% if option.availability.fulfillment_type == "preorder" %}
+                                                — Preorder
+                                            {% else %}
+                                                — {{ option.availability.available_quantity }} available
+                                            {% endif %}
+                                            — ${{ option.variant.current_price }}
                                         </option>
                                     {% endif %}
                                 {% endfor %}
@@ -90,7 +107,7 @@
                             <button type="submit" class="btn-primary">
                                 Add to Cart
                             </button>
-                        {% else %}
+                    {% else %}
                             <p>
                                 This product does not currently have any available options.
                             </p>
@@ -102,8 +119,7 @@
                             >
                                 Out of Stock
                             </button>
-                        {% endif %}
-                    {% endwith %}
+                    {% endif %}
                 </form>
             {% endif %}
 

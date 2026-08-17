@@ -1,6 +1,6 @@
 from django.conf import settings
 from django.db import models
-from web.products.models import Product, ProductVariant
+from web.products.models import ProductVariant
 
 
 class Cart(models.Model):
@@ -44,6 +44,13 @@ class CartItem(models.Model):
         ProductVariant,
         on_delete=models.PROTECT,
         related_name="cart_items",
+    )
+    preorder_batch = models.ForeignKey(
+        "products.PreorderBatch",
+        on_delete=models.PROTECT,
+        related_name="cart_items",
+        blank=True,
+        null=True,
     )
     quantity = models.PositiveIntegerField(
         default=1
@@ -91,4 +98,3 @@ class CartItem(models.Model):
 
     def __str__(self):
         return f"{self.quantity} x {self.product.name}"
-

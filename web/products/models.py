@@ -1,4 +1,6 @@
+from django.conf import settings
 from django.db import models
+from django.db.models import Q
 from django.core.exceptions import ValidationError
 
 
@@ -453,6 +455,250 @@ class ProductVariant(models.Model):
             f"{self.product.name} -"
             f"{self.color}, Size {self.size}"
         )
+
+
+class PreorderBatch(models.Model):
+    class Status(models.TextChoices):
+        DRAFT = "draft", "Draft"
+        OPEN = "open", "Open"
+        PAUSED = "paused", "Paused"
+        CLOSED = "closed", "Closed"
+
+    code = models.CharField(max_length=50, unique=True)
+    product = models.ForeignKey(
+        Product,
+        on_delete=models.PROTECT,
+        related_name="preorder_batches",
+    )
+    status = models.CharField(
+        max_length=20,
+        choices=Status.choices,
+        default=Status.DRAFT,
+        db_index=True,
+    )
+    estimated_tender_start = models.DateField()
+    estimated_tender_end = models.DateField()
+    total_capacity = models.PositiveIntegerField()
+    committed_quantity = models.PositiveIntegerField(default=0)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ["-created_at"]
+        constraints = [
+            models.CheckConstraint(
+                condition=Q(total_capacity__gte=1),
+                name="preorder_batch_capacity_positive",
+            ),
+            models.CheckConstraint(
+                condition=Q(committed_quantity__lte=models.F("total_capacity")),
+                name="preorder_batch_committed_within_capacity",
+            ),
+            models.UniqueConstraint(
+                fields=["product"],
+                condition=Q(status__in=["open", "paused"]),
+                name="unique_live_preorder_batch_per_product",
+            ),
+        ]
+
+    @property
+    def remaining_quantity(self):
+        return self.total_capacity - self.committed_quantity
+
+    @property
+    def has_confirmed_payments(self):
+        return self.committed_quantity > 0
+
+    def clean(self):
+        super().clean()
+        errors = {}
+
+        if (
+            self.estimated_tender_start
+            and self.estimated_tender_end
+            and self.estimated_tender_end < self.estimated_tender_start
+        ):
+            errors["estimated_tender_end"] = (
+                "The estimated tender end must be on or after the start date."
+            )
+
+        previous = None
+        if self.pk:
+            previous = type(self).objects.filter(pk=self.pk).first()
+
+        if not self.pk and self.status != self.Status.DRAFT:
+            errors["status"] = (
+                "Create the batch as draft, add SKU allocations, then open it."
+            )
+
+        if previous:
+            allowed_transitions = {
+                self.Status.DRAFT: {self.Status.DRAFT, self.Status.OPEN},
+                self.Status.OPEN: {
+                    self.Status.OPEN,
+                    self.Status.PAUSED,
+                    self.Status.CLOSED,
+                },
+                self.Status.PAUSED: {
+                    self.Status.PAUSED,
+                    self.Status.OPEN,
+                    self.Status.CLOSED,
+                },
+                self.Status.CLOSED: {self.Status.CLOSED},
+            }
+            if self.status not in allowed_transitions[previous.status]:
+                errors["status"] = (
+                    f"A {previous.get_status_display().lower()} batch cannot "
+                    f"transition to {self.get_status_display().lower()}."
+                )
+
+            promised_dates_changed = (
+                previous.estimated_tender_start != self.estimated_tender_start
+                or previous.estimated_tender_end != self.estimated_tender_end
+            )
+            if previous.committed_quantity and promised_dates_changed:
+                errors["estimated_tender_start"] = (
+                    "The shipping window is locked after the first confirmed payment."
+                )
+
+        if self.status in [self.Status.OPEN, self.Status.PAUSED] and self.pk:
+            active_variant_ids = set(
+                self.product.variants.filter(is_active=True)
+                .values_list("id", flat=True)
+            )
+            allocated_variant_ids = set(
+                self.variant_allocations.values_list("variant_id", flat=True)
+            )
+            if not active_variant_ids.issubset(allocated_variant_ids):
+                errors["status"] = (
+                    "Every active product variant must have exactly one allocation "
+                    "before the batch can open or pause."
+                )
+
+            combined_capacity = sum(
+                self.variant_allocations.values_list("capacity", flat=True)
+            )
+            if combined_capacity < self.total_capacity:
+                errors["total_capacity"] = (
+                    "Total capacity cannot exceed combined SKU capacity."
+                )
+
+        if errors:
+            raise ValidationError(errors)
+
+    def save(self, *args, **kwargs):
+        self.full_clean()
+        return super().save(*args, **kwargs)
+
+    def __str__(self):
+        return f"{self.code} — {self.product.name} ({self.get_status_display()})"
+
+
+class PreorderVariantAllocation(models.Model):
+    batch = models.ForeignKey(
+        PreorderBatch,
+        on_delete=models.PROTECT,
+        related_name="variant_allocations",
+    )
+    variant = models.ForeignKey(
+        ProductVariant,
+        on_delete=models.PROTECT,
+        related_name="preorder_allocations",
+    )
+    capacity = models.PositiveIntegerField()
+    committed_quantity = models.PositiveIntegerField(default=0)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ["variant_id"]
+        constraints = [
+            models.UniqueConstraint(
+                fields=["batch", "variant"],
+                name="unique_preorder_batch_variant",
+            ),
+            models.CheckConstraint(
+                condition=Q(committed_quantity__lte=models.F("capacity")),
+                name="preorder_variant_committed_within_capacity",
+            ),
+        ]
+
+    @property
+    def remaining_quantity(self):
+        return self.capacity - self.committed_quantity
+
+    def clean(self):
+        super().clean()
+        if self.pk:
+            previous = type(self).objects.filter(pk=self.pk).first()
+            if previous and previous.variant_id != self.variant_id:
+                raise ValidationError({
+                    "variant": "A batch allocation cannot be moved to another SKU."
+                })
+        if (
+            self.batch_id
+            and self.variant_id
+            and self.batch.product_id != self.variant.product_id
+        ):
+            raise ValidationError({
+                "variant": "The variant must belong to the batch product."
+            })
+
+    def save(self, *args, **kwargs):
+        self.full_clean()
+        return super().save(*args, **kwargs)
+
+    def __str__(self):
+        return f"{self.batch.code}: {self.variant.sku}"
+
+
+class PreorderBatchEvent(models.Model):
+    class EventType(models.TextChoices):
+        CREATED = "created", "Created"
+        STATUS_CHANGED = "status_changed", "Status Changed"
+        BATCH_CAPACITY_CHANGED = "batch_capacity_changed", "Batch Capacity Changed"
+        SKU_CAPACITY_CHANGED = "sku_capacity_changed", "SKU Capacity Changed"
+
+    batch = models.ForeignKey(
+        PreorderBatch,
+        on_delete=models.PROTECT,
+        related_name="events",
+    )
+    variant_allocation = models.ForeignKey(
+        PreorderVariantAllocation,
+        on_delete=models.PROTECT,
+        related_name="events",
+        blank=True,
+        null=True,
+    )
+    event_type = models.CharField(max_length=40, choices=EventType.choices)
+    previous_status = models.CharField(max_length=20, blank=True)
+    new_status = models.CharField(max_length=20, blank=True)
+    previous_capacity = models.PositiveIntegerField(blank=True, null=True)
+    new_capacity = models.PositiveIntegerField(blank=True, null=True)
+    reason = models.TextField()
+    actor = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        related_name="preorder_batch_events",
+        blank=True,
+        null=True,
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["-created_at", "-id"]
+
+    def save(self, *args, **kwargs):
+        if self.pk:
+            raise ValidationError("Preorder batch events are append-only.")
+        return super().save(*args, **kwargs)
+
+    def delete(self, *args, **kwargs):
+        raise ValidationError("Preorder batch events are append-only.")
+
+    def __str__(self):
+        return f"{self.batch.code}: {self.get_event_type_display()}"
 
 class ProductVariantComponent(models.Model):
     """

@@ -1,13 +1,79 @@
+from django import forms
+from django.conf import settings
 from django.contrib import admin
+from django.db import transaction
 from .models import (
     CompatibilityGroup,
     Part,
     PartType,
     PartVariant,
+    PreorderBatch,
+    PreorderBatchEvent,
+    PreorderVariantAllocation,
     Product,
     ProductVariant,
     ProductVariantComponent,
 )
+from .services import update_preorder_variant_capacity
+
+
+class PreorderBatchAdminForm(forms.ModelForm):
+    change_reason = forms.CharField(
+        required=False,
+        widget=forms.Textarea(attrs={"rows": 2}),
+        help_text="Required when changing an existing preorder batch.",
+    )
+
+    class Meta:
+        model = PreorderBatch
+        fields = "__all__"
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        if self.instance.pk:
+            self.fields["change_reason"].required = True
+
+
+class PreorderVariantAllocationInline(admin.TabularInline):
+    model = PreorderVariantAllocation
+    extra = 0
+    can_delete = False
+    fields = (
+        "variant",
+        "capacity",
+        "committed_quantity",
+        "remaining_display",
+    )
+    readonly_fields = (
+        "committed_quantity",
+        "remaining_display",
+    )
+    autocomplete_fields = ("variant",)
+
+    @admin.display(description="Remaining")
+    def remaining_display(self, obj):
+        return obj.remaining_quantity if obj.pk else "-"
+
+
+class PreorderBatchEventInline(admin.TabularInline):
+    model = PreorderBatchEvent
+    extra = 0
+    can_delete = False
+    fields = (
+        "event_type",
+        "variant_allocation",
+        "previous_status",
+        "new_status",
+        "previous_capacity",
+        "new_capacity",
+        "reason",
+        "actor",
+        "created_at",
+    )
+    readonly_fields = fields
+
+    def has_add_permission(self, request, obj=None):
+        return False
 
 class ProductVariantComponentInline(admin.TabularInline):
     model = ProductVariantComponent
@@ -153,6 +219,7 @@ class ProductAdmin(admin.ModelAdmin):
         "price",
         "sale_price",
         "total_stock_display",
+        "preorder_status_display",
         "is_active",
         "is_featured",
     )
@@ -175,6 +242,16 @@ class ProductAdmin(admin.ModelAdmin):
     @admin.display(description="Total Variant Stock")
     def total_stock_display(self, obj):
         return obj.total_stock()
+
+    @admin.display(description="Preorder")
+    def preorder_status_display(self, obj):
+        batch = obj.preorder_batches.filter(
+            status__in=[
+                PreorderBatch.Status.OPEN,
+                PreorderBatch.Status.PAUSED,
+            ]
+        ).first()
+        return batch.get_status_display() if batch else "Stocked"
 
 @admin.register(CompatibilityGroup)
 class CompatibilityGroupAdmin(admin.ModelAdmin):
@@ -273,3 +350,204 @@ class ProductVariantComponentAdmin(admin.ModelAdmin):
         "part_type",
         "part_variant",
     )
+
+
+@admin.register(PreorderBatch)
+class PreorderBatchAdmin(admin.ModelAdmin):
+    form = PreorderBatchAdminForm
+    list_display = (
+        "code",
+        "product",
+        "status",
+        "estimated_tender_start",
+        "estimated_tender_end",
+        "total_capacity",
+        "committed_quantity",
+        "remaining_display",
+        "paid_shortfall_count",
+    )
+    list_filter = ("status", "estimated_tender_start")
+    search_fields = ("code", "product__name", "product__slug")
+    list_select_related = ("product",)
+    inlines = (
+        PreorderVariantAllocationInline,
+        PreorderBatchEventInline,
+    )
+    readonly_fields = (
+        "committed_quantity",
+        "created_at",
+        "updated_at",
+    )
+
+    @admin.display(description="Remaining")
+    def remaining_display(self, obj):
+        return obj.remaining_quantity
+
+    @admin.display(description="Paid shortfalls")
+    def paid_shortfall_count(self, obj):
+        if not settings.IS_COMMERCE_MODE:
+            return 0
+        from web.orders.models import InventoryAllocation
+
+        return InventoryAllocation.objects.filter(
+            order__preorder_batch=obj,
+            status__in=[
+                InventoryAllocation.Status.REVIEW_REQUIRED,
+                InventoryAllocation.Status.REFUND_PENDING,
+                InventoryAllocation.Status.REFUNDED,
+            ],
+        ).count()
+
+    def get_readonly_fields(self, request, obj=None):
+        fields = list(super().get_readonly_fields(request, obj))
+        if obj is not None:
+            fields.extend(["code", "product"])
+        if obj is not None and obj.has_confirmed_payments:
+            fields.extend([
+                "estimated_tender_start",
+                "estimated_tender_end",
+            ])
+        return tuple(fields)
+
+    @transaction.atomic
+    def save_model(self, request, obj, form, change):
+        reason = (form.cleaned_data.get("change_reason") or "").strip()
+        request._preorder_change_reason = reason
+
+        if not change:
+            super().save_model(request, obj, form, change)
+            PreorderBatchEvent.objects.create(
+                batch=obj,
+                event_type=PreorderBatchEvent.EventType.CREATED,
+                reason="Preorder batch created.",
+                actor=request.user,
+            )
+            return
+
+        previous = PreorderBatch.objects.select_for_update().get(pk=obj.pk)
+        previous_status = previous.status
+        previous_capacity = previous.total_capacity
+        super().save_model(request, obj, form, change)
+
+        if obj.status != previous_status:
+            PreorderBatchEvent.objects.create(
+                batch=obj,
+                event_type=PreorderBatchEvent.EventType.STATUS_CHANGED,
+                previous_status=previous_status,
+                new_status=obj.status,
+                reason=reason,
+                actor=request.user,
+            )
+        if obj.total_capacity != previous_capacity:
+            PreorderBatchEvent.objects.create(
+                batch=obj,
+                event_type=PreorderBatchEvent.EventType.BATCH_CAPACITY_CHANGED,
+                previous_capacity=previous_capacity,
+                new_capacity=obj.total_capacity,
+                reason=reason,
+                actor=request.user,
+            )
+
+    @transaction.atomic
+    def save_formset(self, request, form, formset, change):
+        if formset.model is not PreorderVariantAllocation:
+            return super().save_formset(request, form, formset, change)
+
+        instances = formset.save(commit=False)
+        reason = getattr(request, "_preorder_change_reason", "")
+
+        for instance in instances:
+            matching_form = next(
+                item_form
+                for item_form in formset.forms
+                if item_form.instance is instance
+            )
+            if instance.pk and "capacity" in matching_form.changed_data:
+                update_preorder_variant_capacity(
+                    instance,
+                    new_capacity=instance.capacity,
+                    actor=request.user,
+                    reason=reason,
+                )
+            else:
+                instance.save()
+
+        formset.save_m2m()
+        form.instance.full_clean()
+
+    def has_add_permission(self, request):
+        return request.user.is_superuser
+
+    def has_change_permission(self, request, obj=None):
+        return request.user.is_superuser
+
+    def has_delete_permission(self, request, obj=None):
+        return False
+
+
+@admin.register(PreorderVariantAllocation)
+class PreorderVariantAllocationAdmin(admin.ModelAdmin):
+    list_display = (
+        "batch",
+        "variant",
+        "capacity",
+        "committed_quantity",
+        "remaining_display",
+    )
+    list_filter = ("batch__status", "batch")
+    search_fields = ("batch__code", "variant__sku", "variant__product__name")
+    list_select_related = ("batch", "variant", "variant__product")
+    readonly_fields = ("committed_quantity", "created_at", "updated_at")
+
+    @admin.display(description="Remaining")
+    def remaining_display(self, obj):
+        return obj.remaining_quantity
+
+    def get_readonly_fields(self, request, obj=None):
+        fields = list(super().get_readonly_fields(request, obj))
+        if obj is not None:
+            fields.extend(["batch", "variant", "capacity"])
+        return tuple(fields)
+
+    def has_add_permission(self, request):
+        return request.user.is_superuser
+
+    def has_change_permission(self, request, obj=None):
+        return request.user.is_superuser
+
+    def has_delete_permission(self, request, obj=None):
+        return False
+
+
+@admin.register(PreorderBatchEvent)
+class PreorderBatchEventAdmin(admin.ModelAdmin):
+    list_display = (
+        "batch",
+        "event_type",
+        "variant_allocation",
+        "actor",
+        "created_at",
+    )
+    list_filter = ("event_type", "created_at")
+    search_fields = ("batch__code", "reason", "actor__username")
+    readonly_fields = (
+        "batch",
+        "variant_allocation",
+        "event_type",
+        "previous_status",
+        "new_status",
+        "previous_capacity",
+        "new_capacity",
+        "reason",
+        "actor",
+        "created_at",
+    )
+
+    def has_add_permission(self, request):
+        return False
+
+    def has_change_permission(self, request, obj=None):
+        return False
+
+    def has_delete_permission(self, request, obj=None):
+        return False

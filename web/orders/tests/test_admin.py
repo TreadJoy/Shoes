@@ -63,8 +63,8 @@ class InventoryReviewAdminTests(TestCase):
             sku=variant.sku,
             required_quantity=1,
             allocated_quantity=0,
-            stock_before=0,
-            stock_after=0,
+            variant_available_before=0,
+            variant_available_after=0,
         )
 
     def test_review_queue_shows_shortage_and_overdue_filter(self):

@@ -66,6 +66,14 @@
                 {{ payment.get_status_display }}
             </p>
         {% endif %}
+
+        {% if order.fulfillment_type == "preorder" %}
+            <p>
+                <strong>Preorder</strong> — estimated to ship
+                {{ order.estimated_tender_start|date:"M j" }}–{{ order.estimated_tender_end|date:"M j, Y" }}.
+                Delivery time begins after the package is handed to the carrier.
+            </p>
+        {% endif %}
     </div>
 
     <h2>Items</h2>
@@ -83,6 +91,13 @@
             <p>
                 Quantity: {{ item.quantity }}
             </p>
+
+            {% if item.fulfillment_type == "preorder" %}
+                <p>
+                    Preorder batch {{ item.preorder_batch_code }} — estimated to ship
+                    {{ item.estimated_tender_start|date:"M j" }}–{{ item.estimated_tender_end|date:"M j, Y" }}.
+                </p>
+            {% endif %}
 
             <p>
                 Unit price: ${{ item.unit_price|floatformat:2 }}

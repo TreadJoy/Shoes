@@ -140,8 +140,8 @@ class StripePaymentWebhookTests(TestCase):
         )
         self.assertEqual(allocation_item.required_quantity, 2)
         self.assertEqual(allocation_item.allocated_quantity, 2)
-        self.assertEqual(allocation_item.stock_before, 10)
-        self.assertEqual(allocation_item.stock_after, 8)
+        self.assertEqual(allocation_item.variant_available_before, 10)
+        self.assertEqual(allocation_item.variant_available_after, 8)
         self.assertTrue(stripe_event.processed)
         self.assertIsNotNone(stripe_event.processed_at)
 
@@ -225,8 +225,8 @@ class StripePaymentWebhookTests(TestCase):
         self.assertIsNotNone(allocation.review_due_at)
         self.assertEqual(allocation_item.required_quantity, 2)
         self.assertEqual(allocation_item.allocated_quantity, 0)
-        self.assertEqual(allocation_item.stock_before, 1)
-        self.assertEqual(allocation_item.stock_after, 1)
+        self.assertEqual(allocation_item.variant_available_before, 1)
+        self.assertEqual(allocation_item.variant_available_after, 1)
         self.assertTrue(stripe_event.processed)
 
     def test_missing_order_metadata_does_not_change_business_records(self):

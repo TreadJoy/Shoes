@@ -16,6 +16,10 @@ from django.views.decorators.csrf import csrf_exempt
 
 from web.cart.views import get_or_create_cart
 from web.cart.models import CartItem
+from web.products.services import (
+    AvailabilityError,
+    validate_cart_items_for_checkout,
+)
 
 from .models import (
     Order,
@@ -157,29 +161,10 @@ def checkout(request):
                     messages.error(request, "Your cart is empty.")
                     return redirect("cart:cart_detail")
 
-                for cart_item in cart_items:
-                    if cart_item.variant is None:
-                        raise ValueError(
-                            "This cart item does not have a valid size/color option."
-                        )
-
-                    variant = cart_item.variant
-
-                    if not variant.is_active:
-                        raise ValueError(
-                            f"{variant.product.name} — {variant.color}, Size {variant.size} is no longer available."
-                        )
-
-                    if not variant.product.is_active:
-                        raise ValueError(
-                            f"{variant.product.name} is currently unavailable."
-                        )
-
-                    if cart_item.quantity > variant.stock_quantity:
-                        raise ValueError(
-                            f"Only {variant.stock_quantity} of "
-                            f"{variant.product.name} — {variant.color}, Size {variant.size} available."
-                        )
+                cart_availability = validate_cart_items_for_checkout(
+                    cart_items
+                )
+                preorder_batch = cart_availability.preorder_batch
 
                 order_line_total = sum(
                     cart_item.line_total()
@@ -203,6 +188,18 @@ def checkout(request):
                     email=shipping_address.email,
                     full_name=shipping_address.full_name,
                     status=Order.Status.PENDING_PAYMENT,
+                    fulfillment_type=cart_availability.fulfillment_type,
+                    preorder_batch=preorder_batch,
+                    estimated_tender_start=(
+                        preorder_batch.estimated_tender_start
+                        if preorder_batch is not None
+                        else None
+                    ),
+                    estimated_tender_end=(
+                        preorder_batch.estimated_tender_end
+                        if preorder_batch is not None
+                        else None
+                    ),
                     subtotal=order_line_total,
                     shipping_total=Decimal("0.00"),
                     tax_total=Decimal("0.00"),
@@ -233,6 +230,23 @@ def checkout(request):
                         order=order,
                         product=variant.product,
                         variant=variant,
+                        fulfillment_type=cart_availability.fulfillment_type,
+                        preorder_batch=preorder_batch,
+                        preorder_batch_code=(
+                            preorder_batch.code
+                            if preorder_batch is not None
+                            else ""
+                        ),
+                        estimated_tender_start=(
+                            preorder_batch.estimated_tender_start
+                            if preorder_batch is not None
+                            else None
+                        ),
+                        estimated_tender_end=(
+                            preorder_batch.estimated_tender_end
+                            if preorder_batch is not None
+                            else None
+                        ),
                         product_name=variant.product.name,
                         sku=variant.sku,
                         size=variant.size,
@@ -246,7 +260,7 @@ def checkout(request):
                 # Do not clear the cart here yet.
                 # Stripe webhook will handle that after payment succeeds.
 
-        except ValueError as error:
+        except (AvailabilityError, ValueError) as error:
             messages.error(request, str(error))
             return redirect("cart:cart_detail")
 
@@ -371,17 +385,30 @@ def build_stripe_line_items(order):
         "variant",
         "variant__product",
     ):
+        product_data = {
+            "name": item.product_name,
+            "metadata": {
+                "sku": item.sku,
+                "size": item.size,
+                "color": item.color,
+                "fulfillment_type": item.fulfillment_type,
+            },
+        }
+        if item.fulfillment_type == Order.FulfillmentType.PREORDER:
+            product_data["description"] = (
+                "Preorder — estimated to ship "
+                f"{item.estimated_tender_start:%b %d}–"
+                f"{item.estimated_tender_end:%b %d, %Y}. "
+                "Delivery time begins after the package is handed to the carrier."
+            )
+            product_data["metadata"]["preorder_batch"] = (
+                item.preorder_batch_code
+            )
+
         line_items.append({
             "price_data": {
                 "currency": "usd",
-                "product_data": {
-                    "name": item.product_name,
-                    "metadata": {
-                        "sku": item.sku,
-                        "size": item.size,
-                        "color": item.color,
-                    },
-                },
+                "product_data": product_data,
                 "unit_amount": int(item.unit_price * 100),
             },
             "quantity": item.quantity,
