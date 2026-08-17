@@ -7,15 +7,31 @@
 <div class="survey-page">
 
     <div class="survey-card">
-        <p class="eyebrow">Question {{ question_number }}</p>
+        <p class="eyebrow">Question {{ question_number }} of {{ total_questions }}</p>
 
         <h1>Survey Question {{ question_number }}</h1>
 
-        <p>The real survey question content will go here.</p>
+        <form method="post" class="survey-form">
+            {% csrf_token %}
 
-        <a href="{% url 'survey:survey_thank_you' %}" class="btn-primary">
-            Finish Survey
-        </a>
+            {{ form.non_field_errors }}
+
+            {% for field in form %}
+                <div class="form-group">
+                    {{ field.label_tag }}
+                    {{ field }}
+                    {{ field.errors }}
+                </div>
+            {% endfor %}
+
+            <button type="submit" class="btn-primary">
+                {% if question_number == total_questions %}
+                    Finish Survey
+                {% else %}
+                    Next Question
+                {% endif %}
+            </button>
+        </form>
     </div>
 
 </div>

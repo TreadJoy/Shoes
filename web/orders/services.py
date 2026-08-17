@@ -7,6 +7,7 @@ from django.db import transaction
 from django.db.models import Min, Sum
 from django.utils import timezone
 
+from web.cart.models import CartItem
 from web.products.models import (
     PreorderBatch,
     PreorderVariantAllocation,
@@ -52,6 +53,50 @@ def next_inventory_review_deadline(detected_at=None):
         tzinfo=BUSINESS_TIME_ZONE,
     )
     return local_deadline.astimezone(datetime_timezone.utc)
+
+
+@transaction.atomic
+def reconcile_paid_order_cart(order):
+    locked_order = Order.objects.select_for_update().get(pk=order.pk)
+
+    if locked_order.cart_reconciled_at is not None:
+        return False
+
+    if locked_order.source_cart_id is not None:
+        purchased_items = (
+            locked_order.items
+            .exclude(variant_id__isnull=True)
+            .values("variant_id", "preorder_batch_id")
+            .annotate(purchased_quantity=Sum("quantity"))
+            .order_by("variant_id")
+        )
+
+        for purchased_item in purchased_items:
+            cart_item = (
+                CartItem.objects.select_for_update()
+                .filter(
+                    cart_id=locked_order.source_cart_id,
+                    variant_id=purchased_item["variant_id"],
+                    preorder_batch_id=purchased_item["preorder_batch_id"],
+                    added_at__lte=locked_order.created_at,
+                )
+                .first()
+            )
+
+            if cart_item is None:
+                continue
+
+            purchased_quantity = purchased_item["purchased_quantity"]
+            if cart_item.quantity > purchased_quantity:
+                cart_item.quantity -= purchased_quantity
+                cart_item.save(update_fields=["quantity"])
+            else:
+                cart_item.delete()
+
+    locked_order.cart_reconciled_at = timezone.now()
+    locked_order.save(update_fields=["cart_reconciled_at", "updated_at"])
+    order.cart_reconciled_at = locked_order.cart_reconciled_at
+    return True
 
 
 @transaction.atomic

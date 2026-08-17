@@ -58,6 +58,14 @@ class Order(models.Model):
         null=True,
         related_name="orders",
     )
+    source_cart = models.ForeignKey(
+        "cart.Cart",
+        on_delete=models.SET_NULL,
+        blank=True,
+        null=True,
+        related_name="checkout_orders",
+    )
+    cart_reconciled_at = models.DateTimeField(blank=True, null=True)
     email = models.EmailField(
         blank=True
     )
@@ -732,7 +740,7 @@ class Payment(models.Model):
     updated_at = models.DateTimeField(auto_now=True)
 
     def __str__(self):
-        return f"Payment for Order #{self.id} - {self.status}"
+        return f"Payment for Order #{self.order_id} - {self.status}"
 
 
 class Refund(models.Model):

@@ -1,5 +1,6 @@
 from django.contrib.auth import login
 from django.contrib.auth.models import User
+from django.conf import settings
 from django.shortcuts import render, redirect
 from django.utils.encoding import force_str
 from django.utils.http import urlsafe_base64_decode
@@ -8,7 +9,7 @@ from .tokens import account_activation_token
 
 
 def signup_view(request):
-    return render(request, "account/signup.html")
+    return redirect("account_signup")
 
 
 def activate(request, uidb64, token):
@@ -21,7 +22,11 @@ def activate(request, uidb64, token):
     if user is not None and account_activation_token.check_token(user, token):
         user.is_active = True
         user.save()
-        login(request, user)
+        login(
+            request,
+            user,
+            backend=settings.AUTHENTICATION_BACKENDS[0],
+        )
         return redirect("core:home")
 
     return render(request, "account/activate.html", {

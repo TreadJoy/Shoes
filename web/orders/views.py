@@ -15,12 +15,12 @@ from django.utils import timezone
 from django.views.decorators.csrf import csrf_exempt
 
 from web.cart.views import get_or_create_cart
-from web.cart.models import CartItem
 from web.products.services import (
     AvailabilityError,
     validate_cart_items_for_checkout,
 )
 
+from .forms import CheckoutForm
 from .models import (
     Order,
     OrderItem,
@@ -32,6 +32,7 @@ from .models import (
 from .services import (
     UnmatchedRefundPaymentError,
     allocate_inventory_for_paid_order,
+    reconcile_paid_order_cart,
     synchronize_refund,
 )
 
@@ -48,6 +49,7 @@ def create_order_status_event(order, from_status, to_status, note=""):
         note=note,
     )
 
+@transaction.atomic
 def mark_order_as_paid(
     order,
     *,
@@ -59,6 +61,7 @@ def mark_order_as_paid(
     raw_response=None,
     status_note="Payment succeeded.",
 ):
+    order = Order.objects.select_for_update().get(pk=order.pk)
     logger.info("mark_order_as_paid called for order %s.", order.id)
     logger.info("order status before payment update: %s", order.status)
 
@@ -68,6 +71,7 @@ def mark_order_as_paid(
     ).exists()
 
     if order.status == Order.Status.PAID or payment_already_recorded:
+        reconcile_paid_order_cart(order)
         return False
 
     previous_status = order.status
@@ -115,6 +119,7 @@ def mark_order_as_paid(
     )
 
     allocate_inventory_for_paid_order(order)
+    reconcile_paid_order_cart(order)
 
     return True
 
@@ -124,28 +129,13 @@ def checkout(request):
     if cart.items.count() == 0:
         return redirect("cart:cart_detail")
 
+    form = CheckoutForm(request.POST or None)
+
     if request.method == "POST":
-        required_fields = [
-            "full_name",
-            "email",
-            "address_line_1",
-            "city",
-            "state",
-            "postal_code",
-        ]
-
-        missing_fields = [
-            field for field in required_fields
-            if not request.POST.get(field)
-        ]
-
-        if missing_fields:
-            messages.error(
-                request,
-                "Please fill out all required shipping fields.",
-            )
+        if not form.is_valid():
             return render(request, "orders/checkout.html", {
                 "cart": cart,
+                "form": form,
             })
 
         try:
@@ -173,18 +163,19 @@ def checkout(request):
 
                 shipping_address = ShippingAddress.objects.create(
                     user=request.user if request.user.is_authenticated else None,
-                    full_name=request.POST.get("full_name", "").strip(),
-                    email=request.POST.get("email", "").strip(),
-                    address_line_1=request.POST.get("address_line_1", "").strip(),
-                    address_line_2=request.POST.get("address_line_2", "").strip(),
-                    city=request.POST.get("city", "").strip(),
-                    state=request.POST.get("state", "").strip(),
-                    postal_code=request.POST.get("postal_code", "").strip(),
+                    full_name=form.cleaned_data["full_name"],
+                    email=form.cleaned_data["email"],
+                    address_line_1=form.cleaned_data["address_line_1"],
+                    address_line_2=form.cleaned_data["address_line_2"],
+                    city=form.cleaned_data["city"],
+                    state=form.cleaned_data["state"],
+                    postal_code=form.cleaned_data["postal_code"],
                 )
 
                 order = Order.objects.create(
                     user=request.user if request.user.is_authenticated else None,
                     shipping_address=shipping_address,
+                    source_cart=cart,
                     email=shipping_address.email,
                     full_name=shipping_address.full_name,
                     status=Order.Status.PENDING_PAYMENT,
@@ -291,9 +282,6 @@ def checkout(request):
                 automatic_tax={
                     "enabled": False,
                 },
-                shipping_address_collection={
-                    "allowed_countries": ["US"],
-                }
             )
         except stripe.error.StripeError as error:
 
@@ -312,6 +300,7 @@ def checkout(request):
 
     return render(request, "orders/checkout.html", {
         "cart": cart,
+        "form": form,
     })
 def order_success(request, order_id):
     order = get_object_or_404(
@@ -342,9 +331,6 @@ def order_success(request, order_id):
         and payment.status == Payment.Status.SUCCEEDED
     )
     is_refunded = order.status == Order.Status.REFUNDED
-
-    if is_paid:
-        remove_paid_order_items_from_cart(request, order)
 
     return render(
         request,
@@ -565,21 +551,6 @@ def handle_payment_intent_succeeded(payment_intent):
         raw_response=payment_intent,
         status_note="Stripe payment intent succeeded.",
     )
-
-def remove_paid_order_items_from_cart(request, order):
-    cart = get_or_create_cart(request)
-
-    purchased_variant_ids = order.items.exclude(
-        variant__isnull=True
-    ).values_list(
-        "variant_id",
-        flat=True
-    )
-
-    CartItem.objects.filter(
-        cart=cart,
-        variant_id__in=purchased_variant_ids,
-    ).delete()
 
 @login_required
 def order_list(request):

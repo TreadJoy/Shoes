@@ -1,8 +1,10 @@
 {% extends "base.html" %}
 
-{% if not is_paid and not is_refunded %}
-    <meta http-equiv="refresh" content="3">
-{% endif %}
+{% block extra_head %}
+    {% if not is_paid and not is_refunded %}
+        <meta http-equiv="refresh" content="3">
+    {% endif %}
+{% endblock %}
 
 {% block content %}
     <section class="order-success-page">

@@ -1,24 +1,16 @@
 from django.contrib import messages
 from django.shortcuts import render, redirect
+from .forms import WaitlistSignupForm
 from .models import WaitlistSignup
 
 
 def join_waitlist(request):
-    if request.method == "POST":
-        email = request.POST.get("email", "").strip().lower()
-        first_name = request.POST.get("first_name", "").strip()
+    form = WaitlistSignupForm(request.POST or None)
 
-        if not email:
-            messages.error(request, "Please enter an email address.")
-            return redirect("waitlist:join_waitlist")
-
-        if "@" not in email or "." not in email:
-            messages.error(request, "Please enter a valid email address.")
-            return redirect("waitlist:join_waitlist")
-
+    if request.method == "POST" and form.is_valid():
         signup, created = WaitlistSignup.objects.get_or_create(
-            email=email,
-            defaults={"first_name": first_name},
+            email=form.cleaned_data["email"],
+            defaults={"first_name": form.cleaned_data["first_name"]},
         )
 
         if created:
@@ -31,5 +23,6 @@ def join_waitlist(request):
     signup_count = WaitlistSignup.objects.count()
 
     return render(request, "waitlist/join_waitlist.html", {
+        "form": form,
         "signup_count": signup_count,
     })

@@ -73,10 +73,7 @@ class CartItem(models.Model):
         ]
 
     def unit_price(self):
-        if self.variant is not None:
-            return self.variant.current_price()
-
-        return self.product.current_price()
+        return self.variant.current_price()
 
     def line_total(self):
         return self.unit_price() * self.quantity
@@ -97,4 +94,4 @@ class CartItem(models.Model):
         return self.variant.color
 
     def __str__(self):
-        return f"{self.quantity} x {self.product.name}"
+        return f"{self.quantity} x {self.variant.product.name}"

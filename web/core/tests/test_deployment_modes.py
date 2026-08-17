@@ -76,6 +76,9 @@ else:
     assert "web.cart.models" not in sys.modules
     assert "web.orders.models" not in sys.modules
     assert "stripe" not in sys.modules
+    assert reverse("products:product_list") == "/products/"
+    assert reverse("survey:survey_welcome") == "/survey/"
+    assert reverse("waitlist:join_waitlist") == "/waitlist/join/"
 
     from django.contrib.auth.models import AnonymousUser
     from django.contrib.messages.storage.fallback import FallbackStorage
@@ -91,6 +94,17 @@ else:
     home_html = render_to_string("home.html", request=request)
     assert 'href="/cart/' not in home_html
     assert 'href="/orders/' not in home_html
+
+    survey_html = render_to_string("survey/survey_welcome.html", request=request)
+    waitlist_html = render_to_string(
+        "waitlist/join_waitlist.html",
+        {"signup_count": 0},
+        request=request,
+    )
+    assert "Start Survey" in survey_html
+    assert "Join the TreadJoy Waitlist" in waitlist_html
+    assert 'href="/cart/' not in survey_html + waitlist_html
+    assert 'href="/orders/' not in survey_html + waitlist_html
 
     class ResearchUser:
         is_authenticated = True

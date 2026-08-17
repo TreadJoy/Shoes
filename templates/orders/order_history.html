@@ -22,7 +22,7 @@
                     </div>
 
                     <div class="order-card-summary">
-                        <p><strong>Total:</strong> ${{ order.total }}</p>
+                        <p><strong>Total:</strong> ${{ order.grand_total|floatformat:2 }}</p>
                         <p><strong>Items:</strong> {{ order.total_items }}</p>
 
                         <a href="{% url 'orders:order_detail' order.id %}" class="btn-secondary">

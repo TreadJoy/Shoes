@@ -18,40 +18,49 @@
 
             <h2>Shipping Information</h2>
 
+            {{ form.non_field_errors }}
+
             <div class="form-group">
-                <label for="full_name">Full Name</label>
-                <input type="text" name="full_name" id="full_name" required>
+                {{ form.full_name.label_tag }}
+                {{ form.full_name }}
+                {{ form.full_name.errors }}
             </div>
 
             <div class="form-group">
-                <label for="email">Email</label>
-                <input type="email" name="email" id="email" required>
+                {{ form.email.label_tag }}
+                {{ form.email }}
+                {{ form.email.errors }}
             </div>
 
             <div class="form-group">
-                <label for="address_line_1">Address</label>
-                <input type="text" name="address_line_1" id="address_line_1" required>
+                {{ form.address_line_1.label_tag }}
+                {{ form.address_line_1 }}
+                {{ form.address_line_1.errors }}
             </div>
 
             <div class="form-group">
-                <label for="address_line_2">Apartment, suite, etc.</label>
-                <input type="text" name="address_line_2" id="address_line_2">
+                {{ form.address_line_2.label_tag }}
+                {{ form.address_line_2 }}
+                {{ form.address_line_2.errors }}
             </div>
 
             <div class="form-row">
                 <div class="form-group">
-                    <label for="city">City</label>
-                    <input type="text" name="city" id="city" required>
+                    {{ form.city.label_tag }}
+                    {{ form.city }}
+                    {{ form.city.errors }}
                 </div>
 
                 <div class="form-group">
-                    <label for="state">State</label>
-                    <input type="text" name="state" id="state" required>
+                    {{ form.state.label_tag }}
+                    {{ form.state }}
+                    {{ form.state.errors }}
                 </div>
 
                 <div class="form-group">
-                    <label for="postal_code">ZIP Code</label>
-                    <input type="text" name="postal_code" id="postal_code" required>
+                    {{ form.postal_code.label_tag }}
+                    {{ form.postal_code }}
+                    {{ form.postal_code.errors }}
                 </div>
             </div>
 
