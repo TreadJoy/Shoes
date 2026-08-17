@@ -1,12 +1,18 @@
 {% extends "base.html" %}
 
-{% if not is_paid %}
+{% if not is_paid and not is_refunded %}
     <meta http-equiv="refresh" content="3">
 {% endif %}
 
 {% block content %}
     <section class="order-success-page">
-        {% if is_paid %}
+        {% if is_refunded %}
+            <h1>Your order has been refunded</h1>
+
+            <p>
+                Your refund was confirmed. TreadJoy will contact you with details.
+            </p>
+        {% elif is_paid %}
             <h1>Thank you for your order!</h1>
 
             <p>
@@ -90,7 +96,7 @@
         <p>No order items found.</p>
     {% endfor %}
 
-    {% if not is_paid %}
+    {% if not is_paid and not is_refunded %}
         <p>
             Refresh this page in a few seconds if your payment has already completed.
         </p>

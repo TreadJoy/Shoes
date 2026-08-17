@@ -5,8 +5,12 @@ from threading import Barrier
 from django.db import close_old_connections, connections
 from django.test import TestCase, TransactionTestCase
 
-from web.orders.models import Order, OrderItem
-from web.orders.views import reduce_inventory_for_order
+from web.orders.models import (
+    InventoryAllocation,
+    Order,
+    OrderItem,
+)
+from web.orders.services import allocate_inventory_for_paid_order
 from web.products.models import Product, ProductVariant
 
 
@@ -76,16 +80,27 @@ class InventoryAllocationTests(InventoryTestDataMixin, TestCase):
             quantity=1,
         )
 
-        with self.assertRaisesRegex(
-            ValueError,
-            f"Not enough inventory for {unavailable_variant.sku}",
-        ):
-            reduce_inventory_for_order(order)
+        allocation = allocate_inventory_for_paid_order(order)
 
         available_variant.refresh_from_db()
         unavailable_variant.refresh_from_db()
         self.assertEqual(available_variant.stock_quantity, 3)
         self.assertEqual(unavailable_variant.stock_quantity, 0)
+        self.assertEqual(
+            allocation.status,
+            InventoryAllocation.Status.REVIEW_REQUIRED,
+        )
+        self.assertIsNotNone(allocation.review_due_at)
+        audit_items = {
+            item.variant_id: item
+            for item in allocation.items.all()
+        }
+        self.assertEqual(audit_items[available_variant.id].stock_before, 3)
+        self.assertEqual(audit_items[available_variant.id].stock_after, 3)
+        self.assertEqual(audit_items[available_variant.id].allocated_quantity, 0)
+        self.assertEqual(audit_items[unavailable_variant.id].stock_before, 0)
+        self.assertEqual(audit_items[unavailable_variant.id].stock_after, 0)
+        self.assertEqual(audit_items[unavailable_variant.id].allocated_quantity, 0)
 
     def test_multiple_order_lines_for_one_variant_are_combined(self):
         variant = self.create_variant(
@@ -98,10 +113,37 @@ class InventoryAllocationTests(InventoryTestDataMixin, TestCase):
         self.add_order_item(order=order, variant=variant, quantity=2)
         self.add_order_item(order=order, variant=variant, quantity=1)
 
-        reduce_inventory_for_order(order)
+        allocation = allocate_inventory_for_paid_order(order)
 
         variant.refresh_from_db()
         self.assertEqual(variant.stock_quantity, 2)
+        self.assertEqual(
+            allocation.status,
+            InventoryAllocation.Status.ALLOCATED,
+        )
+        audit_item = allocation.items.get()
+        self.assertEqual(audit_item.required_quantity, 3)
+        self.assertEqual(audit_item.allocated_quantity, 3)
+        self.assertEqual(audit_item.stock_before, 5)
+        self.assertEqual(audit_item.stock_after, 2)
+
+    def test_repeated_allocation_is_idempotent(self):
+        variant = self.create_variant(
+            sku="TJ-INVENTORY-100-WHT",
+            size="10",
+            color="White",
+            stock_quantity=4,
+        )
+        order = self.create_order()
+        self.add_order_item(order=order, variant=variant, quantity=1)
+
+        first = allocate_inventory_for_paid_order(order)
+        second = allocate_inventory_for_paid_order(order)
+
+        variant.refresh_from_db()
+        self.assertEqual(first.pk, second.pk)
+        self.assertEqual(variant.stock_quantity, 3)
+        self.assertEqual(InventoryAllocation.objects.filter(order=order).count(), 1)
 
 
 class ConcurrentInventoryAllocationTests(
@@ -121,10 +163,8 @@ class ConcurrentInventoryAllocationTests(
         try:
             order = Order.objects.get(pk=order_id)
             start_barrier.wait(timeout=5)
-            reduce_inventory_for_order(order)
-            return "allocated"
-        except ValueError:
-            return "insufficient"
+            allocation = allocate_inventory_for_paid_order(order)
+            return allocation.status
         finally:
             connections.close_all()
 
@@ -161,5 +201,11 @@ class ConcurrentInventoryAllocationTests(
             results = [future.result(timeout=10) for future in futures]
 
         variant.refresh_from_db()
-        self.assertCountEqual(results, ["allocated", "insufficient"])
+        self.assertCountEqual(
+            results,
+            [
+                InventoryAllocation.Status.ALLOCATED,
+                InventoryAllocation.Status.REVIEW_REQUIRED,
+            ],
+        )
         self.assertEqual(variant.stock_quantity, 0)

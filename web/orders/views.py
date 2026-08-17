@@ -7,7 +7,6 @@ from django.contrib.auth.decorators import login_required
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib import messages
 from django.db import transaction
-from django.db.models import Sum
 from django.core.exceptions import PermissionDenied
 from django.conf import settings
 from django.urls import reverse
@@ -17,7 +16,6 @@ from django.views.decorators.csrf import csrf_exempt
 
 from web.cart.views import get_or_create_cart
 from web.cart.models import CartItem
-from web.products.models import ProductVariant
 
 from .models import (
     Order,
@@ -26,6 +24,11 @@ from .models import (
     ShippingAddress,
     Payment,
     StripeEvent
+)
+from .services import (
+    UnmatchedRefundPaymentError,
+    allocate_inventory_for_paid_order,
+    synchronize_refund,
 )
 
 stripe.api_key = settings.STRIPE_SECRET_KEY
@@ -107,7 +110,7 @@ def mark_order_as_paid(
         },
     )
 
-    reduce_inventory_for_order(order)
+    allocate_inventory_for_paid_order(order)
 
     return True
 
@@ -298,7 +301,9 @@ def checkout(request):
     })
 def order_success(request, order_id):
     order = get_object_or_404(
-        Order.objects.prefetch_related("items__variant"),
+        Order.objects
+        .select_related("payment")
+        .prefetch_related("items__variant"),
         id=order_id,
     )
 
@@ -317,7 +322,12 @@ def order_success(request, order_id):
     if not user_owns_order and not guest_session_owns_order:
         raise PermissionDenied
 
-    is_paid = order.status == Order.Status.PAID
+    payment = getattr(order, "payment", None)
+    is_paid = (
+        payment is not None
+        and payment.status == Payment.Status.SUCCEEDED
+    )
+    is_refunded = order.status == Order.Status.REFUNDED
 
     if is_paid:
         remove_paid_order_items_from_cart(request, order)
@@ -328,6 +338,8 @@ def order_success(request, order_id):
         {
             "order": order,
             "is_paid": is_paid,
+            "is_refunded": is_refunded,
+            "payment": payment,
         },
     )
 
@@ -438,6 +450,19 @@ def stripe_webhook(request):
             session = event_data["data"]["object"]
             handle_checkout_session_completed(session)
 
+        elif event_type in [
+            "refund.created",
+            "refund.updated",
+            "refund.failed",
+        ]:
+            refund = event_data["data"]["object"]
+
+            try:
+                synchronize_refund(refund, event_type=event_type)
+            except UnmatchedRefundPaymentError as error:
+                logger.error("Unable to match Stripe refund: %s", error)
+                return HttpResponse(status=500)
+
         stripe_event.processed = True
         stripe_event.processed_at = timezone.now()
         stripe_event.save(
@@ -528,50 +553,6 @@ def remove_paid_order_items_from_cart(request, order):
         cart=cart,
         variant_id__in=purchased_variant_ids,
     ).delete()
-
-def reduce_inventory_for_order(order):
-    with transaction.atomic():
-        requirements = list(
-            order.items
-            .exclude(variant_id__isnull=True)
-            .values("variant_id")
-            .annotate(required_quantity=Sum("quantity"))
-            .order_by("variant_id")
-        )
-
-        if not requirements:
-            return
-
-        variants = {
-            variant.id: variant
-            for variant in (
-                ProductVariant.objects
-                .select_for_update()
-                .filter(id__in=[
-                    requirement["variant_id"]
-                    for requirement in requirements
-                ])
-                .order_by("id")
-            )
-        }
-
-        for requirement in requirements:
-            variant = variants.get(requirement["variant_id"])
-
-            if variant is None:
-                raise ValueError(
-                    "An order item references an unavailable product variant."
-                )
-
-            if variant.stock_quantity < requirement["required_quantity"]:
-                raise ValueError(
-                    f"Not enough inventory for {variant.sku}."
-                )
-
-        for requirement in requirements:
-            variant = variants[requirement["variant_id"]]
-            variant.stock_quantity -= requirement["required_quantity"]
-            variant.save(update_fields=["stock_quantity"])
 
 @login_required
 def order_list(request):

@@ -7,6 +7,7 @@ from django.test import TestCase
 from django.urls import reverse
 
 from web.orders.models import (
+    InventoryAllocation,
     Order,
     OrderItem,
     OrderStatusEvent,
@@ -131,6 +132,16 @@ class StripePaymentWebhookTests(TestCase):
         self.assertEqual(status_event.from_status, Order.Status.PENDING_PAYMENT)
         self.assertEqual(status_event.to_status, Order.Status.PAID)
         self.assertEqual(self.variant.stock_quantity, 8)
+        allocation = InventoryAllocation.objects.get(order=self.order)
+        allocation_item = allocation.items.get()
+        self.assertEqual(
+            allocation.status,
+            InventoryAllocation.Status.ALLOCATED,
+        )
+        self.assertEqual(allocation_item.required_quantity, 2)
+        self.assertEqual(allocation_item.allocated_quantity, 2)
+        self.assertEqual(allocation_item.stock_before, 10)
+        self.assertEqual(allocation_item.stock_after, 8)
         self.assertTrue(stripe_event.processed)
         self.assertIsNotNone(stripe_event.processed_at)
 
@@ -183,6 +194,40 @@ class StripePaymentWebhookTests(TestCase):
             1,
         )
         self.assertEqual(StripeEvent.objects.filter(processed=True).count(), 2)
+        self.assertEqual(
+            InventoryAllocation.objects.filter(order=self.order).count(),
+            1,
+        )
+
+    def test_insufficient_inventory_records_paid_order_for_staff_review(self):
+        self.variant.stock_quantity = 1
+        self.variant.save(update_fields=["stock_quantity"])
+
+        response = self.post_signed_event(self.checkout_completed_event())
+
+        self.assertEqual(response.status_code, 200)
+        self.order.refresh_from_db()
+        self.variant.refresh_from_db()
+        payment = Payment.objects.get(order=self.order)
+        allocation = InventoryAllocation.objects.get(order=self.order)
+        allocation_item = allocation.items.get()
+        stripe_event = StripeEvent.objects.get(
+            stripe_event_id="evt_checkout_completed"
+        )
+
+        self.assertEqual(self.order.status, Order.Status.PAID)
+        self.assertEqual(payment.status, Payment.Status.SUCCEEDED)
+        self.assertEqual(self.variant.stock_quantity, 1)
+        self.assertEqual(
+            allocation.status,
+            InventoryAllocation.Status.REVIEW_REQUIRED,
+        )
+        self.assertIsNotNone(allocation.review_due_at)
+        self.assertEqual(allocation_item.required_quantity, 2)
+        self.assertEqual(allocation_item.allocated_quantity, 0)
+        self.assertEqual(allocation_item.stock_before, 1)
+        self.assertEqual(allocation_item.stock_after, 1)
+        self.assertTrue(stripe_event.processed)
 
     def test_missing_order_metadata_does_not_change_business_records(self):
         event = self.checkout_completed_event(event_id="evt_missing_metadata")

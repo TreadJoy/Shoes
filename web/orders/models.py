@@ -2,6 +2,7 @@
 from django.conf import settings
 from django.core.exceptions import ValidationError
 from django.db import models, transaction
+from django.utils import timezone
 from web.products.models import Product, ProductVariant
 
 
@@ -182,11 +183,14 @@ class Shipment(models.Model):
         )
 
         if shipped_at_added or delivered_at_added:
-            order_status = (
-                Order.objects.only("status").get(pk=self.order_id).status
-            )
+            order = Order.objects.only("status").get(pk=self.order_id)
             self._validate_timestamp_transitions(
-                order_status,
+                order.status,
+                shipped_at_added,
+                delivered_at_added,
+            )
+            self._validate_inventory_allocation(
+                order,
                 shipped_at_added,
                 delivered_at_added,
             )
@@ -216,6 +220,11 @@ class Shipment(models.Model):
                 order = Order.objects.select_for_update().get(pk=self.order_id)
                 self._validate_timestamp_transitions(
                     order.status,
+                    shipped_at_added,
+                    delivered_at_added,
+                )
+                self._validate_inventory_allocation(
+                    order,
                     shipped_at_added,
                     delivered_at_added,
                 )
@@ -291,6 +300,40 @@ class Shipment(models.Model):
 
         if errors:
             raise ValidationError(errors)
+
+    @staticmethod
+    def _validate_inventory_allocation(
+        order,
+        shipped_at_added,
+        delivered_at_added,
+    ):
+        if not (shipped_at_added or delivered_at_added):
+            return
+
+        allocation_is_blocked = InventoryAllocation.objects.filter(
+            order=order,
+            status__in=[
+                InventoryAllocation.Status.REVIEW_REQUIRED,
+                InventoryAllocation.Status.REFUND_PENDING,
+            ],
+        ).exists()
+
+        if not allocation_is_blocked:
+            return
+
+        errors = {}
+
+        if shipped_at_added:
+            errors["shipped_at"] = (
+                "This order cannot ship while inventory review is open."
+            )
+
+        if delivered_at_added:
+            errors["delivered_at"] = (
+                "This order cannot be delivered while inventory review is open."
+            )
+
+        raise ValidationError(errors)
 
     def mark_order_shipped(self, order=None):
         order = order or self.order
@@ -431,6 +474,114 @@ class OrderItem(models.Model):
         return self.unit_price * self.quantity
 
 
+class InventoryAllocation(models.Model):
+    class Status(models.TextChoices):
+        ALLOCATED = "allocated", "Allocated"
+        REVIEW_REQUIRED = "review_required", "Review Required"
+        REFUND_PENDING = "refund_pending", "Refund Pending"
+        REFUNDED = "refunded", "Refunded"
+
+    order = models.OneToOneField(
+        Order,
+        on_delete=models.CASCADE,
+        related_name="inventory_allocation",
+    )
+    status = models.CharField(
+        max_length=30,
+        choices=Status.choices,
+        db_index=True,
+    )
+    review_due_at = models.DateTimeField(
+        blank=True,
+        null=True,
+        db_index=True,
+    )
+    refund_initiated_at = models.DateTimeField(
+        blank=True,
+        null=True,
+    )
+    customer_notified_at = models.DateTimeField(
+        blank=True,
+        null=True,
+    )
+    customer_notified_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        blank=True,
+        null=True,
+        related_name="+",
+    )
+    resolved_at = models.DateTimeField(
+        blank=True,
+        null=True,
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ["review_due_at", "created_at"]
+
+    @property
+    def blocks_fulfillment(self):
+        return self.status in [
+            self.Status.REVIEW_REQUIRED,
+            self.Status.REFUND_PENDING,
+        ]
+
+    @property
+    def is_overdue(self):
+        if (
+            self.status == self.Status.ALLOCATED
+            or self.review_due_at is None
+        ):
+            return False
+
+        staff_action_incomplete = (
+            self.refund_initiated_at is None
+            or self.customer_notified_at is None
+        )
+        return staff_action_incomplete and timezone.now() > self.review_due_at
+
+    def __str__(self):
+        return f"Inventory allocation for Order #{self.order_id}: {self.status}"
+
+
+class InventoryAllocationItem(models.Model):
+    allocation = models.ForeignKey(
+        InventoryAllocation,
+        on_delete=models.CASCADE,
+        related_name="items",
+    )
+    variant = models.ForeignKey(
+        "products.ProductVariant",
+        on_delete=models.PROTECT,
+        related_name="inventory_allocation_items",
+    )
+    sku = models.CharField(max_length=50)
+    required_quantity = models.PositiveIntegerField()
+    allocated_quantity = models.PositiveIntegerField(default=0)
+    stock_before = models.PositiveIntegerField()
+    stock_after = models.PositiveIntegerField()
+
+    class Meta:
+        ordering = ["variant_id"]
+        constraints = [
+            models.UniqueConstraint(
+                fields=["allocation", "variant"],
+                name="unique_allocation_variant",
+            ),
+            models.CheckConstraint(
+                condition=models.Q(
+                    allocated_quantity__lte=models.F("required_quantity")
+                ),
+                name="allocation_quantity_not_over_required",
+            ),
+        ]
+
+    def __str__(self):
+        return f"{self.sku}: {self.allocated_quantity}/{self.required_quantity}"
+
+
 class Payment(models.Model):
     class Status(models.TextChoices):
         REQUIRES_PAYMENT_METHOD = (
@@ -492,6 +643,51 @@ class Payment(models.Model):
     def __str__(self):
         return f"Payment for Order #{self.id} - {self.status}"
 
+
+class Refund(models.Model):
+    class Status(models.TextChoices):
+        PENDING = "pending", "Pending"
+        REQUIRES_ACTION = "requires_action", "Requires Action"
+        SUCCEEDED = "succeeded", "Succeeded"
+        FAILED = "failed", "Failed"
+        CANCELED = "canceled", "Canceled"
+
+    payment = models.ForeignKey(
+        Payment,
+        on_delete=models.PROTECT,
+        related_name="refunds",
+    )
+    stripe_refund_id = models.CharField(
+        max_length=255,
+        unique=True,
+    )
+    stripe_payment_intent_id = models.CharField(
+        max_length=255,
+        db_index=True,
+    )
+    amount = models.DecimalField(
+        max_digits=10,
+        decimal_places=2,
+    )
+    currency = models.CharField(max_length=10)
+    status = models.CharField(
+        max_length=30,
+        choices=Status.choices,
+        db_index=True,
+    )
+    reason = models.CharField(max_length=100, blank=True)
+    failure_reason = models.CharField(max_length=255, blank=True)
+    stripe_created_at = models.DateTimeField()
+    raw_response = models.JSONField(default=dict)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ["-stripe_created_at"]
+
+    def __str__(self):
+        return f"Refund {self.stripe_refund_id}: {self.status}"
+
 class StripeEvent(models.Model):
     stripe_event_id = models.CharField(max_length=255, unique=True)
     event_type = models.CharField(max_length=255)
@@ -501,7 +697,7 @@ class StripeEvent(models.Model):
     processed_at = models.DateTimeField(blank=True, null=True)
 
     def __str__(self):
-        return f"Stripe Event {self.event_type} - {self.stripe_id}"
+        return f"Stripe Event {self.event_type} - {self.stripe_event_id}"
 
 class OrderStatusEvent(models.Model):
     order = models.ForeignKey(
