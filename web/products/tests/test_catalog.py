@@ -14,6 +14,7 @@ class ProductCatalogTests(TestCase):
             description="An active catalog product.",
             price=Decimal("100.00"),
             sale_price=Decimal("85.00"),
+            audience="men",
         )
         self.variant = ProductVariant.objects.create(
             product=self.product,
@@ -28,6 +29,13 @@ class ProductCatalogTests(TestCase):
             slug="hidden-shoe",
             price=Decimal("75.00"),
             is_active=False,
+        )
+        self.womens_product = Product.objects.create(
+            name="City Shoe",
+            slug="city-shoe",
+            description="A lightweight city option.",
+            price=Decimal("95.00"),
+            audience="women",
         )
 
     def test_list_only_shows_active_products_and_current_product_price(self):
@@ -55,6 +63,44 @@ class ProductCatalogTests(TestCase):
         )
 
         self.assertEqual(response.status_code, 404)
+
+    def test_list_filters_by_audience(self):
+        response = self.client.get(
+            reverse("products:product_list"),
+            {"audience": "women"},
+        )
+
+        self.assertContains(response, self.womens_product.name)
+        self.assertNotContains(response, self.product.name)
+
+    def test_list_filters_sale_products(self):
+        response = self.client.get(
+            reverse("products:product_list"),
+            {"sale": "1"},
+        )
+
+        self.assertContains(response, self.product.name)
+        self.assertNotContains(response, self.womens_product.name)
+
+    def test_list_labels_products_without_available_variants_as_sold_out(self):
+        response = self.client.get(reverse("products:product_list"))
+
+        self.assertContains(response, "product-badge product-badge-sold-out")
+        self.assertContains(response, "Sold Out")
+
+    def test_list_labels_sale_products(self):
+        response = self.client.get(reverse("products:product_list"))
+
+        self.assertContains(response, "product-badge product-badge-sale")
+
+    def test_list_searches_product_and_variant_details(self):
+        response = self.client.get(
+            reverse("products:product_list"),
+            {"q": "Black"},
+        )
+
+        self.assertContains(response, self.product.name)
+        self.assertNotContains(response, self.womens_product.name)
 
     def test_inactive_and_sold_out_variants_are_not_selectable(self):
         self.variant.stock_quantity = 0

@@ -1,50 +1,253 @@
-<header class="site-header">
+{% load static %}
 
-    <!-- KEEP YOUR EXISTING TOP BAR HERE -->
-    <div class="top-bar">
-        <!-- whatever you already had in your top bar -->
-        <p>Free shipping / brand message / announcement</p>
+<header class="site-header" data-site-header>
+    <div class="announcement-bar{% if is_commerce_mode %} announcement-bar-commerce{% else %} announcement-bar-research{% endif %}">
+        <div class="announcement-inner">
+            {% if is_commerce_mode %}
+                <span class="announcement-label">Drops &amp; Events</span>
+                <span>Updates coming soon.</span>
+            {% else %}
+                <span>Help shape the next TreadJoy release.</span>
+                <a href="{% url 'survey:survey_welcome' %}">Take the Survey →</a>
+            {% endif %}
+        </div>
     </div>
 
-    <!-- MAIN NAVIGATION -->
     <div class="header-inner">
+        <button
+            class="header-icon-button mobile-menu-toggle"
+            type="button"
+            aria-label="Open navigation"
+            aria-expanded="false"
+            aria-controls="mobile-navigation"
+            data-mobile-menu-open
+        >
+            <svg aria-hidden="true" viewBox="0 0 24 24" width="24" height="24">
+                <path d="M4 7h16M4 12h16M4 17h16" fill="none" stroke="currentColor" stroke-linecap="round" stroke-width="2"/>
+            </svg>
+        </button>
 
-        <a href="{% url 'core:home' %}" class="brand-logo">
-            TreadJoy
+        <a href="{% url 'core:home' %}" class="brand-logo" aria-label="TreadJoy home">
+            <img
+                src="{% static 'images/LogoClearBackground.png' %}"
+                alt="TreadJoy"
+                width="1536"
+                height="1024"
+            >
         </a>
 
-        <nav class="main-nav">
-            <a href="{% url 'core:home' %}">Home</a>
-            <a href="{% url 'products:product_list' %}">Products</a>
-            <a href="{% url 'core:about' %}">About</a>
-            <a href="{% url 'core:contact' %}">Contact</a>
+        <nav class="desktop-navigation" aria-label="Primary navigation">
             {% if is_commerce_mode %}
-                <a href="{% url 'cart:cart_detail' %}">
-                    Cart
-                    {% if cart_count > 0 %}
-                        <span class="cart-badge">{{ cart_count }}</span>
-                    {% endif %}
-                </a>
-                {% if user.is_authenticated %}
-                    <a href="{% url 'orders:order_list' %}">My Orders</a>
-                {% endif %}
+                <div class="desktop-nav-item" data-nav-disclosure>
+                    <a
+                        class="desktop-nav-link"
+                        href="{% url 'products:product_list' %}?audience=men"
+                        {% if request.resolver_match.namespace == "products" and request.GET.audience == "men" %}aria-current="page"{% endif %}
+                    >Men</a>
+                    <button
+                        class="nav-disclosure-toggle"
+                        type="button"
+                        aria-label="Show Men categories"
+                        aria-expanded="false"
+                        aria-controls="men-navigation"
+                        data-nav-disclosure-toggle
+                    >
+                        <svg aria-hidden="true" viewBox="0 0 16 16" width="16" height="16">
+                            <path d="m4 6 4 4 4-4" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"/>
+                        </svg>
+                    </button>
+                    <div class="nav-dropdown" id="men-navigation" data-nav-disclosure-panel>
+                        <p class="nav-dropdown-heading">Men</p>
+                        <a href="{% url 'products:product_list' %}?audience=men">Shop All Men →</a>
+                        <a href="{% url 'products:product_list' %}?audience=men&amp;category=shoes">Shoes</a>
+                        <a href="{% url 'products:product_list' %}?audience=men&amp;category=accessories">Accessories</a>
+                    </div>
+                </div>
+
+                <div class="desktop-nav-item" data-nav-disclosure>
+                    <a
+                        class="desktop-nav-link"
+                        href="{% url 'products:product_list' %}?audience=women"
+                        {% if request.resolver_match.namespace == "products" and request.GET.audience == "women" %}aria-current="page"{% endif %}
+                    >Women</a>
+                    <button
+                        class="nav-disclosure-toggle"
+                        type="button"
+                        aria-label="Show Women categories"
+                        aria-expanded="false"
+                        aria-controls="women-navigation"
+                        data-nav-disclosure-toggle
+                    >
+                        <svg aria-hidden="true" viewBox="0 0 16 16" width="16" height="16">
+                            <path d="m4 6 4 4 4-4" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"/>
+                        </svg>
+                    </button>
+                    <div class="nav-dropdown" id="women-navigation" data-nav-disclosure-panel>
+                        <p class="nav-dropdown-heading">Women</p>
+                        <a href="{% url 'products:product_list' %}?audience=women">Shop All Women →</a>
+                        <a href="{% url 'products:product_list' %}?audience=women&amp;category=shoes">Shoes</a>
+                        <a href="{% url 'products:product_list' %}?audience=women&amp;category=accessories">Accessories</a>
+                    </div>
+                </div>
+
+                <a
+                    class="desktop-nav-link"
+                    href="{% url 'products:product_list' %}?sale=1"
+                    {% if request.resolver_match.namespace == "products" and request.GET.sale == "1" %}aria-current="page"{% endif %}
+                >Sale</a>
+                <a
+                    class="desktop-nav-link"
+                    href="{% url 'core:how_it_works' %}"
+                    {% if request.resolver_match.url_name == "how_it_works" %}aria-current="page"{% endif %}
+                >How It Works</a>
+            {% else %}
+                <a
+                    class="desktop-nav-link"
+                    href="{% url 'survey:survey_welcome' %}"
+                    {% if request.resolver_match.namespace == "survey" %}aria-current="page"{% endif %}
+                >Survey</a>
+                <a
+                    class="desktop-nav-link"
+                    href="{% url 'waitlist:join_waitlist' %}"
+                    {% if request.resolver_match.namespace == "waitlist" %}aria-current="page"{% endif %}
+                >Waitlist</a>
+                <a
+                    class="desktop-nav-link"
+                    href="{% url 'core:how_it_works' %}"
+                    {% if request.resolver_match.url_name == "how_it_works" %}aria-current="page"{% endif %}
+                >How It Works</a>
+                <a
+                    class="desktop-nav-link"
+                    href="{% url 'core:about' %}"
+                    {% if request.resolver_match.url_name == "about" %}aria-current="page"{% endif %}
+                >Story</a>
             {% endif %}
         </nav>
 
-        <div class="header-actions">
-            {% if user.is_authenticated %}
-                <a href="{% url 'accounts:profile' %}">Profile</a>
-                <form method="post" action="{% url 'account_logout' %}" class="logout-form">
-                    {% csrf_token %}
-                    <button type="submit" class="logout-button">
-                        Sign Out
-                    </button>
-                </form>            {% else %}
-                <a href="{% url 'account_login' %}">Sign In</a>
-                <a href="{% url 'account_signup' %}" class="btn-small">Sign Up</a>
-            {% endif %}
-        </div>
+        {% if is_commerce_mode %}
+            <div class="header-utilities" aria-label="Commerce utilities">
+                <button
+                    class="header-icon-button search-toggle"
+                    type="button"
+                    aria-label="Search"
+                    aria-expanded="false"
+                    aria-controls="header-search"
+                    data-search-toggle
+                >
+                    <svg aria-hidden="true" viewBox="0 0 24 24" width="22" height="22">
+                        <circle cx="10.8" cy="10.8" r="6.8" fill="none" stroke="currentColor" stroke-width="2"/>
+                        <path d="m16 16 4 4" fill="none" stroke="currentColor" stroke-linecap="round" stroke-width="2"/>
+                    </svg>
+                </button>
 
+                <a
+                    class="header-icon-button desktop-account-link"
+                    href="{% if user.is_authenticated %}{% url 'accounts:profile' %}{% else %}{% url 'account_login' %}{% endif %}"
+                    aria-label="{% if user.is_authenticated %}Account{% else %}Sign in{% endif %}"
+                    {% if request.resolver_match.namespace == "accounts" or request.resolver_match.url_name == "account_login" %}aria-current="page"{% endif %}
+                >
+                    <svg aria-hidden="true" viewBox="0 0 24 24" width="22" height="22">
+                        <circle cx="12" cy="8" r="3.5" fill="none" stroke="currentColor" stroke-width="2"/>
+                        <path d="M5.5 20c.7-3.5 3-5.3 6.5-5.3s5.8 1.8 6.5 5.3" fill="none" stroke="currentColor" stroke-linecap="round" stroke-width="2"/>
+                    </svg>
+                </a>
+
+                <a
+                    class="header-icon-button bag-link"
+                    href="{% url 'cart:cart_detail' %}"
+                    aria-label="Bag{% if cart_count > 0 %}, {{ cart_count }} item{{ cart_count|pluralize }}{% endif %}"
+                    {% if request.resolver_match.namespace == "cart" %}aria-current="page"{% endif %}
+                >
+                    <svg aria-hidden="true" viewBox="0 0 24 24" width="22" height="22">
+                        <path d="M5 8h14l-1 12H6L5 8Z" fill="none" stroke="currentColor" stroke-linejoin="round" stroke-width="2"/>
+                        <path d="M9 9V6a3 3 0 0 1 6 0v3" fill="none" stroke="currentColor" stroke-linecap="round" stroke-width="2"/>
+                    </svg>
+                    {% if cart_count > 0 %}
+                        <span class="cart-badge" aria-hidden="true">{{ cart_count }}</span>
+                    {% endif %}
+                </a>
+            </div>
+        {% endif %}
     </div>
 
+    {% if is_commerce_mode %}
+        <div class="header-search" id="header-search" data-search-panel>
+            <form action="{% url 'products:product_list' %}" method="get" role="search">
+                <label for="site-search">Search TreadJoy</label>
+                <div class="header-search-controls">
+                    <input id="site-search" name="q" type="search" value="{{ request.GET.q }}" autocomplete="off" placeholder="Shoes, accessories, colors…">
+                    <button class="btn-primary" type="submit">Search</button>
+                </div>
+            </form>
+        </div>
+    {% endif %}
+
+    <div class="mobile-navigation" id="mobile-navigation" data-mobile-navigation>
+        <div class="mobile-navigation-top">
+            <span class="mobile-navigation-title">Explore TreadJoy</span>
+            <button class="header-icon-button" type="button" aria-label="Close navigation" data-mobile-menu-close>
+                <svg aria-hidden="true" viewBox="0 0 24 24" width="26" height="26">
+                    <path d="m6 6 12 12M18 6 6 18" fill="none" stroke="currentColor" stroke-linecap="round" stroke-width="2"/>
+                </svg>
+            </button>
+        </div>
+
+        <nav class="mobile-navigation-links" aria-label="Mobile navigation">
+            {% if is_commerce_mode %}
+                <div class="mobile-nav-group">
+                    <div class="mobile-nav-row">
+                        <a href="{% url 'products:product_list' %}?audience=men">Men</a>
+                        <button type="button" aria-label="Show Men categories" aria-expanded="false" aria-controls="mobile-men-navigation" data-mobile-submenu-toggle>
+                            <svg aria-hidden="true" viewBox="0 0 16 16" width="20" height="20">
+                                <path d="m4 6 4 4 4-4" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"/>
+                            </svg>
+                        </button>
+                    </div>
+                    <div class="mobile-nav-submenu" id="mobile-men-navigation" data-mobile-submenu>
+                        <a href="{% url 'products:product_list' %}?audience=men">Shop All Men</a>
+                        <a href="{% url 'products:product_list' %}?audience=men&amp;category=shoes">Shoes</a>
+                        <a href="{% url 'products:product_list' %}?audience=men&amp;category=accessories">Accessories</a>
+                    </div>
+                </div>
+
+                <div class="mobile-nav-group">
+                    <div class="mobile-nav-row">
+                        <a href="{% url 'products:product_list' %}?audience=women">Women</a>
+                        <button type="button" aria-label="Show Women categories" aria-expanded="false" aria-controls="mobile-women-navigation" data-mobile-submenu-toggle>
+                            <svg aria-hidden="true" viewBox="0 0 16 16" width="20" height="20">
+                                <path d="m4 6 4 4 4-4" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"/>
+                            </svg>
+                        </button>
+                    </div>
+                    <div class="mobile-nav-submenu" id="mobile-women-navigation" data-mobile-submenu>
+                        <a href="{% url 'products:product_list' %}?audience=women">Shop All Women</a>
+                        <a href="{% url 'products:product_list' %}?audience=women&amp;category=shoes">Shoes</a>
+                        <a href="{% url 'products:product_list' %}?audience=women&amp;category=accessories">Accessories</a>
+                    </div>
+                </div>
+
+                <a class="mobile-nav-link" href="{% url 'products:product_list' %}?sale=1">Sale</a>
+                <a class="mobile-nav-link" href="{% url 'core:how_it_works' %}">How It Works</a>
+            {% else %}
+                <a class="mobile-nav-link" href="{% url 'survey:survey_welcome' %}">Survey</a>
+                <a class="mobile-nav-link" href="{% url 'waitlist:join_waitlist' %}">Waitlist</a>
+                <a class="mobile-nav-link" href="{% url 'core:how_it_works' %}">How It Works</a>
+                <a class="mobile-nav-link" href="{% url 'core:about' %}">Story</a>
+            {% endif %}
+
+            <div class="mobile-account-links">
+                {% if user.is_authenticated %}
+                    <a href="{% url 'accounts:profile' %}">Account</a>
+                    {% if is_commerce_mode %}<a href="{% url 'orders:order_list' %}">Orders</a>{% endif %}
+                    <form method="post" action="{% url 'account_logout' %}">
+                        {% csrf_token %}
+                        <button type="submit">Sign Out</button>
+                    </form>
+                {% else %}
+                    <a href="{% url 'account_login' %}">Sign In</a>
+                    <a href="{% url 'account_signup' %}">Create Account</a>
+                {% endif %}
+            </div>
+        </nav>
+    </div>
 </header>

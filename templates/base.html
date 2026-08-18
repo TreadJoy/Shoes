@@ -4,23 +4,35 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>{% block title %}TreadJoy{% endblock %}</title>
 
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600;9..40,700&amp;family=Fredoka:wght@500;600;700&amp;display=swap" rel="stylesheet">
+    <script>document.documentElement.classList.add("js");</script>
     <link rel="stylesheet" href="{% static 'css/style.css' %}">
+    <script src="{% static 'js/navigation.js' %}" defer></script>
     {% block extra_head %}{% endblock %}
 </head>
 <body>
+
+    <a class="skip-link" href="#main-content">Skip to main content</a>
 
     <div class="site-wrapper">
 
         {% include "partials/header.html" %}
 
-        <main class="site-main">
+        <main class="site-main" id="main-content" tabindex="-1">
 
             {% if messages %}
                 <div class="messages">
                     {% for message in messages %}
-                        <div class="message message-{{ message.tags }}">
+                        <div
+                            class="message message-{{ message.tags }}"
+                            {% if "error" in message.tags or "warning" in message.tags %}role="alert"{% else %}role="status"{% endif %}
+                            aria-atomic="true"
+                        >
                             {{ message }}
                         </div>
                     {% endfor %}

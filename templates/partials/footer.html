@@ -7,12 +7,17 @@
         </div>
 
         <div class="footer-links">
-            <h3>Shop</h3>
-            <a href="{% url 'products:product_list' %}">Products</a>
             {% if is_commerce_mode %}
+                <h3>Shop</h3>
+                <a href="{% url 'products:product_list' %}">Products</a>
                 <a href="{% url 'cart:cart_detail' %}">Cart</a>
+                <a href="{% url 'waitlist:join_waitlist' %}">Waitlist</a>
+            {% else %}
+                <h3>Get Involved</h3>
+                <a href="{% url 'survey:survey_welcome' %}">Survey</a>
+                <a href="{% url 'waitlist:join_waitlist' %}">Waitlist</a>
+                <a href="{% url 'core:how_it_works' %}">How It Works</a>
             {% endif %}
-            <a href="{% url 'waitlist:join_waitlist' %}">Waitlist</a>
         </div>
 
         <div class="footer-links">

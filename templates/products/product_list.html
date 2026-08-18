@@ -1,55 +1,149 @@
 {% extends "base.html" %}
 
-{% block title %}Products | TreadJoy{% endblock %}
+{% block title %}{% if is_commerce_mode %}{{ catalog_heading }}{% else %}Product Preview{% endif %} | TreadJoy{% endblock %}
 
 {% block content %}
+<div class="catalog-page">
+    <header class="catalog-hero">
+        <p class="eyebrow">{% if is_commerce_mode %}TreadJoy Shop{% else %}Product Research{% endif %}</p>
+        <div class="catalog-hero-layout">
+            {% if is_commerce_mode %}
+                <h1>{{ catalog_heading }}</h1>
+                <p>{{ catalog_description }}</p>
+            {% else %}
+                <h1>Product Preview</h1>
+                <p>Explore the current product direction, then tell us what matters to you.</p>
+            {% endif %}
+        </div>
+    </header>
 
-<div class="products-page">
+    <nav class="catalog-filter-bar" aria-label="Filter products">
+        <div class="catalog-filter-group">
+            <span class="catalog-filter-label">{% if is_commerce_mode %}Shop By{% else %}Explore By{% endif %}</span>
+            <div class="catalog-filter-links">
+                <a
+                    href="{% url 'products:product_list' %}"
+                    {% if not active_audience and not active_category and not sale_only and not search_query %}aria-current="page"{% endif %}
+                >All</a>
+                <a
+                    href="{% url 'products:product_list' %}?audience=men"
+                    {% if active_audience == 'men' %}aria-current="page"{% endif %}
+                >Men</a>
+                <a
+                    href="{% url 'products:product_list' %}?audience=women"
+                    {% if active_audience == 'women' %}aria-current="page"{% endif %}
+                >Women</a>
+                <a
+                    href="{% url 'products:product_list' %}?category=shoes"
+                    {% if active_category == 'shoes' %}aria-current="page"{% endif %}
+                >Shoes</a>
+                <a
+                    href="{% url 'products:product_list' %}?category=accessories"
+                    {% if active_category == 'accessories' %}aria-current="page"{% endif %}
+                >Accessories</a>
+                {% if is_commerce_mode %}
+                    <a
+                        href="{% url 'products:product_list' %}?sale=1"
+                        {% if sale_only %}aria-current="page"{% endif %}
+                    >Sale</a>
+                {% endif %}
+            </div>
+        </div>
+    </nav>
 
-    <div class="page-heading">
-        <h1>Shop TreadJoy</h1>
-        <p>Explore our latest shoes and gear.</p>
+    <div class="catalog-results-heading" aria-live="polite">
+        <p>{{ catalog_items|length }} product{{ catalog_items|length|pluralize }}</p>
+        {% if search_query or active_audience or active_category or sale_only %}
+            <a href="{% url 'products:product_list' %}" class="editorial-link">Clear Filter →</a>
+        {% endif %}
     </div>
 
-    {% if products %}
-        <div class="product-grid">
-            {% for product in products %}
-                <div class="product-card">
-                    <a href="{% url 'products:product_detail' product.slug %}">
-                        {% if product.image %}
-                            <img src="{{ product.image.url }}" alt="{{ product.name }}">
+    {% if catalog_items %}
+        <div class="catalog-grid">
+            {% for item in catalog_items %}
+                <article class="catalog-card">
+                    <a
+                        class="catalog-card-media"
+                        href="{% url 'products:product_detail' item.product.slug %}"
+                        aria-label="View {{ item.product.name }}"
+                    >
+                        {% if item.product.image %}
+                            <img
+                                src="{{ item.product.image.url }}"
+                                alt="{{ item.product.name }}"
+                                width="720"
+                                height="720"
+                            >
+                        {% else %}
+                            <span
+                                class="catalog-image-placeholder"
+                                role="img"
+                                aria-label="Development placeholder for {{ item.product.name }} product photography"
+                            >
+                                <span class="placeholder-kicker">Photography Placeholder</span>
+                                <strong>{{ item.product.name }}</strong>
+                            </span>
                         {% endif %}
+
+                        <span class="catalog-card-badges">
+                            {% if item.product.sale_price and is_commerce_mode %}
+                                <span class="product-badge product-badge-sale">Sale</span>
+                            {% endif %}
+                            {% if item.is_preorder %}
+                                <span class="product-badge product-badge-preorder">{{ item.availability_label }}</span>
+                            {% elif not item.has_available_variants %}
+                                <span class="product-badge product-badge-sold-out">Sold Out</span>
+                            {% endif %}
+                        </span>
                     </a>
 
-                    <div class="product-card-body">
-                        <p class="product-category">{{ product.get_category_display }}</p>
+                    <div class="catalog-card-body">
+                        <div class="catalog-card-heading">
+                            <p class="product-category">{{ item.product.get_category_display }}</p>
+                            <h2>
+                                <a href="{% url 'products:product_detail' item.product.slug %}">
+                                    {{ item.product.name }}
+                                </a>
+                            </h2>
+                        </div>
 
-                        <h2>{{ product.name }}</h2>
-
-                        {% if product.sale_price %}
+                        {% if item.product.sale_price %}
                             <p class="product-price">
-                                <span class="old-price">${{ product.price }}</span>
-                                <strong>${{ product.sale_price }}</strong>
+                                <span class="old-price">${{ item.product.price }}</span>
+                                <strong>${{ item.product.sale_price }}</strong>
                             </p>
                         {% else %}
-                            <p class="product-price">${{ product.price }}</p>
+                            <p class="product-price">${{ item.product.price }}</p>
                         {% endif %}
 
-                        <p class="product-description">
-                            {{ product.description|truncatewords:16 }}
-                        </p>
+                        {% if item.product.description %}
+                            <p class="catalog-card-description">
+                                {{ item.product.description|truncatewords:18 }}
+                            </p>
+                        {% endif %}
 
-                        <a href="{% url 'products:product_detail' product.slug %}" class="btn-primary">
-                            View Details
+                        <a
+                            href="{% url 'products:product_detail' item.product.slug %}"
+                            class="catalog-card-link"
+                        >
+                            {% if is_commerce_mode %}View Product →{% else %}View Product Preview →{% endif %}
                         </a>
                     </div>
-                </div>
+                </article>
             {% endfor %}
         </div>
     {% else %}
-        <p>No products have been added yet.</p>
+        <div class="catalog-empty-state">
+            <span class="catalog-empty-mark" aria-hidden="true">↗</span>
+            <div>
+                <p class="eyebrow">Nothing Here Yet</p>
+                <h2>No Matches Yet</h2>
+                <p>Try another category or search term.</p>
+                <a href="{% url 'products:product_list' %}" class="btn-secondary">
+                    View All Products
+                </a>
+            </div>
+        </div>
     {% endif %}
-
 </div>
-
 {% endblock %}

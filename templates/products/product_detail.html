@@ -3,25 +3,50 @@
 {% block title %}{{ product.name }} | TreadJoy{% endblock %}
 
 {% block content %}
-
 <div class="product-detail-page">
+    <nav class="product-breadcrumbs" aria-label="Breadcrumb">
+        <a href="{% url 'products:product_list' %}">{% if is_commerce_mode %}Shop{% else %}Products{% endif %}</a>
+        <span aria-hidden="true">/</span>
+        <a href="{% url 'products:product_list' %}?category={{ product.category }}">
+            {{ product.get_category_display }}
+        </a>
+        <span aria-hidden="true">/</span>
+        <span aria-current="page">{{ product.name }}</span>
+    </nav>
 
     <div class="product-detail-grid">
-
-        <div class="product-detail-image">
+        <div class="product-detail-media">
             {% if product.image %}
-                <img src="{{ product.image.url }}" alt="{{ product.name }}">
+                <img
+                    src="{{ product.image.url }}"
+                    alt="{{ product.name }}"
+                    width="960"
+                    height="960"
+                >
             {% else %}
-                <div class="image-placeholder">
-                    No image available
+                <div
+                    class="product-detail-placeholder"
+                    role="img"
+                    aria-label="Development placeholder for {{ product.name }} product photography"
+                >
+                    <span class="placeholder-kicker">Photography Placeholder</span>
+                    <strong>{{ product.name }}</strong>
+                    <span>Approved product imagery pending.</span>
                 </div>
             {% endif %}
         </div>
 
         <div class="product-detail-info">
-            <p class="product-category">
-                {{ product.get_category_display }}
-            </p>
+            <div class="product-detail-status-row">
+                <p class="product-category">{{ product.get_category_display }}</p>
+                {% if preorder_batch %}
+                    <span class="product-badge product-badge-preorder">{{ availability_label }}</span>
+                {% elif not has_available_variants %}
+                    <span class="product-badge product-badge-sold-out">Sold Out</span>
+                {% elif product.sale_price and is_commerce_mode %}
+                    <span class="product-badge product-badge-sale">Sale</span>
+                {% endif %}
+            </div>
 
             <h1>{{ product.name }}</h1>
 
@@ -34,60 +59,45 @@
                 <p class="product-detail-price">${{ product.price }}</p>
             {% endif %}
 
-            <p class="product-detail-description">
-                {{ product.description }}
-            </p>
+            {% if product.description %}
+                <p class="product-detail-description">{{ product.description }}</p>
+            {% endif %}
 
             {% if preorder_batch %}
-                <div class="preorder-notice">
+                <div class="preorder-notice" role="status">
                     {% if preorder_batch.status == "open" %}
+                        <strong>Preorder Timing</strong>
                         <p>
-                            <strong>Preorder</strong> — estimated to ship
+                            Estimated to ship
                             {{ preorder_batch.estimated_tender_start|date:"M j" }}–{{ preorder_batch.estimated_tender_end|date:"M j, Y" }}.
                             Delivery time begins after the package is handed to the carrier.
                         </p>
                     {% else %}
-                        <p><strong>Preorder</strong> — temporarily unavailable.</p>
+                        <strong>Preorder Paused</strong>
+                        <p>This preorder is temporarily unavailable.</p>
                     {% endif %}
                 </div>
             {% endif %}
 
-            <div class="product-meta">
-                <p><strong>Audience:</strong> {{ product.get_audience_display }}</p>
-                <p><strong>Category:</strong> {{ product.get_category_display }}</p>
-                <p>
-                    <strong>Available Options:</strong>
-                    {{ product.variants.count }}
-                </p>
-            </div>
-
             {% if is_commerce_mode %}
-                <form method="post"
-                      action="{% url 'cart:add_to_cart' %}"
-                      class="add-to-cart-form">
-
+                <form
+                    method="post"
+                    action="{% url 'cart:add_to_cart' %}"
+                    class="product-purchase-panel add-to-cart-form"
+                >
                     {% csrf_token %}
+                    <input type="hidden" name="product_id" value="{{ product.id }}">
 
-                    <input
-                        type="hidden"
-                        name="product_id"
-                        value="{{ product.id }}"
-                    >
+                    <div class="purchase-panel-heading">
+                        <h2>Choose Your Pair</h2>
+                        <p>Availability and pricing are shown for each option.</p>
+                    </div>
 
                     {% if variant_options and has_available_variants %}
-                            <label for="variant_id">
-                                Choose size and color:
-                            </label>
-
-                            <select
-                                    id="variant_id"
-                                    name="variant_id"
-                                    required
-                            >
-                                <option value="">
-                                    Select an option
-                                </option>
-
+                        <div class="product-option-field">
+                            <label for="variant_id">Size and color</label>
+                            <select id="variant_id" name="variant_id" required>
+                                <option value="">Select an option</option>
                                 {% for option in variant_options %}
                                     {% if option.availability.is_available %}
                                         <option value="{{ option.variant.id }}">
@@ -103,33 +113,50 @@
                                     {% endif %}
                                 {% endfor %}
                             </select>
+                        </div>
 
-                            <button type="submit" class="btn-primary">
-                                Add to Cart
-                            </button>
+                        <button type="submit" class="btn-primary">Add to Cart</button>
                     {% else %}
-                            <p>
-                                This product does not currently have any available options.
-                            </p>
-
-                            <button
-                                    type="button"
-                                    class="btn-primary"
-                                    disabled
-                            >
-                                Out of Stock
-                            </button>
+                        <p class="product-unavailable-message">
+                            This product does not currently have any available options.
+                        </p>
+                        <button type="button" class="btn-primary" disabled>Out of Stock</button>
                     {% endif %}
                 </form>
+            {% else %}
+                <aside class="research-product-panel" aria-labelledby="research-product-title">
+                    <p class="eyebrow">Research Preview</p>
+                    <h2 id="research-product-title">Help Shape What Comes Next.</h2>
+                    <p>Purchasing is unavailable on this research site.</p>
+                    <a href="{% url 'survey:survey_welcome' %}" class="btn-primary">Take the Survey →</a>
+                </aside>
             {% endif %}
 
-            <a href="{% url 'products:product_list' %}" class="back-link">
-                ← Back to Products
-            </a>
-        </div>
+            <dl class="product-meta-list">
+                <div>
+                    <dt>Audience</dt>
+                    <dd>{{ product.get_audience_display }}</dd>
+                </div>
+                <div>
+                    <dt>Category</dt>
+                    <dd>{{ product.get_category_display }}</dd>
+                </div>
+                <div>
+                    <dt>Options</dt>
+                    <dd>{{ product.variants.count }}</dd>
+                </div>
+            </dl>
 
+            <aside class="modular-product-note">
+                <p class="eyebrow">New to the System?</p>
+                <h2>See How Modularity Works.</h2>
+                <a href="{% url 'core:how_it_works' %}" class="editorial-link">
+                    Discover the System →
+                </a>
+            </aside>
+        </div>
     </div>
 
+    <a href="{% url 'products:product_list' %}" class="back-link">← Back to Products</a>
 </div>
-
 {% endblock %}

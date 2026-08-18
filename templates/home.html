@@ -3,38 +3,246 @@
 {% block title %}Home | TreadJoy{% endblock %}
 
 {% block content %}
-
 <div class="home-page">
+    <section class="home-hero" aria-labelledby="home-hero-title">
+        <div class="home-hero-copy">
+            <p class="eyebrow">The TreadJoy Modular System</p>
+            <h1 id="home-hero-title">A Shoe That Changes With You.</h1>
+            <p class="home-hero-intro">
+                TreadJoy is developing modular shoes built around compatible,
+                interchangeable components—so one pair can keep up with more
+                of your life.
+            </p>
 
-    <section class="hero-section">
-        <div class="hero-content">
-            <h1>Welcome to TreadJoy</h1>
-            <p>Fun, comfortable shoes built for everyday movement.</p>
+            <div class="home-hero-actions">
+                {% if is_commerce_mode %}
+                    <a href="{% url 'products:product_list' %}" class="btn-primary">
+                        Explore Products →
+                    </a>
+                    <a href="{% url 'core:how_it_works' %}" class="editorial-link">
+                        Discover the System →
+                    </a>
+                {% else %}
+                    <a href="{% url 'survey:survey_welcome' %}" class="btn-primary">
+                        Take the Survey →
+                    </a>
+                    <a href="{% url 'waitlist:join_waitlist' %}" class="editorial-link">
+                        Join the Waitlist →
+                    </a>
+                {% endif %}
+            </div>
+        </div>
 
-            <a href="{% url 'products:product_list' %}" class="btn-primary">
-                Shop Products
-            </a>
+        <div
+            class="home-hero-media media-placeholder media-placeholder-hero"
+            role="img"
+            aria-label="Development placeholder for TreadJoy campaign lifestyle photography or video"
+        >
+            <span class="placeholder-kicker">Development Placeholder</span>
+            <strong>Campaign Lifestyle<br>Photography / Video</strong>
+            <span>Real customer and product imagery pending approval</span>
         </div>
     </section>
 
-    <section class="home-section">
-        <h2>Help Us Build Better Shoes</h2>
-        <p>Take our quick survey and tell us what you look for in a shoe.</p>
-
-        <a href="{% url 'survey:survey_welcome' %}" class="btn-secondary">
-            Take the Survey
+    <section class="home-statement" aria-labelledby="why-treadjoy-title">
+        <p class="eyebrow">Why TreadJoy</p>
+        <h2 id="why-treadjoy-title">One Shoe. More Ways to Make It Yours.</h2>
+        <p>
+            The idea is simple: build around a compatible system instead of
+            treating every style change as a whole new shoe.
+        </p>
+        <a href="{% url 'core:how_it_works' %}" class="editorial-link">
+            How Compatibility Works →
         </a>
     </section>
 
-    <section class="home-section">
-        <h2>Join the Waitlist</h2>
-        <p>Be the first to hear about new drops and product launches.</p>
+    {% if is_commerce_mode %}
+        <section class="home-categories" aria-labelledby="shop-by-fit-title">
+            <div class="home-section-heading">
+                <p class="eyebrow">Find Your Starting Point</p>
+                <h2 id="shop-by-fit-title">Choose Your Lane.</h2>
+            </div>
 
-        <a href="{% url 'waitlist:join_waitlist' %}" class="btn-secondary">
-            Join Waitlist
-        </a>
+            <div class="category-entry-grid">
+                <a class="category-entry category-entry-men" href="{% url 'products:product_list' %}?audience=men">
+                    <span
+                        class="category-entry-media media-placeholder"
+                        role="img"
+                        aria-label="Development placeholder for men's lifestyle photography"
+                    >
+                        <span class="placeholder-kicker">Photography Placeholder</span>
+                        <strong>Men's Lifestyle</strong>
+                    </span>
+                    <span class="category-entry-content">
+                        <span class="category-entry-title">Men</span>
+                        <span>Shop Men →</span>
+                    </span>
+                </a>
+
+                <a class="category-entry category-entry-women" href="{% url 'products:product_list' %}?audience=women">
+                    <span
+                        class="category-entry-media media-placeholder"
+                        role="img"
+                        aria-label="Development placeholder for women's lifestyle photography"
+                    >
+                        <span class="placeholder-kicker">Photography Placeholder</span>
+                        <strong>Women's Lifestyle</strong>
+                    </span>
+                    <span class="category-entry-content">
+                        <span class="category-entry-title">Women</span>
+                        <span>Shop Women →</span>
+                    </span>
+                </a>
+            </div>
+        </section>
+    {% else %}
+        <section class="home-research-actions" aria-labelledby="research-actions-title">
+            <div>
+                <p class="eyebrow">Help Shape the First Release</p>
+                <h2 id="research-actions-title">Your Input Sets the Direction.</h2>
+            </div>
+            <p>
+                Tell us what matters in fit, style, and interchangeable
+                components before the product direction is locked in.
+            </p>
+            <a href="{% url 'survey:survey_welcome' %}" class="btn-secondary">
+                Share Your Feedback →
+            </a>
+        </section>
+    {% endif %}
+
+    <section class="home-modular-system" aria-labelledby="modular-system-title">
+        <div class="modular-system-copy">
+            <p class="eyebrow">Built Around Compatibility</p>
+            <h2 id="modular-system-title">Start With the Shoe. Change the Parts.</h2>
+            <p>
+                Products will identify the components designed for their
+                compatibility group, so customers can understand what works
+                together before they choose.
+            </p>
+            <a href="{% url 'core:how_it_works' %}" class="btn-secondary">
+                See How It Works →
+            </a>
+        </div>
+
+        <ol class="modular-system-steps">
+            <li>
+                <span>01</span>
+                <h3>Choose a Base</h3>
+                <p>Begin with a TreadJoy shoe platform.</p>
+            </li>
+            <li>
+                <span>02</span>
+                <h3>Check Compatibility</h3>
+                <p>Match components made for that platform.</p>
+            </li>
+            <li>
+                <span>03</span>
+                <h3>Make It Yours</h3>
+                <p>Change approved parts as your style evolves.</p>
+            </li>
+        </ol>
     </section>
 
+    <section class="home-video" aria-labelledby="home-video-title">
+        <div
+            class="video-placeholder"
+            role="img"
+            aria-label="Development placeholder for an embedded TreadJoy YouTube video or livestream"
+        >
+            <span class="placeholder-kicker">YouTube Placeholder</span>
+            <span class="video-placeholder-play" aria-hidden="true">▶</span>
+            <strong>Product Story / Live Session</strong>
+            <span>Playback will require an intentional user action.</span>
+        </div>
+        <div class="home-video-copy">
+            <p class="eyebrow">See It in Motion</p>
+            <h2 id="home-video-title">The Story Is Better in Motion.</h2>
+            <p>
+                A TreadJoy YouTube video or livestream will live here once an
+                approved recording is available.
+            </p>
+            <p class="placeholder-note">
+                Development placeholder — no video has been selected or
+                embedded yet.
+            </p>
+        </div>
+    </section>
+
+    <section class="home-community" aria-labelledby="community-title">
+        <div
+            class="community-media media-placeholder"
+            role="img"
+            aria-label="Development placeholder for authentic TreadJoy community photography"
+        >
+            <span class="placeholder-kicker">Photography Placeholder</span>
+            <strong>Community, Creators<br>&amp; Real Gathering</strong>
+        </div>
+        <div class="home-community-copy">
+            <p class="eyebrow">Community</p>
+            <h2 id="community-title">Built With People, Not Just for Them.</h2>
+            <p>
+                This section will document real customer, creator, local, and
+                community relationships as they happen.
+            </p>
+            <p class="placeholder-note">
+                Development placeholder — no partnership, event, or community
+                claim is being made here.
+            </p>
+        </div>
+    </section>
+
+    <section class="home-impact" aria-labelledby="impact-title">
+        <p class="eyebrow">Positive Impact</p>
+        <h2 id="impact-title">Show the Work.</h2>
+        <p>
+            TreadJoy will only publish concrete impact actions, evidence, and
+            approved collaborators here—not broad promises or unsupported
+            metrics.
+        </p>
+        <div class="impact-placeholder">
+            <span>Impact content pending approved actions and evidence.</span>
+        </div>
+    </section>
+
+    <section class="home-roadmap" aria-labelledby="roadmap-title">
+        <div class="home-section-heading">
+            <p class="eyebrow">What We Are Learning Next</p>
+            <h2 id="roadmap-title">The Road Ahead Is Still Being Tested.</h2>
+        </div>
+        <p class="roadmap-intro">
+            Approved milestones and dates will appear only when the underlying
+            product, community, and impact work is ready to support them.
+        </p>
+        <div class="roadmap-placeholder-list" aria-label="Development roadmap placeholders">
+            <div>
+                <span>01</span>
+                <strong>Product Feedback</strong>
+                <p>Placeholder for validated customer learning.</p>
+            </div>
+            <div>
+                <span>02</span>
+                <strong>Compatibility Testing</strong>
+                <p>Placeholder for approved product-system updates.</p>
+            </div>
+            <div>
+                <span>03</span>
+                <strong>Community Work</strong>
+                <p>Placeholder for documented relationships and actions.</p>
+            </div>
+        </div>
+    </section>
+
+    <section class="home-waitlist" aria-labelledby="waitlist-title">
+        <p class="eyebrow">Stay in the Loop</p>
+        <h2 id="waitlist-title">Get Updates When There Is Something Real to Share.</h2>
+        <p>
+            Join the existing waitlist to hear about approved product updates,
+            drops, and opportunities to participate.
+        </p>
+        <a href="{% url 'waitlist:join_waitlist' %}" class="btn-primary">
+            Join the Waitlist →
+        </a>
+    </section>
 </div>
-
 {% endblock %}
