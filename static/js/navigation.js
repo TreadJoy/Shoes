@@ -22,9 +22,21 @@
 
         if (isOpen) {
             delete disclosure.dataset.dismissed;
+        } else {
+            delete disclosure.dataset.clickOpen;
         }
 
         toggle?.setAttribute("aria-expanded", String(isOpen));
+
+        if (toggle?.hasAttribute("aria-label")) {
+            toggle.setAttribute(
+                "aria-label",
+                toggle.getAttribute("aria-label").replace(
+                    /^(Show|Hide)/,
+                    isOpen ? "Hide" : "Show",
+                ),
+            );
+        }
     };
 
     const closeDisclosures = (except = null) => {
@@ -44,9 +56,8 @@
         });
 
         disclosure.addEventListener("pointerleave", () => {
-            delete disclosure.dataset.dismissed;
-
             if (!disclosure.contains(document.activeElement)) {
+                delete disclosure.dataset.dismissed;
                 setDisclosureOpen(disclosure, false);
             }
         });
@@ -64,8 +75,16 @@
         });
 
         toggle?.addEventListener("click", () => {
+            const wasOpenedByClick = disclosure.dataset.clickOpen === "true";
             closeDisclosures(disclosure);
-            setDisclosureOpen(disclosure, true);
+
+            if (wasOpenedByClick) {
+                setDisclosureOpen(disclosure, false);
+                disclosure.dataset.dismissed = "true";
+            } else {
+                setDisclosureOpen(disclosure, true);
+                disclosure.dataset.clickOpen = "true";
+            }
         });
     });
 

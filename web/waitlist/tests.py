@@ -5,6 +5,12 @@ from web.waitlist.models import WaitlistSignup
 
 
 class WaitlistFlowTests(TestCase):
+    def test_form_defers_browser_validation_to_inline_server_errors(self):
+        response = self.client.get(reverse("waitlist:join_waitlist"))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "novalidate")
+
     def test_valid_signup_is_normalized_and_duplicate_is_not_created(self):
         first = self.client.post(
             reverse("waitlist:join_waitlist"),
@@ -23,6 +29,7 @@ class WaitlistFlowTests(TestCase):
         signup = WaitlistSignup.objects.get()
         self.assertEqual(signup.email, "jo@example.com")
         self.assertEqual(signup.first_name, "Jo")
+        self.assertEqual(signup.source, "waitlist_page")
 
     def test_server_rejects_malformed_email_that_bypasses_browser_validation(self):
         response = self.client.post(
@@ -43,4 +50,3 @@ class WaitlistFlowTests(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "at most 100 characters")
         self.assertFalse(WaitlistSignup.objects.exists())
-

@@ -4,14 +4,19 @@
         <div class="footer-brand">
             <h2>TreadJoy</h2>
             <p>Fun, comfortable shoes built for everyday movement.</p>
+            <div class="footer-social-placeholder" aria-label="Social links pending approval">
+                <strong>Social</strong>
+                <span>Links pending approval.</span>
+            </div>
         </div>
 
         <div class="footer-links">
             {% if is_commerce_mode %}
                 <h3>Shop</h3>
-                <a href="{% url 'products:product_list' %}">Products</a>
+                <a href="{% url 'products:product_list' %}?audience=men">Men</a>
+                <a href="{% url 'products:product_list' %}?audience=women">Women</a>
+                <a href="{% url 'products:product_list' %}?sale=1">Sale</a>
                 <a href="{% url 'cart:cart_detail' %}">Cart</a>
-                <a href="{% url 'waitlist:join_waitlist' %}">Waitlist</a>
             {% else %}
                 <h3>Get Involved</h3>
                 <a href="{% url 'survey:survey_welcome' %}">Survey</a>

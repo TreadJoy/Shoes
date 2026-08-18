@@ -1,16 +1,19 @@
 from django.contrib import messages
 from django.shortcuts import render, redirect
+
 from .forms import WaitlistSignupForm
 from .models import WaitlistSignup
+from .services import create_waitlist_signup
 
 
 def join_waitlist(request):
     form = WaitlistSignupForm(request.POST or None)
 
     if request.method == "POST" and form.is_valid():
-        signup, created = WaitlistSignup.objects.get_or_create(
+        _, created = create_waitlist_signup(
             email=form.cleaned_data["email"],
-            defaults={"first_name": form.cleaned_data["first_name"]},
+            first_name=form.cleaned_data["first_name"],
+            source="waitlist_page",
         )
 
         if created:

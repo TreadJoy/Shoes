@@ -235,6 +235,11 @@
                 <a class="mobile-nav-link" href="{% url 'core:about' %}">Story</a>
             {% endif %}
 
+            <div class="mobile-social-placeholder" aria-label="Social links pending approval">
+                <strong>Follow TreadJoy</strong>
+                <span>Social links pending approval.</span>
+            </div>
+
             <div class="mobile-account-links">
                 {% if user.is_authenticated %}
                     <a href="{% url 'accounts:profile' %}">Account</a>

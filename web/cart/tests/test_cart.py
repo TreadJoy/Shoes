@@ -1,7 +1,12 @@
 from decimal import Decimal
+from unittest import SkipTest
 
+from django.conf import settings
 from django.test import Client, TestCase
 from django.urls import reverse
+
+if not settings.IS_COMMERCE_MODE:
+    raise SkipTest("Cart tests require the commerce deployment mode.")
 
 from web.cart.models import Cart, CartItem
 from web.products.models import Product, ProductVariant
@@ -114,4 +119,3 @@ class CartFlowTests(TestCase):
         self.add_item()
 
         self.assertEqual(str(CartItem.objects.get()), "1 x Cart Shoe")
-

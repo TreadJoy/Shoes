@@ -1,9 +1,14 @@
 {% extends "base.html" %}
+{% load static %}
 
 {% block title %}Home | TreadJoy{% endblock %}
 
+{% block extra_head %}
+    <link rel="stylesheet" href="{% static 'css/home.css' %}">
+{% endblock %}
+
 {% block content %}
-<div class="home-page">
+<div class="home-page{% if is_commerce_mode %} home-page-commerce{% else %} home-page-research{% endif %}">
     <section class="home-hero" aria-labelledby="home-hero-title">
         <div class="home-hero-copy">
             <p class="eyebrow">The TreadJoy Modular System</p>
@@ -16,31 +21,20 @@
 
             <div class="home-hero-actions">
                 {% if is_commerce_mode %}
-                    <a href="{% url 'products:product_list' %}" class="btn-primary">
-                        Explore Products →
-                    </a>
-                    <a href="{% url 'core:how_it_works' %}" class="editorial-link">
-                        Discover the System →
-                    </a>
+                    <a href="{% url 'products:product_list' %}?audience=men" class="btn-primary">Shop Men →</a>
+                    <a href="{% url 'products:product_list' %}?audience=women" class="btn-secondary">Shop Women →</a>
                 {% else %}
-                    <a href="{% url 'survey:survey_welcome' %}" class="btn-primary">
-                        Take the Survey →
-                    </a>
-                    <a href="{% url 'waitlist:join_waitlist' %}" class="editorial-link">
-                        Join the Waitlist →
-                    </a>
+                    <a href="#home-waitlist" class="btn-primary">Join the Waitlist →</a>
+                    <a href="{% url 'survey:survey_welcome' %}" class="btn-secondary">Take the Survey →</a>
                 {% endif %}
             </div>
         </div>
 
-        <div
-            class="home-hero-media media-placeholder media-placeholder-hero"
-            role="img"
-            aria-label="Development placeholder for TreadJoy campaign lifestyle photography or video"
-        >
+        {# Replace with approved <picture> media and intentional alt text. #}
+        <div class="home-hero-media media-placeholder media-placeholder-hero" data-final-alt-required="true">
             <span class="placeholder-kicker">Development Placeholder</span>
             <strong>Campaign Lifestyle<br>Photography / Video</strong>
-            <span>Real customer and product imagery pending approval</span>
+            <span>Approved media and final alt text required before launch.</span>
         </div>
     </section>
 
@@ -51,143 +45,146 @@
             The idea is simple: build around a compatible system instead of
             treating every style change as a whole new shoe.
         </p>
-        <a href="{% url 'core:how_it_works' %}" class="editorial-link">
-            How Compatibility Works →
-        </a>
+        <a href="{% url 'core:how_it_works' %}" class="editorial-link">How Compatibility Works →</a>
     </section>
 
-    {% if is_commerce_mode %}
-        <section class="home-categories" aria-labelledby="shop-by-fit-title">
-            <div class="home-section-heading">
-                <p class="eyebrow">Find Your Starting Point</p>
-                <h2 id="shop-by-fit-title">Choose Your Lane.</h2>
-            </div>
+    <section class="home-categories" aria-labelledby="home-categories-title">
+        <div class="home-section-heading">
+            <p class="eyebrow">Find Your Starting Point</p>
+            <h2 id="home-categories-title">Choose Your Lane.</h2>
+        </div>
 
-            <div class="category-entry-grid">
-                <a class="category-entry category-entry-men" href="{% url 'products:product_list' %}?audience=men">
-                    <span
-                        class="category-entry-media media-placeholder"
-                        role="img"
-                        aria-label="Development placeholder for men's lifestyle photography"
-                    >
-                        <span class="placeholder-kicker">Photography Placeholder</span>
-                        <strong>Men's Lifestyle</strong>
-                    </span>
-                    <span class="category-entry-content">
-                        <span class="category-entry-title">Men</span>
-                        <span>Shop Men →</span>
-                    </span>
-                </a>
-
-                <a class="category-entry category-entry-women" href="{% url 'products:product_list' %}?audience=women">
-                    <span
-                        class="category-entry-media media-placeholder"
-                        role="img"
-                        aria-label="Development placeholder for women's lifestyle photography"
-                    >
-                        <span class="placeholder-kicker">Photography Placeholder</span>
-                        <strong>Women's Lifestyle</strong>
-                    </span>
-                    <span class="category-entry-content">
-                        <span class="category-entry-title">Women</span>
-                        <span>Shop Women →</span>
-                    </span>
-                </a>
-            </div>
-        </section>
-    {% else %}
-        <section class="home-research-actions" aria-labelledby="research-actions-title">
-            <div>
-                <p class="eyebrow">Help Shape the First Release</p>
-                <h2 id="research-actions-title">Your Input Sets the Direction.</h2>
-            </div>
-            <p>
-                Tell us what matters in fit, style, and interchangeable
-                components before the product direction is locked in.
-            </p>
-            <a href="{% url 'survey:survey_welcome' %}" class="btn-secondary">
-                Share Your Feedback →
+        <div class="category-entry-grid">
+            <a class="category-entry category-entry-men" href="{% url 'products:product_list' %}?audience=men">
+                {# Replace with approved <picture> media and intentional alt text. #}
+                <span class="category-entry-media media-placeholder" data-final-alt-required="true">
+                    <span class="placeholder-kicker">Development Placeholder</span>
+                    <strong>Men’s Editorial Photography</strong>
+                    <span>Approved media and final alt text required.</span>
+                </span>
+                <span class="category-entry-content">
+                    <span class="category-entry-title">Men</span>
+                    <span>{% if is_commerce_mode %}Shop Men →{% else %}Explore Men →{% endif %}</span>
+                </span>
             </a>
-        </section>
-    {% endif %}
+
+            <a class="category-entry category-entry-women" href="{% url 'products:product_list' %}?audience=women">
+                {# Replace with approved <picture> media and intentional alt text. #}
+                <span class="category-entry-media media-placeholder" data-final-alt-required="true">
+                    <span class="placeholder-kicker">Development Placeholder</span>
+                    <strong>Women’s Editorial Photography</strong>
+                    <span>Approved media and final alt text required.</span>
+                </span>
+                <span class="category-entry-content">
+                    <span class="category-entry-title">Women</span>
+                    <span>{% if is_commerce_mode %}Shop Women →{% else %}Explore Women →{% endif %}</span>
+                </span>
+            </a>
+        </div>
+    </section>
 
     <section class="home-modular-system" aria-labelledby="modular-system-title">
         <div class="modular-system-copy">
             <p class="eyebrow">Built Around Compatibility</p>
             <h2 id="modular-system-title">Start With the Shoe. Change the Parts.</h2>
             <p>
-                Products will identify the components designed for their
-                compatibility group, so customers can understand what works
+                Products identify the components designed for their
+                compatibility group, so people can understand what works
                 together before they choose.
             </p>
-            <a href="{% url 'core:how_it_works' %}" class="btn-secondary">
-                See How It Works →
-            </a>
+            <a href="{% url 'core:how_it_works' %}" class="btn-secondary">See How It Works →</a>
         </div>
 
         <ol class="modular-system-steps">
-            <li>
-                <span>01</span>
-                <h3>Choose a Base</h3>
-                <p>Begin with a TreadJoy shoe platform.</p>
-            </li>
-            <li>
-                <span>02</span>
-                <h3>Check Compatibility</h3>
-                <p>Match components made for that platform.</p>
-            </li>
-            <li>
-                <span>03</span>
-                <h3>Make It Yours</h3>
-                <p>Change approved parts as your style evolves.</p>
-            </li>
+            {% for part_type in modular_part_types %}
+                <li>
+                    <span>{{ forloop.counter|stringformat:"02d" }}</span>
+                    <h3>{{ part_type.name }}</h3>
+                    <p>{{ part_type.description }}</p>
+                </li>
+            {% empty %}
+                <li class="modular-system-empty">
+                    <span>Development Placeholder</span>
+                    <h3>Modular Components</h3>
+                    <p>Component information will appear after the product taxonomy is configured.</p>
+                </li>
+            {% endfor %}
         </ol>
     </section>
 
-    <section class="home-video" aria-labelledby="home-video-title">
-        <div
-            class="video-placeholder"
-            role="img"
-            aria-label="Development placeholder for an embedded TreadJoy YouTube video or livestream"
-        >
-            <span class="placeholder-kicker">YouTube Placeholder</span>
-            <span class="video-placeholder-play" aria-hidden="true">▶</span>
-            <strong>Product Story / Live Session</strong>
-            <span>Playback will require an intentional user action.</span>
+    <section class="home-lifestyle" aria-labelledby="lifestyle-title">
+        {# Replace with approved <picture> media and intentional alt text. #}
+        <div class="home-lifestyle-media media-placeholder" data-final-alt-required="true">
+            <span class="placeholder-kicker">Development Placeholder</span>
+            <strong>Lifestyle Photography</strong>
+            <span>Approved media and final alt text required before launch.</span>
         </div>
+        <div class="home-lifestyle-copy">
+            <p class="eyebrow">Made to Move</p>
+            <h2 id="lifestyle-title">More Life From Every Look.</h2>
+            <p>
+                TreadJoy is exploring a shoe system that can change with the
+                way people dress, move, and express themselves.
+            </p>
+        </div>
+    </section>
+
+    <section class="home-video" aria-labelledby="home-video-title">
+        {% if homepage_video %}
+            <div class="video-player" data-video-player>
+                <button
+                    class="video-play-control"
+                    type="button"
+                    data-video-play
+                    data-embed-url="{{ homepage_video.embed_url }}"
+                    data-video-title="{{ homepage_video.title }}"
+                    aria-label="Play {{ homepage_video.title }}"
+                >
+                    <span class="placeholder-kicker">YouTube Video</span>
+                    <span class="video-placeholder-play" aria-hidden="true">▶</span>
+                    <strong>{{ homepage_video.title }}</strong>
+                    <span>Play video</span>
+                </button>
+            </div>
+        {% else %}
+            <div class="video-placeholder" data-video-placeholder>
+                <span class="placeholder-kicker">YouTube Development Placeholder</span>
+                <span class="video-placeholder-play" aria-hidden="true">▶</span>
+                <strong>Product Story / Live Session</strong>
+                <span>No video or livestream has been approved yet.</span>
+            </div>
+        {% endif %}
         <div class="home-video-copy">
             <p class="eyebrow">See It in Motion</p>
             <h2 id="home-video-title">The Story Is Better in Motion.</h2>
             <p>
-                A TreadJoy YouTube video or livestream will live here once an
-                approved recording is available.
+                An approved TreadJoy video or livestream can be added here
+                without changing the surrounding page structure.
             </p>
             <p class="placeholder-note">
-                Development placeholder — no video has been selected or
-                embedded yet.
+                Development placeholder — playback will require an intentional
+                user action once media is configured.
             </p>
         </div>
     </section>
 
     <section class="home-community" aria-labelledby="community-title">
-        <div
-            class="community-media media-placeholder"
-            role="img"
-            aria-label="Development placeholder for authentic TreadJoy community photography"
-        >
-            <span class="placeholder-kicker">Photography Placeholder</span>
-            <strong>Community, Creators<br>&amp; Real Gathering</strong>
+        {# Replace with authentic approved activity photography and intentional alt text. #}
+        <div class="community-media media-placeholder" data-final-alt-required="true">
+            <span class="placeholder-kicker">Development Placeholder</span>
+            <strong>Community Photography</strong>
+            <span>Authentic activity media and final alt text required.</span>
         </div>
         <div class="home-community-copy">
             <p class="eyebrow">Community</p>
             <h2 id="community-title">Built With People, Not Just for Them.</h2>
             <p>
-                This section will document real customer, creator, local, and
+                This space will document real customer, creator, local, and
                 community relationships as they happen.
             </p>
             <p class="placeholder-note">
                 Development placeholder — no partnership, event, or community
-                claim is being made here.
+                accomplishment is being claimed.
             </p>
         </div>
     </section>
@@ -196,12 +193,11 @@
         <p class="eyebrow">Positive Impact</p>
         <h2 id="impact-title">Show the Work.</h2>
         <p>
-            TreadJoy will only publish concrete impact actions, evidence, and
-            approved collaborators here—not broad promises or unsupported
-            metrics.
+            This section is reserved for concrete actions, evidence, and
+            approved collaborators—not broad promises or unsupported metrics.
         </p>
         <div class="impact-placeholder">
-            <span>Impact content pending approved actions and evidence.</span>
+            <span>Development placeholder — approved impact evidence required.</span>
         </div>
     </section>
 
@@ -211,8 +207,8 @@
             <h2 id="roadmap-title">The Road Ahead Is Still Being Tested.</h2>
         </div>
         <p class="roadmap-intro">
-            Approved milestones and dates will appear only when the underlying
-            product, community, and impact work is ready to support them.
+            Dates and milestones will appear only when the underlying product,
+            community, and impact work can support them.
         </p>
         <div class="roadmap-placeholder-list" aria-label="Development roadmap placeholders">
             <div>
@@ -233,16 +229,51 @@
         </div>
     </section>
 
-    <section class="home-waitlist" aria-labelledby="waitlist-title">
-        <p class="eyebrow">Stay in the Loop</p>
-        <h2 id="waitlist-title">Get Updates When There Is Something Real to Share.</h2>
-        <p>
-            Join the existing waitlist to hear about approved product updates,
-            drops, and opportunities to participate.
-        </p>
-        <a href="{% url 'waitlist:join_waitlist' %}" class="btn-primary">
-            Join the Waitlist →
-        </a>
-    </section>
+    {% if is_commerce_mode %}
+        <section class="home-shop-closing" aria-labelledby="home-shop-closing-title">
+            <p class="eyebrow">Find Your Starting Point</p>
+            <h2 id="home-shop-closing-title">Ready to Explore TreadJoy?</h2>
+            <p>Browse the current catalog and choose the category that fits you.</p>
+            <div class="home-closing-actions">
+                <a href="{% url 'products:product_list' %}?audience=men" class="btn-primary">Shop Men →</a>
+                <a href="{% url 'products:product_list' %}?audience=women" class="btn-secondary">Shop Women →</a>
+            </div>
+        </section>
+    {% else %}
+        <section class="home-waitlist" id="home-waitlist" aria-labelledby="waitlist-title" tabindex="-1">
+            <div class="home-waitlist-copy">
+                <p class="eyebrow">Stay in the Loop</p>
+                <h2 id="waitlist-title">Help Shape What Comes Next.</h2>
+                <p>
+                    Join the waitlist for approved product updates, then share
+                    what matters to you through the TreadJoy survey.
+                </p>
+                <a href="{% url 'survey:survey_welcome' %}" class="editorial-link">Take the Survey →</a>
+            </div>
+
+            <form method="post" action="{% url 'core:home' %}#home-waitlist" class="home-waitlist-form waitlist-form" novalidate>
+                {% csrf_token %}
+                {{ waitlist_form.non_field_errors }}
+
+                <div class="form-group">
+                    {{ waitlist_form.first_name.label_tag }}
+                    {{ waitlist_form.first_name }}
+                    {{ waitlist_form.first_name.errors }}
+                </div>
+
+                <div class="form-group">
+                    {{ waitlist_form.email.label_tag }}
+                    {{ waitlist_form.email }}
+                    {{ waitlist_form.email.errors }}
+                </div>
+
+                <button type="submit" class="btn-primary" data-waitlist-submit>Join the Waitlist</button>
+            </form>
+        </section>
+    {% endif %}
 </div>
+{% endblock %}
+
+{% block extra_scripts %}
+    <script src="{% static 'js/home.js' %}" defer></script>
 {% endblock %}

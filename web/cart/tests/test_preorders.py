@@ -1,10 +1,15 @@
 from datetime import date, timedelta
 from decimal import Decimal
 from types import SimpleNamespace
+from unittest import SkipTest
 from unittest.mock import patch
 
+from django.conf import settings
 from django.test import TestCase
 from django.urls import reverse
+
+if not settings.IS_COMMERCE_MODE:
+    raise SkipTest("Cart and checkout tests require commerce mode.")
 
 from web.cart.models import Cart
 from web.orders.models import Order

@@ -245,6 +245,17 @@ SITE_ID = 1
 GOOGLE_CLIENT_ID = config("GOOGLE_CLIENT_ID", default="")
 GOOGLE_CLIENT_SECRET = config("GOOGLE_CLIENT_SECRET", default="")
 
+# Optional homepage YouTube video or livestream. The value may be an 11-character
+# video ID or a supported HTTPS YouTube URL; the view validates it before use.
+HOMEPAGE_YOUTUBE_VIDEO_ID = config(
+    "HOMEPAGE_YOUTUBE_VIDEO_ID",
+    default="",
+).strip()
+HOMEPAGE_YOUTUBE_TITLE = config(
+    "HOMEPAGE_YOUTUBE_TITLE",
+    default="",
+).strip()
+
 SOCIALACCOUNT_PROVIDERS = {
     "google": {
         "APP": {

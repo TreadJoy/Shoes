@@ -1,5 +1,7 @@
 from decimal import Decimal
+from unittest import skipIf, skipUnless
 
+from django.conf import settings
 from django.test import TestCase
 from django.urls import reverse
 
@@ -46,6 +48,7 @@ class ProductCatalogTests(TestCase):
         self.assertContains(response, "$85.00")
         self.assertNotContains(response, self.inactive_product.name)
 
+    @skipUnless(settings.IS_COMMERCE_MODE, "Commerce product-detail behavior")
     def test_detail_uses_variant_override_and_exposes_available_option(self):
         response = self.client.get(
             reverse("products:product_detail", args=[self.product.slug])
@@ -88,6 +91,7 @@ class ProductCatalogTests(TestCase):
         self.assertContains(response, "product-badge product-badge-sold-out")
         self.assertContains(response, "Sold Out")
 
+    @skipUnless(settings.IS_COMMERCE_MODE, "Commerce sale merchandising")
     def test_list_labels_sale_products(self):
         response = self.client.get(reverse("products:product_list"))
 
@@ -102,6 +106,7 @@ class ProductCatalogTests(TestCase):
         self.assertContains(response, self.product.name)
         self.assertNotContains(response, self.womens_product.name)
 
+    @skipUnless(settings.IS_COMMERCE_MODE, "Commerce variant selection")
     def test_inactive_and_sold_out_variants_are_not_selectable(self):
         self.variant.stock_quantity = 0
         self.variant.save(update_fields=["stock_quantity"])
@@ -119,4 +124,27 @@ class ProductCatalogTests(TestCase):
         )
 
         self.assertContains(response, "Out of Stock")
+        self.assertNotContains(response, "Add to Cart")
+
+    @skipIf(settings.IS_COMMERCE_MODE, "Research product-preview behavior")
+    def test_research_detail_hides_purchase_controls_and_invites_feedback(self):
+        response = self.client.get(
+            reverse("products:product_detail", args=[self.product.slug])
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Research Preview")
+        self.assertContains(response, "Purchasing is unavailable")
+        self.assertContains(response, "Take the Survey")
+        self.assertNotContains(response, "Add to Cart")
+        self.assertNotContains(response, "product-variant-select")
+
+    @skipIf(settings.IS_COMMERCE_MODE, "Research product-preview behavior")
+    def test_research_list_uses_preview_language_without_sale_urgency(self):
+        response = self.client.get(reverse("products:product_list"))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Product Preview")
+        self.assertContains(response, "View Product Preview")
+        self.assertNotContains(response, "product-badge product-badge-sale")
         self.assertNotContains(response, "Add to Cart")

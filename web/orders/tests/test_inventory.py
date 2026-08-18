@@ -1,8 +1,9 @@
 from concurrent.futures import ThreadPoolExecutor
 from decimal import Decimal
 from threading import Barrier
+from unittest import skipUnless
 
-from django.db import close_old_connections, connections
+from django.db import close_old_connections, connection, connections
 from django.test import TestCase, TransactionTestCase
 
 from web.orders.models import (
@@ -158,6 +159,10 @@ class InventoryAllocationTests(InventoryTestDataMixin, TestCase):
         self.assertEqual(InventoryAllocation.objects.filter(order=order).count(), 1)
 
 
+@skipUnless(
+    connection.vendor == "postgresql",
+    "Requires PostgreSQL row-level locking.",
+)
 class ConcurrentInventoryAllocationTests(
     InventoryTestDataMixin,
     TransactionTestCase,
