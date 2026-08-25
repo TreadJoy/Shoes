@@ -2,14 +2,29 @@ from decimal import Decimal
 from unittest import SkipTest
 
 from django.conf import settings
-from django.test import Client, TestCase
-from django.urls import reverse
+from django.test import Client, SimpleTestCase, TestCase
+from django.urls import NoReverseMatch, resolve, reverse
 
 if not settings.IS_COMMERCE_MODE:
     raise SkipTest("Cart tests require the commerce deployment mode.")
 
 from web.cart.models import Cart, CartItem
+from web.cart import views as cart_views
 from web.products.models import Product, ProductVariant
+
+
+class CartRouteTests(SimpleTestCase):
+    def test_update_route_has_one_canonical_name_and_view(self):
+        self.assertEqual(
+            reverse("cart:update_cart_item", args=[17]),
+            "/cart/update/17/",
+        )
+        self.assertIs(
+            resolve("/cart/update/17/").func,
+            cart_views.update_cart_item,
+        )
+        with self.assertRaises(NoReverseMatch):
+            reverse("cart:add_to_cart_item", args=[17])
 
 
 class CartFlowTests(TestCase):

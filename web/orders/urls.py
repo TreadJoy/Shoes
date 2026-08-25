@@ -1,14 +1,24 @@
+from django.contrib.auth.decorators import login_required
 from django.urls import path
+from django.views.generic import RedirectView
 
 from . import views
 
-app_name = 'orders'
+app_name = "orders"
 
 urlpatterns = [
-    path("", views.order_list, name='order_list'),
-    path("checkout/", views.checkout, name='checkout'),
+    path("", views.order_list, name="order_list"),
+    path("checkout/", views.checkout, name="checkout"),
     path("success/<int:order_id>/", views.order_success, name="order_success"),
-    path("history/", views.order_history, name='order_history'),
+    path(
+        "history/",
+        login_required(
+            RedirectView.as_view(
+                pattern_name="orders:order_list",
+                permanent=False,
+            )
+        ),
+    ),
     path("<int:order_id>/", views.order_detail, name="order_detail"),
     path("stripe/webhook/", views.stripe_webhook, name="stripe_webhook"),
 ]

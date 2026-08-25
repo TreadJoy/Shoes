@@ -5,13 +5,38 @@ from unittest.mock import patch
 
 import stripe
 from django.contrib.auth import get_user_model
-from django.test import Client, TestCase
-from django.urls import reverse
+from django.http import HttpResponse
+from django.test import Client, SimpleTestCase, TestCase
+from django.urls import NoReverseMatch, resolve, reverse
 
 from web.cart.models import Cart, CartItem
 from web.orders.models import Order, Payment, ShippingAddress
+from web.orders import views as order_views
 from web.orders.views import mark_order_as_paid
 from web.products.models import Product, ProductVariant
+
+
+class OrderRouteTests(SimpleTestCase):
+    def test_order_list_and_detail_have_one_canonical_route_name(self):
+        self.assertEqual(reverse("orders:order_list"), "/orders/")
+        self.assertEqual(
+            reverse("orders:order_detail", args=[17]),
+            "/orders/17/",
+        )
+        self.assertIs(resolve("/orders/").func, order_views.order_list)
+        self.assertIs(
+            resolve("/orders/17/").func,
+            order_views.order_detail,
+        )
+
+        with self.assertRaises(NoReverseMatch):
+            reverse("orders:order_history")
+
+    def test_history_compatibility_path_is_unnamed(self):
+        match = resolve("/orders/history/")
+
+        self.assertIsNone(match.url_name)
+        self.assertEqual(match.route, "orders/history/")
 
 
 class CheckoutFlowTests(TestCase):
@@ -251,14 +276,48 @@ class OrderAccessAndPresentationTests(TestCase):
 
         self.assertEqual(response.status_code, 404)
 
-    def test_order_history_displays_grand_total_and_item_count(self):
+    def test_canonical_order_list_displays_grand_total_and_item_count(self):
         self.client.force_login(self.user)
 
-        response = self.client.get(reverse("orders:order_history"))
+        response = self.client.get(reverse("orders:order_list"))
 
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "$125.00")
         self.assertContains(response, "<strong>Items:</strong> 0", html=True)
+
+    def test_authenticated_history_url_redirects_to_canonical_order_list(self):
+        self.client.force_login(self.user)
+
+        response = self.client.get("/orders/history/")
+
+        self.assertRedirects(response, reverse("orders:order_list"))
+
+    def test_anonymous_history_url_preserves_login_requirement(self):
+        response = self.client.get("/orders/history/")
+
+        self.assertRedirects(
+            response,
+            "/accounts/login/?next=/orders/history/",
+            fetch_redirect_response=False,
+        )
+
+    def test_order_detail_prefetches_rendered_relations(self):
+        self.client.force_login(self.user)
+
+        with patch(
+            "web.orders.views.render",
+            return_value=HttpResponse(),
+        ) as render:
+            response = self.client.get(
+                reverse("orders:order_detail", args=[self.order.pk])
+            )
+
+        self.assertEqual(response.status_code, 200)
+        rendered_order = render.call_args.args[2]["order"]
+        self.assertEqual(
+            set(rendered_order._prefetched_objects_cache),
+            {"items", "shipments", "status_events"},
+        )
 
     def test_pending_success_page_emits_refresh_metadata(self):
         self.client.force_login(self.user)

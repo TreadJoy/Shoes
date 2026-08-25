@@ -174,16 +174,17 @@ P1 storefront, email, accessibility, SEO, performance, monitoring, and admin-usa
 
 ### A0.2 — Remove confirmed dead and duplicate implementation paths
 
-- **Priority / status:** P0 — Not started.
+- **Priority / status:** P0 — Ready for owner acceptance.
 - **Objective:** Leave one discoverable implementation for every active route and business workflow.
 - **Why it matters:** Stale checkout/auth/cart code invites security fixes and features to be applied to the wrong path and may be accidentally reconnected later.
-- **Current state:** web/views.py is unrouted, contains duplicated legacy behavior and hardcoded localhost assumptions; web/models.py and web/tests.py are empty; duplicate/legacy cart and order route/view names remain.
+- **Current state:** Confirmed unrouted root-level scaffolding has been removed. Cart mutations and customer order presentation now have one canonical route name and owning view, with the former order-history URL retained only as a login-protected compatibility redirect.
 - **Required work:** Use repository-wide reference, URL-resolution, import, and template scans; delete only confirmed unreachable modules/aliases; consolidate duplicate URL names/views while preserving intended public URLs or adding explicit redirects; remove stale imports and documentation; do not rewrite migrations.
 - **Dependencies:** A0.1 can run independently.
 - **Affected areas:** web/views.py, web/models.py, web/tests.py, web/cart/urls.py, web/orders URLs/views/templates/tests, README references.
 - **Security considerations:** Confirm no webhook, account recovery, admin, or crafted direct URL depends on a path before removal; avoid re-exposing legacy Stripe handling through compatibility redirects.
 - **Testing requirements:** URL reverse/resolve tests, both mode suites, direct-request negative tests, compile/import checks, and repository searches proving no remaining references.
 - **Acceptance criteria:** Active behavior has one owning module and one canonical route name; legacy code is removed or explicitly documented with a removal blocker; both modes pass their route and regression tests.
+- **Implementation evidence (2026-08-25):** Removed the unrouted root `web` views/models/tests scaffolding, including its hardcoded localhost Stripe flow; removed the duplicate cart update alias while preserving `/cart/update/<id>/`; consolidated customer orders under `orders:order_list` and `orders:order_detail`; and retained `/orders/history/` as an unnamed, login-protected 302 redirect. Canonical route/reverse, redirect, ownership, relation-prefetch, cart mutation, and research negative-capability tests pass. A disposable PostgreSQL 17 cluster passed 79 focused commerce tests and 73 installed-app research tests (5 skipped); both Django mode checks, compile checks, and `makemigrations --check --dry-run` passed. Owner acceptance of the route/template consolidation remains required before marking this task Complete.
 
 ### A0.3 — Create minimal reproducible dependency manifests
 

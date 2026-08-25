@@ -343,26 +343,40 @@ def order_success(request, order_id):
         },
     )
 
-@login_required
-def order_history(request):
-    orders = request.user.orders.all().order_by("-created_at")
 
-    return render(request, "orders/order_history.html", {
-        "orders": orders,
-    })
+@login_required
+def order_list(request):
+    orders = request.user.orders.prefetch_related("items").order_by("-created_at")
+
+    return render(
+        request,
+        "orders/order_list.html",
+        {
+            "orders": orders,
+        },
+    )
 
 
 @login_required
 def order_detail(request, order_id):
     order = get_object_or_404(
-        Order,
+        Order.objects.prefetch_related(
+            "items",
+            "shipments",
+            "status_events",
+        ),
         id=order_id,
         user=request.user,
     )
 
-    return render(request, "orders/order_detail.html", {
-        "order": order,
-    })
+    return render(
+        request,
+        "orders/order_detail.html",
+        {
+            "order": order,
+        },
+    )
+
 
 def build_stripe_line_items(order):
     line_items = []
@@ -550,41 +564,4 @@ def handle_payment_intent_succeeded(payment_intent):
         currency=payment_intent.get("currency", "usd"),
         raw_response=payment_intent,
         status_note="Stripe payment intent succeeded.",
-    )
-
-@login_required
-def order_list(request):
-    orders = (
-        Order.objects
-        .filter(user=request.user)
-        .order_by("-created_at")
-    )
-
-    return render(
-        request,
-        "orders/order_list.html",
-        {
-            "orders": orders,
-        },
-    )
-
-@login_required
-def order_detail_view(request, order_id):
-    order = get_object_or_404(
-        Order.objects
-        .prefetch_related(
-            "items",
-            "shipments",
-            "status_events",
-        ),
-        id=order_id,
-        user=request.user,
-    )
-
-    return render(
-        request,
-        "orders/order_detail.html",
-        {
-            "order": order,
-        },
     )

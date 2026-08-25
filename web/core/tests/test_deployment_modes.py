@@ -24,8 +24,22 @@ if settings.TREADJOY_MODE == "commerce":
     assert apps.is_installed("web.orders")
     assert apps.get_model("orders", "Order") is not None
     assert reverse("cart:cart_detail") == "/cart/"
+    assert reverse("cart:update_cart_item", args=[1]) == "/cart/update/1/"
+    assert reverse("orders:order_list") == "/orders/"
     assert reverse("orders:checkout") == "/orders/checkout/"
     assert reverse("orders:stripe_webhook") == "/orders/stripe/webhook/"
+    assert resolve("/orders/history/").url_name is None
+
+    for removed_route_name, args in (
+        ("cart:add_to_cart_item", [1]),
+        ("orders:order_history", []),
+    ):
+        try:
+            reverse(removed_route_name, args=args)
+        except NoReverseMatch:
+            pass
+        else:
+            raise AssertionError(f"{removed_route_name} remains reversible.")
     assert settings.STRIPE_SECRET_KEY == "sk_test_mode_boundary"
     assert settings.STRIPE_PUBLISHABLE_KEY == "pk_test_mode_boundary"
     assert settings.STRIPE_WEBHOOK_SECRET == "whsec_mode_boundary"
@@ -48,6 +62,7 @@ else:
 
     for route_name in (
         "cart:cart_detail",
+        "orders:order_list",
         "orders:checkout",
         "orders:stripe_webhook",
     ):
@@ -58,8 +73,19 @@ else:
         else:
             raise AssertionError(f"{route_name} is available in research mode.")
 
+    try:
+        reverse("cart:update_cart_item", args=[1])
+    except NoReverseMatch:
+        pass
+    else:
+        raise AssertionError("cart:update_cart_item is available in research mode.")
+
     for route_path in (
         "/cart/",
+        "/cart/update/1/",
+        "/orders/",
+        "/orders/history/",
+        "/orders/1/",
         "/orders/checkout/",
         "/orders/stripe/webhook/",
     ):
