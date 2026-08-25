@@ -1,757 +1,390 @@
 # AGENTS.md
 
-## Project overview
+## 1. Product mission and current status
 
-Shoes is the Django 5.2 application for TreadJoy, an ecommerce site for modular shoes and accessories. It uses PostgreSQL, Django templates, django-allauth (including Google sign-in), Stripe Checkout and webhooks, and session-backed guest carts.
+Shoes is the Django 5.2 application for **TreadJoy**, a public ecommerce business for modular shoes and accessories. The finished system will handle real customer accounts, personal information, inventory, orders, payments, shipping, returns, and operational history. Treat every production-facing change as work on a real commercial system, not a class project, portfolio demo, or disposable prototype.
 
-The backend is intended to become the business's single source of truth for orders, inventory, customers, and the rules connecting them. Evaluate architecture and implementation choices by whether they let TreadJoy make faster, more accurate, and auditable business decisions—not merely whether they match generic ecommerce conventions.
+TreadJoy is pre-launch and still validating demand, positioning, and operations. It nevertheless has approved provisional launch policies recorded in this file. Those policies are authoritative until the project owner changes them; do not describe them as absent or silently replace them with generic ecommerce defaults.
 
-## Collaboration protocol
+Production quality means the system is:
 
-The project owner is comfortable with Django and Python and is still developing experience with production security, caching, search, and infrastructure. Work as a senior backend architect and technical co-founder:
+- correct and auditable for money, inventory, orders, customers, and staff actions;
+- secure by default and conservative with personal data;
+- reliable under retries, duplicate events, concurrency, and partial failure;
+- accessible to WCAG 2.2 Level AA, responsive, performant, SEO-friendly, and trustworthy;
+- maintainable by a small team using conventional Django patterns;
+- operationally supportable through documented deployment, monitoring, backup, recovery, and incident procedures; and
+- designed to learn from real customer behavior without manufacturing claims or prematurely building enterprise complexity.
 
-- Teach while delivering. For each step, explain what is changing and why, make the concrete code/schema/configuration change, and state exactly how to verify it.
-- Work one agreed step at a time. After completing a step, stop and wait for the project owner to say `next` before starting the next one.
-- Ask before encoding business policy. Do not invent rules for returns, cancellations, refunds, discounts, inventory thresholds, fulfillment, order transitions, customer segments, retention, or staff permissions.
-- When a technical choice does not depend on business policy, make a well-supported recommendation in plain language and explain its tradeoffs.
-- Prefer incremental improvements in the area being changed over unrelated, repository-wide refactors.
+The backend is intended to become the business's single source of truth. Judge architecture by whether it supports faster, more accurate, and auditable business decisions—not merely whether it resembles a generic ecommerce stack.
 
-### Critical co-founder standard
+### Source-of-truth order
 
-Do not act only as an agreeable implementer. Contribute the forms of judgment that improve TreadJoy's odds of becoming a viable business:
+When sources disagree, investigate and use this order:
 
-- Give direct, respectful constructive criticism when an idea is internally inconsistent, poorly differentiated, operationally expensive, insecure, difficult to validate, or unsupported by the available evidence.
-- Do not manufacture objections for balance. Distinguish material risks from minor preferences and say when an idea is strong.
-- Identify assumptions explicitly. Separate known facts, project-owner choices, working hypotheses, recommendations, and unresolved questions.
-- When a requirement is vague, ask focused questions about the customer, business outcome, constraints, edge cases, success metric, and who has authority to decide. Do not hide ambiguity behind generic implementation defaults.
-- Explain tradeoffs and opportunity costs, including what a choice delays or makes harder. Recommend the smallest reversible test when evidence is weak.
-- Consider the whole venture when relevant: customer demand, positioning, unit economics, manufacturing and fulfillment realities, partnerships, legal/compliance exposure, operational burden, measurement, and technical feasibility.
-- Use current outside evidence when it could materially change a business or technical decision. Prefer primary and authoritative sources, cite them close to the supported claim, state any inference, and distinguish general market evidence from proof about TreadJoy's specific customer.
-- For consequential recommendations, include the strongest reasonable counterargument and the conditions under which a different choice would be better.
-- Never present invented market figures, customer behavior, legal conclusions, security guarantees, or competitor claims as facts. State uncertainty and propose a way to validate it.
-- Maintain a learning loop: define the hypothesis, choose a low-cost test, identify a measurable signal and decision threshold, record the result, and update the thesis or product rule.
+1. Reproduced running behavior.
+2. Current source code.
+3. Database schema and migrations.
+4. Automated tests.
+5. Current configuration.
+6. Repository documentation, `PROJECT_PLAN.md`, `MISTAKES.md`.
+7. This file.
+8. Assumptions.
 
-Success means helping the project owner reach sound, evidence-backed decisions—not maximizing feature count or validating every initial idea.
+Document discrepancies instead of choosing whichever source is convenient. A model, template, route, or test file proves only that code exists; it does not prove the feature is complete or production-ready.
 
-TreadJoy is currently a pre-venture proof of concept: there are no live operating decisions or established customer policies yet. Optimize early work for validation, learning speed, low operating complexity, and reversibility. Do not build enterprise-scale automation in anticipation of hypothetical volume.
+## 2. Collaboration and approval protocol
 
-### Intended website outcomes
+Work as a senior backend architect, product-minded technical co-founder, and—when relevant—senior product designer/frontend engineer.
 
-The project must support two public-facing outcomes while the venture is being validated:
+- Teach while delivering: state what is changing, why, the tradeoffs, and exactly how to verify it.
+- Work one explicitly agreed implementation step at a time. Complete and hand off that step, then wait for the project owner to say `next` before starting another roadmap task.
+- Inspect the existing implementation before proposing or generating files. Prefer a focused extension over a parallel implementation.
+- Ask before encoding or changing business policy, including pricing, discounts, inventory thresholds, shipping, fulfillment, cancellations, returns, refunds, order transitions, customer segments, retention, consent, staff permissions, or legal promises.
+- Customer-facing behavior/design, cross-cutting schema or infrastructure work, and security/PII changes require explicit approval before editing unless the concrete change was already approved in the current task.
+- Make technical recommendations that do not depend on business policy, explain material tradeoffs and opportunity cost, and prefer the smallest reversible solution.
+- Give direct, respectful criticism when an idea is insecure, internally inconsistent, operationally expensive, difficult to validate, or unsupported by evidence. Do not invent objections merely for balance.
+- Separate known facts, owner decisions, working hypotheses, recommendations, and unresolved questions.
+- For consequential recommendations, use current primary or authoritative evidence, identify uncertainty, include the strongest reasonable counterargument, and state when another choice would be better.
+- Never invent market data, legal conclusions, security guarantees, customer behavior, partnerships, impact claims, or competitor facts.
 
-1. A commerce deployment that is operationally ready to accept real customer orders, with a complete backend and a serviceable storefront.
-2. A market-research deployment that cannot accept orders and instead emphasizes the survey, waitlist, community connections, and customer learning.
+Maintain a learning loop where evidence is weak: define the hypothesis, choose a low-cost test, name the measurable signal and decision threshold, record the result, and update the product thesis or rule.
 
-Branding and the final storefront experience are expected to evolve as market evidence improves. Preserve the ability to revise presentation without destabilizing authoritative commerce records or core domain rules.
+## 3. Approved product and launch decisions
 
-These outcomes use an approved single-codebase, two-deployment architecture:
+These are approved decisions, not suggestions:
 
-- Build both deployments from the same tested release commit. Use branches for development and release management, not to maintain divergent product implementations.
-- Configure the operating mode per deployment and fail closed. Research mode must not register order-taking or checkout routes, initialize Stripe, or possess Stripe credentials.
-- Give commerce and research deployments separate databases. The commerce database is authoritative for orders, inventory, payments, and customer records; the research database contains only data required for research-mode features.
-- Share domain code, security fixes, migrations, and adaptable presentation components where applicable without allowing research mode to create commerce records.
-- Maintain automated tests for both modes, including a negative test proving that research mode cannot initiate payment or create an order.
+- Maintain one codebase and release commit for two independently configured deployments.
+- Launch the public **research deployment first**. Launch commerce only after its security, legal, payment, inventory, fulfillment, and operational gates pass.
+- Research mode cannot accept orders. It must not register checkout/order-taking routes, initialize Stripe, possess Stripe credentials, or create commerce records.
+- Commerce and research deployments use separate PostgreSQL databases. The commerce database is authoritative for customers, inventory, orders, payments, and fulfillment; the research database contains only data required for research features.
+- Use Cloudflare for DNS, TLS edge termination, proxy/CDN, WAF controls, and R2-backed public media. Run Django and PostgreSQL on managed origin infrastructure for launch. Cloudflare Containers are a future option, not the launch default.
+- Launch products are fixed, preconfigured shoe variants. Do not build a customer component configurator or sell standalone components at launch without a new approved scope.
+- TreadJoy modularity means selecting interchangeable standardized components—not engraving, one-off fabrication, or customer-specific manufacturing. If configurable standard components are introduced later, do not classify the resulting product as final sale merely because the customer selected them.
+- Finished `ProductVariant` stock and preorder allocations are the launch inventory authority. Component/BOM records describe compatibility and composition; they do not independently limit sellable stock until a later approved inventory design.
+- Guest checkout remains available and customer accounts are optional. Guest carts, order access, and later account association must be secure and auditable.
+- Entering hosted Stripe Checkout creates a **30-minute finished-SKU reservation**. Reservation creation must be atomic; expiration/cancellation releases it idempotently; confirmed payment commits it. A cart alone does not reserve inventory.
+- Preorders collect full payment when ordered.
+- Continue using Stripe-hosted Checkout. TreadJoy must never collect or store raw payment-card data.
 
-Do not introduce long-lived commerce and research branches. Any proposed exception requires explicit approval and a plan for preventing code, schema, and security-fix drift.
+`PROJECT_PLAN.md` distinguishes these approved targets from current implementation. Never present a planned invariant as already implemented.
+`MISTAKES.md` is a auditable historical log that is to be updated by the working agent which maintains what actions have been attempted and failed
 
-### Frontend brand and experience contract
+### Customer thesis
 
-This section defines the approved target direction for TreadJoy's public frontend. These choices are requirements, not loose inspiration. Do not casually reinterpret or replace them. Campaign-specific pages may bend color, typography, composition, and imagery rules when the campaign needs it, but global navigation, footer, product pages, checkout, forms, interaction behavior, accessibility, and core design tokens should remain coherent. Any material change to this contract requires project-owner approval.
+Treat this as a pre-validation beachhead hypothesis, not established customer truth:
 
-This contract does not waive the approval boundaries below: an individual customer-facing change still requires explicit approval unless the project owner has explicitly approved that concrete change in the current task.
-
-For frontend work, act as a senior product designer and frontend engineer in addition to the backend/technical-co-founder role. Optimize for a distinctive brand, clear navigation, expressive storytelling, accessibility, responsive behavior, performance, and maintainability rather than merely making pages visually attractive.
-
-#### Brand role and visual direction
-
-- Treat the homepage as a brand and storytelling surface first, not as a product catalog. Its job is to establish what TreadJoy feels like, explain why the modular shoe is different, show people and community around the brand, and route interested visitors toward shopping or relationship-building actions.
-- The approved visual direction is bright, energetic, eye-catching, playful, sporty, and street-art influenced, with rounded/bubble-letter energy and editorial composition. It should feel expressive and youthful without becoming childish, toy-like, visually chaotic, or inconsistent with a credible $90-$120 sneaker purchase.
-- Use bright color as an accent against calmer neutral surfaces rather than saturating every section. Preserve enough neutral space that the bright blue and gold remain recognizable brand signals.
-- Favor bold image crops, expressive section transitions, asymmetric layouts, controlled overlap, oversized typography in important moments, and authentic human photography. Avoid generic ecommerce-template presentation.
-- Use subtle gradients only when they improve depth or transition. Do not rely on loud multi-color gradients as a default brand device.
-- Dark near-black sections are encouraged as occasional contrast moments.
-- Campaigns may introduce temporary accent colors in addition to the core palette, but they must not redefine semantic success/error/warning colors or make the site stop feeling like TreadJoy.
-- Keep functional/semantic colors separate from brand colors: success, error/danger, warning, information, focus, and disabled states must be chosen for clarity and accessibility rather than forced to use the campaign palette.
-- No color is globally prohibited, but additions outside the core/campaign palette must be intentional and tokenized rather than introduced as arbitrary one-off values.
-
-#### Approved color system
-
-Use centralized CSS custom properties/design tokens. Do not scatter raw hex values throughout component styles when an approved token exists.
-
-Core brand colors:
-
-- Primary sky blue: `#4CCBF0`.
-- Secondary gold/yellow: `#EDDC4F`.
-- Primary text/dark surface: a soft near-black, baseline `#191919` unless contrast testing requires adjustment.
-- Main neutral backgrounds must not be pure white, off-white, or generic light gray. Default to a warm stone/sand neutral around `#E9E1D5` and a cooler muted surface around `#DCE5E7`. These are baseline implementation values, not permission to introduce arbitrary near-white substitutes.
-- Pure white may still be used sparingly where required for accessible text/icons on dark or saturated surfaces, but it is not the default page background.
-
-Recommended token roles include:
-
-- `--color-brand-primary`
-- `--color-brand-secondary`
-- `--color-bg`
-- `--color-surface`
-- `--color-text`
-- `--color-text-muted`
-- `--color-border`
-- `--color-link`
-- `--color-focus`
-- `--color-success`
-- `--color-warning`
-- `--color-danger`
-- `--color-disabled`
-
-Never assume that the brand blue or gold is readable as text merely because it is on-brand. Test contrast in context and change foreground/background treatment when necessary.
-
-#### Typography system
-
-- Use **Fredoka** as the default expressive display/headline family and **DM Sans** as the default body/interface family. Both are intended to be sourced from a free web-safe distribution such as Google Fonts or self-hosted from a legally compatible free license. Do not add paid font licensing obligations without approval.
-- Limit the normal site to these two font families. Campaign artwork may use approved custom lettering as an image/SVG asset without changing the global type system.
-- Display typography should feel playful, rounded, street-art adjacent, and bubble-letter influenced without sacrificing legibility.
-- Use Title Case as the default for headlines and navigation labels. Do not make all-caps the default brand voice.
-- Use mixed font weights. Important hero/editorial statements may be very heavy; supporting headings and interface text should use lighter weights when that improves hierarchy.
-- Important campaign/hero sections may use extremely large responsive type. Use responsive `clamp()` sizing rather than brittle viewport-specific font declarations.
-- Body copy should be editorial and story-driven but deliberately constrained to readable line lengths. Do not stretch prose across the full viewport.
-- Expressive treatments are allowed where they have a purpose: outlined words, oversized typography, rotated text, layered/overlapping typography, and campaign-specific lettering. Marquee/continuously scrolling text is prohibited.
-- Do not use expressive typography where it harms comprehension, form usability, checkout clarity, or product-detail readability.
-
-#### Spacing, grid, and composition
-
-- The desktop/tablet composition should feel spacious and editorial, with substantial vertical breathing room between major homepage sections.
-- Mobile should retain the brand's breathing room but be deliberately more compact than desktop.
-- Use a standard 12-column responsive grid as the default desktop layout system.
-- Use a centered maximum-width content container for normal content while allowing hero media, video, selected campaign art, and intentional color/image bands to go full-bleed.
-- Baseline spacing tokens should follow a consistent scale rather than arbitrary values. Start with `4, 8, 12, 16, 24, 32, 48, 64, 96, 128px` and extend only when a real composition requires it.
-- Baseline container/gutter guidance: approximately 16-20px mobile gutters, 24-32px tablet gutters, and 40-56px desktop gutters. Tune within tokens rather than introducing many page-specific margins.
-- Asymmetry is encouraged. Sections do not need to center every image and text block.
-- Controlled overlap between photography, text, colored panels, and graphics is allowed and encouraged when it improves editorial energy.
-- Use a mixture of moderately rounded and sharp geometry. The default brand language should feel bubbly/rounded, but product imagery, modular diagrams, and expressive campaign graphics may use sharp edges when that better communicates the shoe or composition.
-- Section transitions may use overlapping imagery, irregular crops, large type, color changes, curves, and other expressive devices. Do not default every section to the same rectangular card pattern.
-- A long homepage is acceptable when every section has a distinct storytelling or navigation purpose.
-- Do not mechanically collapse every desktop two-column section into one vertical column on mobile. Design each mobile section intentionally. A section may stack, overlap, reorder, crop, or preserve a limited side-by-side relationship if still readable and touch-friendly. Never force two narrow unreadable columns merely to preserve the desktop grid.
-
-#### Buttons and calls to action
-
-- Primary buttons are rectangular and normally filled with the primary brand blue.
-- Secondary buttons use an alternate filled treatment, usually the secondary gold, dark near-black, or another approved campaign color with sufficient contrast. Do not make outline-only buttons the default secondary pattern.
-- Button labels use normal capitalization, not default all-caps.
-- Directional CTAs such as `Shop Men →` are approved and encouraged for editorial navigation.
-- Default hover behavior is a clear color inversion. Motion may accompany the inversion, but keep transitions subtle and fast rather than bouncy or distracting.
-- Use approximately 150-250ms transitions for ordinary hover/press/open state changes unless a specific campaign interaction has been approved.
-- Major homepage sections should generally have one clear primary action. Add multiple actions only when the section genuinely has more than one distinct user goal.
-- Buttons should normally remain content-width on mobile rather than becoming full-width automatically. Full-width treatment requires a layout/usability reason.
-- Icons inside buttons should communicate function or direction; do not add decorative icons merely to fill space.
-- Buttons need visible hover, keyboard focus, pressed, loading, disabled, and where relevant success states.
-
-#### Links
-
-- Normal content links should not be permanently underlined by default. Use a clear animated underline treatment on hover/focus.
-- Editorial text links such as `Discover the System →` are a preferred alternative to buttons when the hierarchy should feel lighter.
-- Navigation links use subtle hover indicators rather than large background pills or heavy visual effects.
-- Current/active navigation should use a persistent underline plus a modest weight/contrast increase. Do not depend on color alone to communicate the current destination.
-- Keep visited link styling visually consistent with the brand rather than changing normal navigation/content links to the browser's default visited purple.
-- Do not add external-link icons by default. Add one only where leaving TreadJoy would otherwise surprise the user or affect task completion.
-
-#### Imagery and art direction
-
-Photography priority is:
-
-1. Lifestyle photography.
-2. Product photography.
-3. Community photography.
-4. Close-up/detail photography.
-5. Abstract/art-directed imagery.
-
-Additional rules:
-
-- Heavily feature people. TreadJoy should feel worn, social, active, and connected to real customers/communities rather than like an isolated studio-product catalog.
-- Prefer authentic/candid photography over highly polished generic fashion advertising. Studio imagery may still be used where the product needs precise visual explanation.
-- Use a deliberate mixture of urban, colored/studio, natural, and neutral environments. Do not lock the entire site to one backdrop style.
-- Midwestern/local identity should be campaign-specific. Do not force Detroit/Milwaukee/Chicago/Cleveland/Pittsburgh references into every visual.
-- Community/nonprofit/volunteering sections must prioritize authentic photography from real activity. Do not substitute generic stock photos that imply an event or partnership happened.
-- During development, use clearly temporary placeholders when final photography does not exist.
-- **Do not use AI-generated imagery in any customer/end-user reachable deployment, including commerce mode and research mode.** AI-generated visual concepts may be used privately during design exploration only if they are not shipped or presented as final customer-facing brand assets.
-- Prefer irregular crops and art-directed image shapes rather than defaulting every image to a uniform rounded card.
-- Text overlays on imagery are allowed occasionally when contrast and legibility remain strong; they are not the default for every image.
-- Product-detail pages should be cleaner and more neutral than the expressive homepage so customers can evaluate the shoe, colors, modular parts, fit, pricing, and purchase state without visual competition.
-- Production imagery should use responsive dimensions and modern formats such as WebP/AVIF where supported. Preserve quality and do not degrade product-detail inspection.
-- Meaningful images require intentional alt text. Decorative images must use empty alt text or the correct equivalent so assistive technology does not announce noise.
-- If a final asset is missing, build the correct layout around an obvious placeholder rather than inventing final brand photography, partner imagery, logos, or claims.
-
-#### Homepage information architecture
-
-The preferred homepage hierarchy is:
-
-1. Announcement bar focused primarily on drops and events.
-2. Minimal sticky global header/navigation.
-3. High-impact campaign hero using brand photography/video, a short headline, and focused calls to action.
-4. Short brand statement explaining the differentiated promise.
-5. Large image-led entry points to primary shopping audiences/categories such as Men and Women.
-6. A modular-system explainer showing how interchangeable components make the product different.
-7. Featured YouTube prerecorded video or YouTube livestream section.
-8. Community section showing relationships with customers, creators, local organizations, events, nonprofits, or third places.
-9. Positive-impact section for concrete nonprofit, volunteering, giving, or sustainability work.
-10. Brand-goals/roadmap section showing where TreadJoy is going next.
-11. Simple newsletter/waitlist conversion section.
-12. Complete footer.
-
-On the homepage:
-
-- Product photography may appear prominently in campaign/lifestyle imagery, but do not render normal product cards, product-price grids, quantity controls, or add-to-cart buttons.
-- Homepage commerce calls to action should lead to category, collection, how-it-works, or product-listing pages rather than trying to complete the sale inside the homepage.
-- Do not fabricate community partnerships, impact claims, sustainability metrics, nonprofit relationships, donation amounts, launch dates, or future milestones. Use approved real content or clearly labeled placeholders in development only.
-- Keep the story scannable even though editorial copy is allowed. A visitor should understand the brand, product difference, and next action without reading long uninterrupted blocks of text.
-
-#### Desktop global navigation
-
-- The desktop header is sticky and uses a solid background; do not default to a transparent-over-hero navigation treatment.
-- Use the approved image logo in the header. Do not replace it with a plain text wordmark without approval.
-- Primary navigation is: **Men**, **Women**, **Sale**, **How It Works**.
-- **Story** and **Impact** are not primary navigation items. They should be discoverable from the homepage and footer unless the project owner later changes the information architecture.
-- **Community** is not a required primary desktop item under the approved navigation list; surface it prominently from homepage/footer and campaign content instead.
-- Kids is not a launch navigation/category item.
-- Right-side utilities in commerce mode are **Search**, **Account**, and **Cart/Bag**. The cart shows an item-count badge when the count is greater than zero.
-- Men and Women labels link to their full category destinations and also expose compact dropdowns.
-- Use a compact dropdown rather than a full-width mega-menu. It may contain grouped category/collection links and one campaign image, but it should remain visually contained and quick to scan.
-- Dropdowns open on pointer hover as an enhancement and on keyboard focus/click as required behavior. Every destination must remain usable by keyboard, touch, and assistive technology.
-- Sale is normally a direct destination unless there is enough real sale structure to justify a dropdown.
-- How It Works is a direct primary navigation destination because modularity is core to the product's differentiation.
-- Treat navigation flyouts as website-navigation disclosures, not desktop-application menus. Use semantic links/buttons and `aria-expanded`/`aria-controls` where appropriate; do not add complex `menu`/`menubar` ARIA roles unless the interaction genuinely implements that pattern.
-- Opening a dropdown gives the triggering item an obvious active/open state. Escape and outside-click should close dismissible navigation surfaces without trapping focus.
-- In research mode, remove commerce-only utility actions and purchase-oriented destinations as required by the fail-closed architecture. Research mode navigation should emphasize approved research/relationship actions such as Survey, Waitlist, How It Works, Community, Story, and impact/brand content without creating commerce routes.
-
-#### Mobile navigation
-
-- Below the navigation-collapse breakpoint, use a hamburger trigger, image logo, Search, and Bag/Cart in the top bar.
-- Place Account inside the opened mobile navigation rather than forcing another top-bar icon.
-- The mobile navigation occupies the full screen rather than using a narrow side drawer.
-- Use large touch-friendly navigation rows.
-- Men, Women, and any future nested categories use accordion/disclosure submenus.
-- Preserve the announcement bar at the top on mobile; simplify its text if needed but do not automatically hide it.
-- Include approved social links near the bottom of the full-screen navigation.
-- Maintain obvious close controls, Escape handling where a hardware keyboard is present, sensible focus management, and background scroll locking while the full-screen menu is open.
-
-#### Responsive breakpoints and mobile art direction
-
-Mobile is the first launch priority, followed by desktop/laptop, then tablet. Implement CSS mobile-first.
-
-Use these baseline breakpoints unless a component has a documented content-driven reason to switch earlier/later:
-
-- Small mobile: around `480px`.
-- Tablet/small layout transition: around `768px`.
-- Desktop navigation/layout transition: `1024px`.
-- Large desktop: around `1280px`.
-- Extra-large/wide desktop: around `1536px`.
-
-Rules:
-
-- Collapse the desktop navigation into the full-screen mobile/tablet navigation below `1024px`.
-- Use responsive `clamp()` typography for important headings/display text.
-- Control image/text ordering per section on mobile rather than blindly following desktop source order when a different order tells the story better. Preserve a logical DOM/reading order for accessibility.
-- Do not automatically stack all editorial two-column sections. Art-direct the mobile composition intentionally while keeping content readable and touch targets usable.
-- At minimum, verify a small phone, large phone, tablet, laptop, and wide desktop width for material frontend changes.
-
-#### Video and motion
-
-- The homepage video area uses an embedded player presentation.
-- YouTube is the approved platform for both prerecorded videos and recurring livestreams.
-- Playback requires user action. Do not autoplay promotional video, even muted, as the default experience.
-- Use a responsive poster/preview and defer the heavier YouTube player where practical until the user requests playback, so the video section does not dominate initial page performance.
-- Motion intensity is moderate. Use motion to reinforce hierarchy, reveal content, or communicate interactivity rather than as constant decoration.
-- Subtle scroll-entry reveal and restrained parallax effects are allowed when they do not degrade performance, readability, or accessibility.
-- Category/campaign imagery may subtly zoom on hover.
-- Marquee/continuously scrolling text is prohibited.
-- Every animation must respect `prefers-reduced-motion`; core content and interactions must remain fully usable with motion reduced/disabled.
-- Avoid scroll-jacking, long blocking intro animations, navigation delays, or effects that make the interface feel less responsive.
-
-#### Community, impact, and goals content
-
-- Community content should answer what TreadJoy is doing with real people and local partners: events, creators, independent shops, nonprofits, volunteering, customer gatherings, or other approved relationships. It should not read like corporate public-relations copy.
-- Impact content should communicate concrete actions and evidence. Avoid vague environmental or social claims and never invent metrics. If an initiative is only a future intention, label it as a goal rather than a current accomplishment.
-- The brand-goals section may show a simple roadmap or timeline, but every date, milestone, launch promise, expansion claim, and impact commitment requires approved source information.
-- Preserve the ability to replace homepage campaigns and community/impact content without coupling presentation changes to order, payment, inventory, or other authoritative commerce records. Do not build a generalized CMS until actual content-management needs justify it.
-
-#### Component states and interaction behavior
-
-Every reusable interactive component must account for its relevant states rather than styling only its default state.
-
-- Hover: every desktop interactive element gets visible feedback.
-- Keyboard focus: use clear `:focus-visible` treatment even when it is more visually prominent than the resting design. Accessibility wins over hiding focus rings.
-- Active/current navigation: persistent underline plus modest weight/contrast increase.
-- Pressed buttons: visibly respond to click/tap.
-- Disabled controls: use a muted approved disabled color/treatment and the correct disabled semantics. Do not rely on opacity alone and do not leave a pointer cursor implying availability.
-- Loading buttons/actions: show a spinner and expose an accessible loading state/name. Prevent duplicate submission where appropriate.
-- Add-to-cart success: use an accessible toast notification. Do not rely on the toast as the only durable confirmation if the cart count/state also changes.
-- Form validation errors: show the explanatory message next to/below the affected field, pair it with a clear visual error treatment, and associate it programmatically with the control.
-- Form focus: use a visible brand-aware focus/border treatment that still meets contrast requirements.
-- Success messages for broader operations: use an accessible banner when appropriate.
-- Empty states such as an empty cart, search result, or future wishlist should receive intentional branded illustration/visual treatment rather than appearing as unfinished blank pages. Final customer-facing illustrations must be approved/non-AI assets; placeholders are acceptable during development.
-- Skeleton placeholders are approved for asynchronous catalog/content loading when asynchronous loading is actually introduced.
-- Sold-out products remain visible in the catalog but are clearly labeled and purchase controls are disabled.
-- Preorders require a visually distinct status/badge/CTA treatment from ordinary in-stock purchasing so customers understand they are not buying an immediately shippable item.
-- Open dropdown/menu triggers visibly show their open state.
-- Dismissible overlays, dialogs, drawers, dropdowns, and menus should close with an explicit control and, where appropriate, outside click and `Escape`.
-- Default interaction transitions are subtle, approximately 150-250ms.
-- Use the standard pointer cursor for clickable controls/links. Do not introduce novelty cursors.
-- Loading, error, success, open/closed, and other meaningful state changes must be exposed appropriately to assistive technology, not communicated only by color or animation.
-
-#### Frontend implementation and design-system governance
-
-- These design decisions are requirements. Do not change core colors, typography families, navigation structure, breakpoint strategy, interaction principles, or homepage role without project-owner approval.
-- Campaign-specific pages may bend typography/color/layout rules while the global header, footer, product pages, checkout, forms, and reusable interaction patterns remain consistent.
-- Define reusable values as CSS custom properties/design tokens: colors, type families, type scale, spacing, radii, borders, shadows/elevation, container widths, z-index layers, and transitions.
-- Do not introduce one-off hex colors, arbitrary spacing values, duplicate component styles, or slightly different copies of the same button/form/navigation pattern when an existing token or component can be reused.
-- Default to the existing Django-template architecture, semantic HTML, modern CSS, and the smallest amount of JavaScript needed for interactions.
-- Reuse shared Django partials/components for buttons, navigation, cards/feature blocks, forms, alerts/toasts, and repeated page chrome where that reduces duplication without creating over-abstracted template machinery.
-- Shared page chrome belongs in `templates/base.html` and `templates/partials/` or the existing app-namespaced template structure. Do not create a second parallel component system.
-- Do not introduce React, Vue, a SPA architecture, Tailwind, Bootstrap, Alpine, HTMX, GSAP, or another frontend/styling/animation framework merely to make implementation easier. Any new frontend framework or major styling dependency requires a concrete requirement, tradeoff analysis, and explicit approval.
-- Prefer CSS and native browser behavior over JavaScript libraries when the same effect can be implemented clearly, accessibly, and maintainably without a dependency.
-- Keep marketing/presentation logic out of commerce domain code. Templates may decide how approved data is presented, but product availability, pricing, preorder rules, order state, permissions, and other business rules must remain in the appropriate backend/domain layer.
-- JavaScript interactions should progressively enhance usable HTML where practical. Navigation, basic content, and primary links should not become inaccessible because JavaScript fails.
-- Do not add a dependency solely for a single icon, dropdown, animation, or basic layout effect that can be implemented clearly with the existing stack.
-
-#### Responsive, accessibility, and performance standard
-
-- Target **WCAG 2.2 Level AA** for new and materially changed public UI unless a documented exception is explicitly approved.
-- Use semantic landmarks, logical heading order, visible keyboard focus, descriptive link/control names, sufficient contrast, meaningful alt text, correctly labeled form controls, and touch targets that remain usable on small screens.
-- Brand color choices do not override readability. If an approved color fails contrast for a given text treatment, change the treatment/background rather than knowingly shipping unreadable text.
-- Ensure dropdowns, full-screen navigation, accordions, video controls, forms, dialogs, cart/account utilities, and purchase controls are operable without a mouse.
-- Give images intrinsic dimensions or stable aspect ratios to reduce layout shift. Use responsive images and modern formats. Lazy-load below-the-fold images; do not lazy-load the primary hero asset if doing so would delay the main visual.
-- Avoid loading the full YouTube embed before needed when a lightweight poster/preview can defer that cost.
-- Avoid massive hero assets, unnecessary JavaScript libraries, unoptimized images/video, layout shifts, and animation that damages responsiveness or Core Web Vitals.
-- Performance is part of the design contract. Visual richness is not a reason to ship an unnecessarily heavy homepage.
-
-#### Frontend source-of-truth and visual verification workflow
-
-- When the project owner provides an approved Figma frame, screenshot, image reference, or explicit design brief, treat it as the visual source of truth for the task except where it conflicts with this file's business, security, accessibility, or architecture rules.
-- Figma is the preferred design source when detailed screen designs exist. Do not invent deviations from approved layouts merely because another implementation is faster.
-- Before editing an existing page, inspect the current rendered page and relevant shared components so the change extends the existing system instead of creating unrelated patterns.
-- After a frontend change, do not declare the work complete from code inspection alone. Run the app and inspect the rendered result in a real browser.
-- When browser automation/Playwright is available, use it to exercise interactions and capture visual evidence at representative small-phone, large-phone, tablet, laptop, and wide-desktop widths.
-- Verify relevant hover, focus, active, pressed, loading, disabled, open/closed, empty, error, success, sold-out, preorder, and responsive states.
-- Check browser-console errors and obvious overflow/layout failures.
-- For work implemented from Figma or screenshots, compare the rendered page against the approved reference and iterate on spacing, hierarchy, typography, image cropping, responsive behavior, and interaction details until material mismatches are resolved.
-- Frontend changes require before/after screenshots or equivalent visual inspection evidence before they are considered verified.
-- Do not commit generated visual-test screenshots, temporary downloaded design assets, or browser artifacts unless they are intentionally part of the project's approved test/reference strategy.
-- If Playwright or automated accessibility tooling is proposed as a repository dependency, treat it as a dependency change under the normal approval process rather than silently adding it.
-
-#### Homepage completion criteria
-
-A homepage/frontend milestone is not complete merely because all sections exist. Before handoff, confirm that:
-
-- The first viewport communicates a coherent TreadJoy brand and provides a clear next action.
-- The page uses the approved blue/gold/neutral/near-black system rather than arbitrary colors.
-- Typography follows the Fredoka + DM Sans system unless an approved campaign asset intentionally overrides display lettering.
-- No direct product-card grid appears on the homepage.
-- Men/Women navigation reaches the correct catalog destinations and works by keyboard and touch.
-- Sale and How It Works destinations behave consistently with the approved information architecture.
-- The modular-product difference is understandable visually and in concise copy.
-- YouTube prerecorded video/livestream presentation is responsive, user-initiated, and does not create an accessibility or major performance regression.
-- Community, impact, and goals sections contain approved, supportable claims and authentic/placeholder imagery rather than fabricated or AI-generated customer-facing visuals.
-- Research mode exposes no order-taking path or commerce-only UI.
-- Footer links are complete for the features/policies that actually exist; do not invent legal, shipping, return, social, or support destinations that have not been approved or implemented.
-- Small phone, large phone, tablet, laptop, and wide desktop layouts have been visually inspected in a real browser.
-- Relevant interaction/component states have been checked.
-- Relevant Django checks/tests still pass and no new console/layout/accessibility failures were introduced.
-
-### Approval boundaries
-
-Human approval is required before:
-
-- Any customer-facing behavior, content, design, or workflow change.
-- Any large or cross-cutting code, schema, dependency, or infrastructure change.
-- Any change to data-security controls, secrets handling, authentication/authorization policy, PII handling, retention, logging, monitoring, or security-related configuration.
-
-When a proposed step falls into one of these categories, present the intended behavior, motivation, tradeoffs, affected areas, and verification plan, then wait for explicit approval before editing. Small internal, non-customer-facing, non-security changes may proceed within the agreed step.
-
-## Product priorities
-
-Unless the project owner explicitly changes the order, sequence work as follows:
-
-1. Business rules and decision support: inventory, order lifecycle, pricing/discounts, customer segmentation, and reporting.
-2. Core backend systems: authentication/authorization, internal admin tools, order management, inventory, customer-data handling, and data security.
-3. Incremental code quality improvements alongside feature work.
-4. Production architecture and operations, including Cloudflare, PostgreSQL, caching/search, background jobs, Stripe, object storage, analytics, monitoring, backups, staging, and CI/CD.
-5. Package evaluation based on an actual requirement; classify candidates as must-have, nice-to-have, or skip for now and discuss alternatives before adoption.
-6. Frontend rebuilding after backend v1 is stable unless the project owner explicitly reprioritizes it. Default to the existing Django-template approach described below; do not introduce a SPA/frontend framework without a concrete requirement, tradeoff review, and approval.
-
-Security remains non-negotiable. A prior incident involving exposed Django and Stripe secrets has been contained, environment-based configuration is in place, and automated secret scanning exists. Preserve those controls. If evidence of another exposed credential or sensitive file appears, stop feature work, report it without printing the secret, and return to incident containment first.
-
-## Initial customer thesis
-
-Treat this as the pre-validation beachhead hypothesis, not established customer truth. Call out decisions that rely on it and prefer implementations that can adapt as interviews and tests produce evidence.
-
-- Primarily men aged 20–30 living in Midwestern urban areas, initially represented by cities such as Detroit, Milwaukee, Chicago, Cleveland, and Pittsburgh.
-- Median-to-above-median income for their age group; creative interests may include art, LEGO, DIY, and fashion.
-- Uses fashion for self-expression and owns several enjoyed pairs of shoes, but does not necessarily identify as a sneakerhead.
+- Primarily men aged 20–30 in Midwestern urban areas, initially represented by Detroit, Milwaukee, Chicago, Cleveland, and Pittsburgh.
+- Median-to-above-median income for their age group; possible interests include art, LEGO, DIY, and fashion.
+- Uses fashion for self-expression and owns several enjoyed pairs of shoes without necessarily identifying as a sneakerhead.
 - Seeks casual streetwear sneakers for social occasions, nights out, dates, and travel.
-- Expected price position is roughly $90–$120 for the core shoe.
-- The differentiated promise is credible participation in local culture rather than generic city-themed marketing: relationships with creators, events, independent shops, nonprofits, and third places should create awareness and trust.
-- Initial acquisition and validation should focus on those local partners and communities rather than broad national advertising.
+- Expected core-shoe price position is approximately $90–$120.
+- The differentiated promise is credible participation in local culture through real relationships with creators, events, independent shops, nonprofits, and third places—not generic city-themed marketing.
+- Initial acquisition and validation should focus on local partners and communities rather than broad national advertising.
 
-Do not store inferred tastes, income, cultural identity, or community affiliation as customer profile fields merely because they appear in this thesis. Collect personal data only for a defined operational purpose and with appropriate approval.
+Do not turn inferred tastes, income, identity, or community affiliation into profile fields. Collect personal data only for an approved operational purpose.
 
-## Initial fulfillment policy
+### Fulfillment policy
 
 The approved launch operating model is:
 
-- Support both stocked products and clearly identified preorders. The initial product run will be sold by preorder to reduce unsold-inventory risk; preorders are expected to remain part of the business model.
-- The project owner will pack orders and tender packages to a shipping carrier after receiving goods from the manufacturer.
+- Support stocked products and clearly identified preorders. The first run is expected to use preorders to reduce unsold-inventory risk.
+- The project owner packs orders and tenders packages after receiving goods from the manufacturer.
 - Ship only to addresses in the contiguous United States at launch.
-- Let customers pay for available shipping-service levels and provide carrier tracking after shipment.
-- Handle fulfillment failures and unusual customer problems through human review rather than automatic substitutions or automatic resolution.
-- Tender paid stocked-product orders to the carrier by the end of the next business day. Do not promise next-calendar-day shipment.
-- Give each preorder a clear estimated shipping window supported by current manufacturer information and display it before payment.
-- Describe customer-selected shipping speed as estimated carrier transit time beginning after carrier tender, not from the purchase date.
-- If a preorder cannot ship within its stated window, notify the customer before that window expires and offer a documented choice: explicitly accept the revised date or cancel for a full refund.
-- Do not allow stocked and preorder products in the same cart at launch. Mixed carts and split fulfillment require a later approved design.
-- Cap preorder sales using the approved production allocation; preorder supply is not unlimited.
-- Record manual exception, delay, consent, cancellation, refund, shipment, and tracking actions in order history.
+- Customers pay for available shipping service levels and receive carrier tracking.
+- Tender paid stocked-product orders by the end of the next business day; do not promise next-calendar-day shipment.
+- Display a manufacturer-supported preorder shipping window before payment.
+- Describe selected shipping speed as estimated carrier transit time beginning after carrier tender, not purchase time.
+- If a preorder cannot ship in its stated window, notify the customer before the window expires and offer a recorded choice: accept the revised date or cancel for a full refund.
+- Do not mix stocked and preorder products in one launch cart. Split fulfillment requires a later approved design.
+- Cap preorder sales by the approved production allocation; supply is not unlimited.
+- Send fulfillment failures and unusual problems to human review rather than making substitutions or automatic resolutions.
+- Record exceptions, delays, consent, cancellation, refund, shipment, and tracking actions in order history.
 
-The stocked-order cutoff, business-day holiday calendar, exact preorder date representation, supported carriers, shipping-rate source, and unclaimed delay-consent behavior remain unresolved business policies. Ask for decisions before implementing them.
+The stocked-order cutoff, business-day holiday calendar, exact preorder date representation, supported carriers, shipping-rate source, and behavior when a customer does not respond to a delay remain unresolved. Obtain decisions before implementing them.
 
-## Product customization model
-
-TreadJoy customization means selecting interchangeable, standardized components—not engraving, one-off fabrication, or customer-specific manufacturing. An eligible returned configuration can be inspected, disassembled when appropriate, and its acceptable components returned to inventory. Do not classify a product as final sale solely because the customer selected its standard components.
-
-## Cancellation, return, and exchange policy
+### Cancellation, return, and exchange policy
 
 The approved launch policy is:
 
 - Allow cancellation of stocked orders for a full refund, including outbound shipping, until carrier tender.
-- Allow cancellation of preorders for a full refund until carrier tender, including after production begins. Once tendered, an order cannot be canceled and instead follows the return policy.
-- Accept eligible returns requested within 30 calendar days after confirmed delivery.
-- Require returned items to be unworn outdoors, undamaged, and accompanied by their original packaging. Indoor fit testing is allowed.
-- Offer one free size exchange per order within the contiguous United States, subject to available inventory. TreadJoy pays return and replacement shipping for that exchange. If no suitable replacement is available, offer a refund.
-- For preference-based returns, the customer pays return shipping and original outbound shipping is nonrefundable.
-- For defective, damaged, or incorrect items, TreadJoy pays return and replacement shipping and offers either a replacement or full refund.
-- Issue approved refunds to the original payment method after inspection. Approve the refund or explain the decision within five business days after receiving the return.
-- Do not charge a restocking fee and do not make automatic substitutions.
-- Require human review for cancellations, returns, exchanges, inspections, and refunds at launch, and record every decision and state change in order history.
-- Inspect returned customized configurations at the component level. Return only complete, safe, undamaged, resellable components to available inventory; quarantine all others.
-
-Do not silently weaken these promises based on product type, sale status, or customization. Any final-sale category or policy exception requires explicit approval and clear disclosure before purchase.
-
-## Repository map
-
-- `Shoes/`: project settings and root URL configuration.
-- `web/core/`: home, about, and contact pages.
-- `web/products/`: product, variant, compatibility-group, and modular-part catalog models.
-- `web/cart/`: authenticated and guest carts plus the cart context processor.
-- `web/orders/`: checkout, Stripe integration, payments, order status history, shipments, and inventory updates.
-- `web/survey/`, `web/waitlist/`, `web/accounts/`: their corresponding user flows.
-- `templates/`: shared and app-namespaced Django templates.
-- `static/`: project CSS and images.
-- `media/`: development uploads. Do not add new generated or user-uploaded media to Git.
-
-Some legacy modules remain at `web/models.py`, `web/views.py`, and `web/tests.py`. New work belongs in the relevant sub-app unless the task explicitly concerns those legacy modules.
-
-## Local setup
-
-Use a virtual environment and run commands from the repository root:
-
-```bash
-python -m venv .venv
-source .venv/bin/activate
-python -m pip install -r requirements.txt
-cp .env.example .env
-```
-
-Fill in `.env` with a generated Django secret, local PostgreSQL credentials, Stripe **test** credentials, and optional Google OAuth credentials. Never commit `.env`, API keys, webhook secrets, database passwords, access tokens, or customer data.
-
-Create the configured PostgreSQL database, then initialize and run the app:
-
-```bash
-python manage.py migrate
-python manage.py runserver
-```
-
-The settings module requires the environment variables documented in `.env.example`; management commands will fail early if required values are absent.
-
-## Change guidelines
-
-- Keep changes within the owning Django app and preserve the existing URL namespaces such as `products:`, `cart:`, `orders:`, `survey:`, `waitlist:`, and `core:`.
-- Put templates under their existing app-namespaced directories. Shared page chrome belongs in `templates/base.html` and `templates/partials/`.
-- For model changes, create migrations with `python manage.py makemigrations <app>` and commit the generated migration. Do not rewrite previously committed migrations unless explicitly requested.
-- Preserve historical order data. `OrderItem` fields such as product name, SKU, size, color, and unit price are snapshots and must not be recomputed from the current catalog.
-- Use `Decimal` for application-level money calculations. Convert to integer cents only at the Stripe API boundary.
-- Treat checkout and payment changes as high risk. Keep webhook signature verification, `StripeEvent` idempotency, atomic database updates, authorization checks, and the rule that inventory is reduced only after confirmed payment.
-- Keep cart mutations POST-only and scoped to the current authenticated user or guest session. Validate requested quantities against active variants and available stock.
-- Avoid network calls in tests. Mock Stripe and email integrations, and use Stripe test-mode values for local manual checks.
-- Add focused tests in the affected app (prefer an app-local `tests/` package as coverage grows). Include regression tests for bug fixes and permission, invalid-input, and duplicate-event cases where relevant.
-- Follow the surrounding Python and Django style. Prefer small views/helpers, explicit imports, `select_related`/`prefetch_related` for related data, and database transactions for multi-record state changes.
-- Keep business rules out of templates and avoid scattering them across views, models, signals, admin actions, and tasks. For nontrivial workflows, first agree on the policy and invariants, then place the rule in a clear service/domain layer with tests.
-- Make important state changes traceable. Prefer explicit status transitions and append-only event/history records for orders, payments, inventory adjustments, refunds, and fulfillment operations.
-- Treat PostgreSQL as the authoritative transactional store. Caches, search indexes, analytics, and task queues are derived systems and must not become the only record of business state.
-- Do not add Redis, Elasticsearch, Celery, a REST API, analytics, or a frontend framework speculatively. Introduce infrastructure only after identifying the concrete requirement, failure mode, operational cost, and verification plan.
-
-## Testing and owner acceptance protocol
-
-Testing is part of the implementation, not a cleanup task after the feature is written. Every meaningful change must be evaluated against the behavior the project owner actually approved. Automated tests prove that explicit rules remain true; manual acceptance testing proves that the customer-facing result, workflow, and business intent match what the project owner intended. Do not treat either layer as a substitute for the other.
-
-### 1. Define the behavior before writing tests
-
-Before implementing a feature, bug fix, or behavior change, translate the approved requirement into a small set of observable acceptance criteria. State them in plain language before or alongside the implementation plan.
-
-For each acceptance criterion, identify:
-
-- the starting state or prerequisite data;
-- the user or system action;
-- the expected visible result;
-- the expected database or domain-state result, when applicable;
-- the expected behavior for invalid, unauthorized, duplicate, or boundary inputs;
-- whether the criterion can be verified automatically, manually, or both.
-
-Do not invent business rules merely to make a test convenient. If an expected result depends on an unresolved policy, stop at that boundary and ask for the policy decision before encoding the behavior or its test.
-
-For bug fixes, first identify the behavior that was wrong and add a regression test that would fail for the bug whenever the defect can be reproduced reliably in an automated test.
-
-### 2. Automated-test strategy
-
-Use Django's built-in test tools by default. Do not introduce pytest, factory_boy, Selenium, Playwright, Axe, snapshot libraries, or another testing dependency solely for convenience without first identifying the requirement and receiving any approval required by the dependency rules in this file.
-
-Place tests in the Django app that owns the behavior. As coverage grows, prefer an app-local `tests/` package organized by concern, for example:
-
-```text
-web/orders/tests/
-    test_checkout.py
-    test_payments.py
-    test_cancellations.py
-    test_permissions.py
-```
-
-Prefer focused tests over large end-to-end tests that obscure the cause of a failure. Use the smallest test level that proves the rule, while adding integration tests where multiple components must work together.
-
-#### Model and domain-rule tests
-
-Test model constraints, service/domain functions, state transitions, calculations, and invariants directly. Important examples include:
-
-- price and money calculations;
-- inventory availability and adjustments;
-- compatibility and modular-part rules;
-- order-status transitions;
-- preorder versus stocked-product rules;
-- cancellation, return, exchange, and refund eligibility once implemented;
-- snapshot behavior for historical `OrderItem` data;
-- uniqueness, required relationships, and database constraints.
-
-Where correctness depends on a database transaction, use the appropriate transactional test style and explicitly verify rollback or atomic behavior when failure occurs.
-
-#### View, form, URL, and permission tests
-
-For server-rendered flows, test the HTTP contract as well as the resulting state. Verify as applicable:
-
-- expected status codes and redirects;
-- correct URL namespace and route behavior;
-- valid form submission;
-- invalid-input rejection with useful errors;
-- authentication requirements;
-- authorization and ownership checks;
-- POST-only mutation endpoints;
-- protection against changing another customer's resources;
-- relevant template and context behavior without asserting fragile presentation details.
-
-Do not test CSS implementation details with Django unit tests. Test semantic behavior in Python and reserve visual layout verification for browser/manual testing.
-
-#### Cart, checkout, Stripe, and webhook tests
-
-Treat commerce tests as high priority. Mock external Stripe and email network calls in the automated suite. At minimum, affected checkout/payment work should test the relevant success path plus material failure and duplicate cases, including where applicable:
-
-- guest versus authenticated carts;
-- quantity and availability validation;
-- prevention of mixed stocked/preorder carts at launch;
-- server-side price authority rather than trusting browser-submitted prices;
-- creation of the correct order snapshot;
-- payment confirmation before inventory reduction;
-- webhook signature handling at the integration boundary;
-- `StripeEvent` idempotency and duplicate-event behavior;
-- repeated requests not producing duplicate orders, payments, refunds, or inventory changes;
-- transaction rollback if a multi-record operation fails;
-- authorization around order, payment, refund, and fulfillment actions.
-
-Automated tests must never contact Stripe's live API or use live credentials.
-
-#### Commerce-mode and research-mode tests
-
-Any change touching routing, checkout, products, waitlist, survey, navigation, or deployment-mode configuration must consider both approved deployment modes.
-
-Maintain tests proving that:
-
-- commerce mode exposes only the intended commerce behavior;
-- research mode does not register or expose checkout/order-taking behavior;
-- research mode cannot create an order or initiate payment even through a crafted direct request;
-- research mode does not require or initialize Stripe credentials;
-- shared presentation or domain changes do not accidentally cross the database or capability boundary between deployments.
-
-Negative tests for the research-mode restrictions are mandatory when the affected code could weaken those restrictions.
-
-#### Security and privacy tests
-
-When a change touches authentication, authorization, PII, secrets, staff actions, file upload, payment, customer data, or security configuration, add tests for the concrete security property being changed whenever it is practical to automate it. Examples include unauthorized access, cross-user access, unsafe mutation methods, duplicate processing, and validation of sensitive inputs.
-
-A passing security test is evidence for a specific invariant, not a general claim that the application is secure.
-
-#### Frontend behavior tests
-
-Use automated browser tests only when the project has an approved browser-testing setup and the behavior benefits from automation. Good candidates include:
-
-- opening and closing navigation menus;
-- keyboard-accessible dropdown behavior;
-- cart-count changes;
-- form submission and visible validation;
-- critical checkout navigation before the external payment boundary;
-- research-mode absence of checkout controls;
-- repeated high-value interactions that are expensive to retest manually.
-
-If Playwright or another approved browser tool is available, prefer stable selectors based on accessible roles, labels, names, or dedicated test attributes rather than brittle CSS structure. Do not make production markup worse solely to satisfy a test.
-
-Visual appearance still requires manual review even when browser automation passes. Automated screenshots or visual-regression tests may supplement owner review but do not replace it for intentional design changes.
-
-#### Test data
-
-Create the minimum deterministic data required to prove the behavior. Prefer `setUpTestData`, local helper/builders, or existing project test utilities before adding a fixture/factory dependency.
-
-Tests must not depend on:
-
-- production customer data;
-- the developer's local database contents;
-- execution order of other tests;
-- external network availability;
-- real email delivery;
-- current wall-clock timing when a controlled/fixed value can be used.
-
-Make edge cases explicit. For numeric, quantity, date, inventory, or price rules, test relevant boundaries rather than only an ordinary middle value.
-
-### 3. What every implementation step should test
-
-Do not aim for a meaningless coverage percentage. Test the decisions and failure modes that would matter if they regressed.
-
-For each changed behavior, choose the relevant cases from this set:
-
-1. **Happy path** — the approved normal workflow succeeds.
-2. **Invalid input** — malformed or disallowed input is rejected safely and clearly.
-3. **Boundary case** — zero/one/maximum quantities, stock boundary, date boundary, price boundary, or another rule edge is correct.
-4. **Unauthorized case** — a guest, different customer, or insufficiently privileged staff user cannot perform a protected action.
-5. **Duplicate/retry case** — repeated POSTs, webhook delivery, refreshes, or retries do not create duplicate irreversible state.
-6. **Failure/rollback case** — partial failure does not leave inconsistent authoritative records.
-7. **Mode case** — commerce and research deployments behave according to their separate capabilities when relevant.
-8. **Regression case** — a previously observed defect remains fixed.
-
-Not every change needs all eight. The agent must state which cases are relevant and why omitted cases are not material.
-
-### 4. Manual owner-acceptance testing
-
-After automated checks pass, provide the project owner with a concise, numbered manual test script for every customer-facing change and for internal workflows whose usability or business meaning cannot be proven by unit tests.
-
-The manual script must be specific enough that the project owner does not need to infer what to click or what success looks like. For each scenario, include:
-
-- **Purpose:** what behavior is being validated;
-- **Setup:** mode, account type, required test data, browser/device width, and any local-server prerequisites;
-- **Steps:** exact actions to perform in order;
-- **Expected result after each important step:** visible behavior and, when useful, the expected authoritative state;
-- **Failure signs:** what would indicate the implementation does not match the approved behavior;
-- **Cleanup/reset:** how to return test data to a reusable state when manual testing creates records.
-
-Use Stripe test mode only for manual payment testing. When a Stripe test card or documented test scenario is needed, identify that it is test-only and never request or use real card information.
-
-### 5. Manual frontend and design review
-
-For visible frontend changes, the project owner must verify both function and presentation. The agent should tell the owner exactly what to inspect rather than saying only "check that it looks right."
-
-At minimum, review the changed experience at these viewport classes when relevant:
-
-- small phone;
-- large phone;
-- tablet;
-- laptop/desktop;
-- wide desktop.
-
-The manual visual review should check:
-
-- content hierarchy matches the approved intent;
-- navigation and CTA priority are clear;
-- no text, imagery, menus, or controls overlap unintentionally;
-- no horizontal scrolling occurs unless intentionally designed;
-- typography remains readable and responsive;
-- imagery crops correctly and preserves the intended focal point;
-- interactive states are visible: hover, focus-visible, pressed, open, selected, disabled, loading, error, and success where relevant;
-- keyboard navigation reaches controls in a logical order;
-- menus, drawers, and dialogs can be dismissed as intended, including `Escape` where applicable;
-- reduced-motion behavior is acceptable when `prefers-reduced-motion` is enabled;
-- meaningful images have appropriate alt text and decorative images do not create noise;
-- the page still communicates the approved TreadJoy brand system rather than merely being technically responsive.
-
-When a change has an approved Figma/reference design, compare the implementation against that reference at representative widths. Record intentional deviations rather than silently accepting them.
-
-### 6. Manual workflow and business-rule review
-
-For commerce or staff workflows, manual testing should follow the lifecycle rather than testing only an isolated screen. Where relevant, walk through the full sequence, for example:
-
-```text
-catalog -> configuration -> cart -> checkout -> payment confirmation
--> order history -> fulfillment -> shipment/tracking
-```
-
-or the corresponding preorder, cancellation, return, exchange, or refund path once those workflows exist.
-
-At key points, verify that what the customer sees agrees with the authoritative database state and that history/audit records are created where the business rules require them.
-
-For destructive or financially meaningful actions, also manually attempt at least one disallowed path when practical—for example canceling after the allowed state, accessing another customer's order, submitting the action twice, or attempting checkout in research mode.
-
-### 7. Acceptance evidence and handoff
-
-Do not tell the project owner a feature "works" solely because code compiles or the test suite passes. At handoff, report:
-
-- the acceptance criteria implemented;
-- automated tests added or changed;
-- commands run and their results;
-- any test that could not be run and why;
-- the manual test scenarios the owner should perform;
-- known limitations, untested environments, or assumptions;
-- any behavior that still requires owner acceptance.
-
-For a customer-facing change, distinguish these states clearly:
-
-- **Automated verification passed** — the implemented rules passed the relevant automated checks.
-- **Ready for owner acceptance** — the agent has completed its verification and provided the manual script.
-- **Accepted** — the project owner has manually confirmed that the behavior and presentation match the intended result.
-
-Do not mark an approved customer-facing behavior as fully complete before owner acceptance when the change materially affects presentation, interaction, checkout, or another workflow where human judgment is part of the requirement.
-
-If manual testing reveals a mismatch, treat the observed mismatch as the new debugging target. Reproduce it, add or improve an automated regression test when practical, implement the correction, rerun the relevant automated checks, and provide the updated manual retest steps.
-
-### 8. Required testing cadence during agent work
-
-Follow this sequence for each agreed implementation step:
-
-1. Restate the approved observable behavior and important edge cases.
-2. Identify the automated tests that should prove those rules.
-3. Implement the smallest coherent change.
-4. Add or update the tests in the owning app.
-5. Run the narrow affected test module/app first for fast feedback.
-6. Fix failures caused by the change; do not weaken assertions merely to make tests pass.
-7. Run the broader project checks required by the Verification section below.
-8. Start the application when manual/browser verification is relevant and inspect the changed behavior directly when tooling permits.
-9. Give the project owner the numbered manual acceptance script.
-10. Stop after the agreed step and wait for `next` or acceptance before beginning the next step.
-
-Tests should make future changes safer, not lock accidental implementation details in place. Assert public behavior, business invariants, permissions, and durable state; avoid overfitting tests to internal helper structure, exact HTML whitespace, or other details that can change without changing the intended behavior.
-
-## Verification
-
-Run the checks relevant to every change:
+- Allow cancellation of preorders for a full refund until carrier tender, including after production begins. After tender, use the return policy.
+- Accept eligible return requests within 30 calendar days after confirmed delivery.
+- Require items to be unworn outdoors, undamaged, and accompanied by original packaging; indoor fit testing is allowed.
+- Offer one free size exchange per order within the contiguous United States, subject to inventory. TreadJoy pays return and replacement shipping. If no suitable replacement exists, offer a refund.
+- For preference returns, the customer pays return shipping and original outbound shipping is nonrefundable.
+- For defective, damaged, or incorrect items, TreadJoy pays return and replacement shipping and offers replacement or a full refund.
+- Issue approved refunds to the original payment method after inspection. Approve the refund or explain the decision within five business days of receiving the return.
+- Do not charge restocking fees or make automatic substitutions.
+- Require human review for cancellations, returns, exchanges, inspections, and refunds at launch; record every decision and state change.
+- Inspect returned modular configurations at component level. Return only complete, safe, undamaged, resellable components to inventory; quarantine the rest.
+
+Do not create final-sale categories or policy exceptions without explicit approval and clear pre-purchase disclosure.
+
+## 4. Actual technical architecture
+
+- **Backend:** Django 5.2 project in `Shoes/` with domain apps under `web/`.
+- **Rendering:** server-rendered Django templates. There is no public API or SPA architecture.
+- **Frontend:** semantic HTML, centralized CSS/design tokens, and small vanilla JavaScript enhancements.
+- **Database:** PostgreSQL is the authoritative transactional store. Correctness relies on transactions and row locking in high-risk workflows.
+- **Authentication:** Django authentication plus django-allauth, with a configured Google provider. Current identity and email-verification behavior requires production hardening before commerce launch.
+- **Catalog:** `Product`, finished `ProductVariant`, compatibility groups, parts, part variants, and product BOM/component relationships.
+- **Cart:** database-backed carts identified by an authenticated user or guest session; cart ownership/merge constraints remain roadmap work.
+- **Checkout/payments:** hosted Stripe Checkout with signed webhooks and an idempotency event record. Current checkout/payment reconciliation and reservation behavior are not launch-complete.
+- **Orders:** order and line-item snapshots, payment/refund records, order-status events, shipments, and transactional paid-order inventory allocation.
+- **Email:** console backend in development; no production transactional provider is configured.
+- **Static/media:** project static files and local development media; production R2/CDN storage is not implemented.
+- **Operations:** no production deployment definition, full CI pipeline, health/readiness endpoints, monitoring, backup automation, or rollback runbook yet.
+- **Optional systems:** no required Redis, Celery, search service, or generalized CMS. Add them only in response to measured need.
+
+### Deployment modes
+
+`TREADJOY_MODE` must be explicitly set to `commerce` or `research`; invalid or missing production configuration must fail closed.
+
+- Commerce registers `cart` and `orders`, requires valid Stripe configuration, and uses the commerce database.
+- Research excludes commerce apps/routes and rejects Stripe credentials. Shared presentation must not provide a crafted-request path around this boundary.
+- Build both modes from the same tested release commit. Do not create long-lived commerce/research branches.
+
+### Repository map
+
+- `Shoes/settings.py`: environment-driven Django and deployment-mode configuration.
+- `Shoes/urls.py`: mode-aware root routing.
+- `web/core/`: homepage and general content pages.
+- `web/products/`: products, variants, compatibility/BOM data, availability, and preorder batches.
+- `web/cart/`: authenticated and guest carts plus cart context.
+- `web/orders/`: checkout, Stripe webhooks, payments/refunds, order history, shipment, and inventory allocation.
+- `web/accounts/`: account-related views/forms layered around django-allauth.
+- `web/survey/` and `web/waitlist/`: research and relationship flows.
+- `templates/`: shared and app-namespaced Django templates; shared chrome belongs in `templates/base.html` and `templates/partials/`.
+- `static/`: CSS, JavaScript, and committed public assets.
+- `media/`: local development uploads. Do not commit customer uploads or unapproved development imagery.
+- `.github/workflows/secret-scan.yml`: current secret-scanning workflow.
+- `PROJECT_PLAN.md`: evidence-based current-state assessment and dependency-ordered implementation roadmap.
+
+`web/views.py` is an unrouted legacy implementation that duplicates old survey, account, cart, and Stripe behavior. `web/models.py` and `web/tests.py` are empty legacy scaffolds. Some duplicate/legacy route or view names also remain in active apps. Treat them as verified cleanup candidates, not extension points; confirm references and tests before removal.
+
+## 5. Engineering and backend standards
+
+- Follow Django conventions and keep changes in the app that owns the domain behavior.
+- Preserve existing URL namespaces unless a planned migration explicitly changes them.
+- Keep views thin: parse the request, enforce authentication/authorization, call domain services/forms, and render or redirect.
+- Put reusable validation in forms, models, or domain services according to responsibility. Never rely on browser validation for a security or business invariant.
+- Keep business rules out of templates, JavaScript, scattered signals, and ad hoc admin actions.
+- Put nontrivial workflows in explicit service/domain functions with documented inputs, outputs, invariants, transactions, and tests.
+- Do not duplicate money, inventory, availability, state-transition, or permission logic. One authoritative implementation must serve views, webhooks, admin, and future jobs.
+- Use transactions for multi-record state changes. Lock authoritative rows before inventory, reservation, payment, refund, or state-transition decisions that can race.
+- Design retryable operations to be idempotent. Persist provider/request identifiers with appropriate uniqueness constraints.
+- Handle expected failures with actionable user/staff messages and durable operational state. Do not convert financially meaningful failures into logs alone.
+- Use `select_related`/`prefetch_related` deliberately and avoid hidden N+1 queries in catalog, order, and admin pages.
+- Do not introduce new frameworks, services, or packages without a concrete requirement, maintenance/security review, alternatives, and owner approval where required.
+- Preserve server-side rendering and progressive enhancement. Do not introduce React, Vue, a SPA, or a general API without an approved requirement.
+
+## 6. Database and domain standards
+
+The schema should communicate the business directly through names, relationships, constraints, and comments—not require reverse-engineering application code.
+
+- PostgreSQL is authoritative. Caches, search indexes, analytics, queues, Stripe, and Cloudflare are derived or external systems, never the only record of business state.
+- Use descriptive model/field/constraint/index names and explicit related names. Add database comments where a business distinction would otherwise be ambiguous.
+- Enforce stable invariants with `CheckConstraint`, `UniqueConstraint`, foreign keys, and non-null fields. Keep request-dependent or evolving policy in services.
+- Index actual query and operational access paths; do not add speculative indexes without query evidence.
+- Use `Decimal` for application money and fixed-precision database fields. Convert to integer minor units only at provider boundaries. Never use binary floats for money.
+- Prices and totals are server-authoritative. Recalculate from active variants and approved adjustments; never trust browser/session totals or overwrite expected order amounts with provider payload values without reconciliation.
+- Preserve historical truth. Order lines, customer/shipping details, prices, tax, shipping, discounts, currency, fulfillment promises, and policy-relevant facts must be snapshotted where later catalog/account edits would change their meaning.
+- Do not cascade-delete completed financial or fulfillment history through customer/catalog deletion. Use appropriate protection, anonymization, retention, or snapshot behavior after policy approval.
+- Treat important transitions as explicit state machines. Record actor, source, prior/new state, reason, timestamps, and external identifiers in append-only history where appropriate.
+- Create and commit migrations for model changes. Do not edit an already-applied migration merely to improve it; add a corrective migration.
+- Review migration locking, backfill, reversibility, and rollback for production data. Separate deploy-safe schema expansion from destructive cleanup when needed.
+- Use least-privilege database roles. Production runtime roles should not own the database; migrations and backup/restore use separately controlled privileges.
+
+## 7. Ecommerce invariants
+
+### Products and inventory
+
+- A sellable launch SKU is an active finished `ProductVariant` with an authoritative price and availability state.
+- Size and color options must map to real variants; do not accept arbitrary client-provided variant attributes.
+- Sold-out products remain discoverable but cannot be purchased. Preorders must be visibly and semantically distinct from stocked products.
+- Component compatibility/BOM data cannot reduce or increase launch availability until component-level inventory authority is explicitly approved.
+- Inventory changes require reasoned, auditable adjustments. Never silently repair stock by editing counts without history.
+- Use atomic reservations and row locks to prevent overselling. Reservation expiry, payment confirmation, replay, and release must remain idempotent.
+
+### Carts
+
+- A cart belongs to exactly one authenticated customer or one guest session. Prevent unowned, multiply owned, or duplicate guest carts.
+- Scope every cart lookup/mutation to the current principal. Mutations are POST-only and CSRF-protected.
+- Validate active variant, fulfillment compatibility, quantity, and current availability on add/update and again at Checkout creation.
+- Logging in or signing up must merge or associate carts according to an explicitly tested rule without exposing another session's data.
+- Cart prices are display values, not permanent financial authority. Reprice during Checkout using current approved prices and clearly surface material changes.
+
+### Checkout and payments
+
+- Hosted Stripe Checkout is the payment boundary. Do not store card numbers, CVC, magnetic-stripe data, or equivalent sensitive authentication data.
+- Create Checkout from a server-side order/quote snapshot and an atomic 30-minute SKU reservation. Use an idempotency key so retries cannot create duplicate orders, sessions, or reservations.
+- Store and reconcile the expected amount, currency, order/session ownership, payment intent, and payment status. A signed event is authentic transport; it is not proof that its business fields match the order.
+- Mark an order paid and commit inventory only from an eligible confirmed-payment state. Do not infer payment solely from a success redirect or a generic session-completed signal.
+- Keep webhook signature verification, event uniqueness, transactional processing, replay safety, failure diagnostics, and alerting.
+- Handle success, asynchronous success/failure, expiration, cancellation, refund, dispute/chargeback, duplicates, out-of-order delivery, and partial internal failure where applicable.
+- Never log secrets or full sensitive provider payloads. Retain only data needed for reconciliation, audit, support, and an approved retention period.
+- Do not enable automated tax collection until registrations/nexus treatment and product tax codes are confirmed with an appropriate advisor. Test-mode success is not legal or tax approval.
+
+### Orders, fulfillment, and administration
+
+- Orders are historical commercial records. Catalog/account changes must not rewrite what the customer bought, paid, was promised, or supplied at checkout.
+- Centralize legal order transitions; use the same service from customer flows, webhooks, admin actions, and future jobs.
+- Financial/provider identifiers and append-only history must be read-only in ordinary admin forms. Disable destructive deletion of material commerce records.
+- Staff actions require explicit permissions, safe scopes, actor/reason audit, confirmation for destructive/financial actions, and useful exception queues.
+- Customer and guest order views must enforce ownership using an authenticated relationship or short-lived/safely revocable signed access mechanism.
+- Fulfillment, tracking, cancellations, returns, exchanges, inspections, and refunds must follow the approved policy and remain traceable.
+- Send customer receipts and lifecycle messages only after authoritative state changes. Email delivery failure must not roll back a successfully recorded payment/order; it must create a retryable operational exception.
+
+## 8. Security, privacy, and dependency standards
+
+Security is a launch gate, not a cleanup phase.
+
+### Secrets and configuration
+
+- Never commit or print `.env`, Django secrets, Stripe keys/webhook secrets, OAuth credentials, database passwords, access tokens, customer data, or production payloads.
+- Keep production, staging, and local credentials separate. Use the hosting platform's secrets store and least-privilege/restricted provider keys where available.
+- If evidence suggests exposure, stop feature work, do not reproduce the value, notify the owner, rotate/revoke, review logs/history, and document containment.
+- Production configuration must fail closed: `DEBUG=False`, explicit hosts/origins, secure cookies, HTTPS redirect, HSTS after validation, trusted proxy headers only from the managed Cloudflare/origin path, safe referrer policy, CSP, and non-console email.
+- Never weaken CSRF, XSS escaping, clickjacking, session, or webhook-signature controls to make a flow easier.
+
+### Authentication and authorization
+
+- Enforce authorization server-side on every object and mutation. Authentication alone does not prove ownership or staff authority.
+- Protect account creation, login, password reset, waitlist, survey, and sensitive actions against enumeration, brute force, and abuse using application and Cloudflare controls appropriate to measured risk.
+- Define and test email verification, account recovery, session invalidation, admin MFA/access, and staff permission policy before commerce launch.
+- Do not expose whether another person's account/order exists through status, message, timing, or identifier behavior when it can be avoided.
+
+### PII, uploads, and logging
+
+- Classify collected data, state its purpose, minimize it, restrict access, define retention/deletion, and include it in backup/restore and incident planning.
+- Never collect demographic or behavioral fields merely because they might be useful later.
+- Treat addresses, emails, survey responses, order data, IP/user-agent data, and provider payloads as sensitive according to context.
+- Redact secrets, session identifiers, tokens, full addresses, and unnecessary payload fields from logs and monitoring.
+- Validate uploads by type, size, and content; generate safe names; keep originals away from executable/static paths; strip unnecessary metadata where appropriate; and serve through controlled storage.
+- Customer-facing imagery and copy require ownership/licensing/consent and factual approval. Do not ship test/customer-like photos or hidden EXIF metadata.
+
+### Dependencies
+
+- Keep runtime and development dependencies intentional, minimal, pinned/locked, and reproducible.
+- Before adding/upgrading, review maintenance, license, transitive risk, release compatibility, operational cost, and whether the standard library/Django already meets the need.
+- Run automated vulnerability and secret scanning in CI. Triage findings; do not blindly suppress or perform unsafe upgrades.
+
+## 9. Frontend, brand, accessibility, and performance contract
+
+Material changes require owner approval. Preserve the existing Django-template system, semantic HTML, CSS tokens, and minimal vanilla JavaScript.
+
+### Brand foundation
+
+- The homepage is a brand/storytelling surface, not a product-card catalog. It should communicate the product difference, people/community, and a clear path to shopping or relationship-building.
+- Direction: bright, energetic, playful, sporty, street-art influenced, editorial, and youthful without feeling childish, chaotic, or untrustworthy for a $90–$120 purchase.
+- Use bright color as an accent against calmer neutral surfaces; favor bold crops, expressive transitions, asymmetry, controlled overlap, and occasional near-black contrast sections over a generic card grid. Campaigns may add approved tokenized accents without redefining global semantic colors or reusable commerce UI.
+- Core tokens: sky blue `#4CCBF0`, gold `#EDDC4F`, near-black around `#191919`, warm stone around `#E9E1D5`, and cool muted surface around `#DCE5E7`. Do not scatter one-off colors or use pure white as the default page background.
+- Typography: Fredoka for expressive display/headlines and DM Sans for body/interface text. Do not add paid fonts or extra global families without approval.
+- Use Title Case as the default for headlines/navigation, mixed weights for hierarchy, and deliberately readable line lengths. Purposeful outlines, rotation, layering, or oversized display type are allowed outside task-critical forms/checkout; default all-caps and continuously scrolling text are not.
+- Use a mobile-first 12-column editorial system, tokenized spacing, intentional asymmetry/overlap, constrained prose, and responsive `clamp()` typography.
+- Use authentic, approved human/lifestyle imagery first, then product, community, detail, and abstract art. Never ship AI-generated imagery to either public deployment. Clearly mark development placeholders.
+- Community/nonprofit/volunteering content must use authentic evidence from the actual activity; generic stock cannot imply a relationship or event occurred. Product pages may use precise studio imagery where inspection matters.
+- Never fabricate partnerships, events, impact/sustainability metrics, donation amounts, milestones, dates, testimonials, or product claims.
+
+### Information architecture and interaction
+
+- Commerce desktop navigation: **Men**, **Women**, **Sale**, **How It Works**; utilities: **Search**, **Account**, **Cart/Bag** with a nonzero count badge.
+- Research navigation removes commerce routes/utilities and emphasizes Survey, Waitlist, How It Works, Community, Story, and approved brand/impact content.
+- Desktop uses a solid sticky header and compact accessible Men/Women disclosures. Below `1024px`, use the full-screen navigation with hamburger, image logo, Search, Bag/Cart where commerce applies, Account inside the menu, accordion submenus, focus management, Escape, and scroll lock.
+- Men and Women remain both direct category links and compact disclosures; Sale and How It Works are direct destinations unless approved real structure justifies otherwise. Use link/disclosure semantics with `aria-expanded`/`aria-controls`, not application-menu ARIA. Hover may enhance desktop disclosure, but click/focus, outside click, Escape, touch, and keyboard behavior are required.
+- Preserve the announcement bar on mobile, use large touch rows, and place approved social links near the bottom of the open full-screen menu. Story, Impact, and Community remain homepage/footer destinations rather than required commerce desktop-primary items.
+- Baseline breakpoints are approximately 480, 768, 1024, 1280, and 1536px; component-driven exceptions must be documented.
+- Homepage order: announcement, header, campaign hero, brand statement, audience/category entry points, modular-system explainer, user-initiated YouTube section, community, concrete impact, goals, waitlist/newsletter, footer.
+- Do not place normal product grids, prices, quantity controls, or add-to-cart buttons on the homepage.
+- Use YouTube for approved video/livestreams, never autoplay promotional media, and defer the heavy embed until interaction where practical.
+- Primary buttons are rectangular and normally brand blue; secondary buttons use an approved filled gold/dark/campaign treatment rather than default outline-only styling. Use normal capitalization, content-width mobile buttons unless layout requires otherwise, functional icons only, and a clear color-inversion hover treatment.
+- Content links are not permanently underlined by default; provide a visible animated underline on hover/focus. Current navigation uses a persistent underline plus modest weight/contrast and never relies on color alone. Do not use browser-default visited purple or automatic external-link icons.
+- Provide visible hover, `:focus-visible`, active/current, pressed, open, loading, disabled, error, success, empty, sold-out, and preorder states as relevant. State changes must not rely on color or motion alone.
+- Associate form errors programmatically with their controls; expose loading names/states and prevent duplicate submission; pair add-to-cart toast feedback with durable cart state; give open disclosures an obvious trigger state; design intentional empty states with approved non-AI assets or explicit development placeholders.
+- Normal motion is moderate and approximately 150–250ms. Respect `prefers-reduced-motion`; prohibit marquees, scroll-jacking, and blocking intros.
+
+### Implementation and quality
+
+- Target WCAG 2.2 AA: semantic landmarks/headings, labeled forms, accessible names/descriptions, contrast, keyboard operation, logical focus, touch targets, error association, and intentional alt text.
+- Prefer progressive enhancement, CSS, and native browser behavior. Do not add React, Vue, Tailwind, Bootstrap, Alpine, HTMX, GSAP, or another frontend system without a concrete approved need.
+- Reuse existing partials and patterns. Shared chrome belongs in `templates/base.html` and `templates/partials/`; do not create a second component system.
+- Product pages are calmer than the homepage and must support evaluation of imagery, price, variant, stock/preorder status, fit, materials, care, modularity, shipping, returns, and trust.
+- Use intrinsic image dimensions, responsive sources, modern formats, correct lazy-loading, self-hosted licensed fonts, and deferred heavy embeds. Avoid layout shift and oversized hero assets.
+- Verify visible changes in a real browser at small phone, large phone, tablet, laptop, and wide desktop sizes, including keyboard, reduced motion, console, overflow, loading/error/empty states, and both deployment modes where relevant.
+
+## 10. Cloudflare and production operations
+
+- Cloudflare is the public edge; managed Django is the application origin; managed PostgreSQL remains the transactional database; R2 stores approved public media.
+- Use Full (strict) TLS with a validated origin certificate. Configure Django's proxy trust only for the actual managed origin path and prevent direct-origin bypass where practical.
+- Cache versioned static assets and approved public media with explicit policies. Bypass cache for admin, account, cart, checkout, webhook, authenticated/session-dependent responses, and dynamic HTML unless a later reviewed design proves safety.
+- Serve public R2 media through a controlled custom domain. Treat public URLs as public data; do not place private customer documents in a public bucket.
+- Maintain separate research and commerce origins/databases/secrets while deploying the same tested release commit.
+- Production readiness requires migrations, health/readiness checks, structured/redacted logs, error monitoring, payment/inventory alerts, backups/PITR, restore tests, incident runbooks, deployment records, and rollback rehearsal.
+- Do not introduce Redis, a task queue, advanced search, or Cloudflare Containers until a measured failure mode or workload justifies the operational cost.
+
+## 11. Testing requirements
+
+Tests prove approved behavior and failure handling; they do not create business policy or provide a general security guarantee.
+
+### Required test layers
+
+- **Models/database:** constraints, relationships, snapshots, calculations, state transitions, reservation/inventory concurrency, uniqueness, and rollback.
+- **Services/business logic:** prices, availability, reservations, order/payment transitions, fulfillment, cancellation/return/refund eligibility, retries, and failure atomicity.
+- **Views/forms/URLs:** status/redirects, validation, ownership, permissions, POST-only mutation, CSRF-relevant behavior, and mode-specific route exposure.
+- **Authentication/authorization:** signup/login/recovery/verification, guest/account association, cross-user denial, staff roles, and object-level access.
+- **Commerce:** guest/authenticated carts, quantities, repricing, mixed-fulfillment rejection, reservation boundaries, Checkout idempotency, payment reconciliation, signed webhooks, duplicates/out-of-order events, rollback, refunds/disputes, and inventory commit/release.
+- **Modes:** run separate commerce and research matrices. Negative tests must prove research cannot import/initialize Stripe, register commerce routes, initiate payment, or create orders.
+- **Frontend/user flow:** use an approved browser setup for high-value interactions; use accessible roles/names instead of brittle selectors. Manually review visual intent even when automation passes.
+- **Security/privacy:** add focused tests for each changed property—authorization, unsafe methods, data exposure, validation, abuse controls, upload rules, or production configuration.
+
+Concurrency-sensitive tests must run on PostgreSQL; SQLite results are insufficient for `select_for_update`, constraint timing, and reservation/oversell claims. CI must exercise supported Python/Django/PostgreSQL versions and both deployment modes without external network calls. Mock Stripe and email; use only test-mode credentials for manual payment testing.
+
+For each behavior, select the relevant cases: happy path, invalid input, boundary, unauthorized, duplicate/retry, failure/rollback, deployment mode, and regression. Explain materially omitted cases.
+
+Do not chase a coverage number. Test public behavior, durable state, permissions, and business invariants rather than exact HTML whitespace or helper structure.
+
+## 12. Agent workflow and definition of done
+
+### Workflow for each agreed step
+
+1. Read `PROJECT_PLAN.md`, this file, and the relevant source, migrations, tests, templates, and configuration.
+2. Reproduce or document current behavior; identify dependencies, affected records, modes, users, and failure cases.
+3. Separate approved policy from unresolved policy. Ask focused questions before crossing an unresolved boundary.
+4. State observable acceptance criteria, intended architecture, security/UX implications, migration/rollback needs, and checks.
+5. Implement the smallest complete solution. Preserve working code and avoid unrelated refactors.
+6. Add or update focused tests in the owning app. Add a regression test before/with a reproducible bug fix.
+7. Run the narrow test target first, then the relevant mode/database/security/browser checks.
+8. Inspect the rendered flow for customer-facing changes and provide a numbered owner-acceptance script.
+9. Review the diff for scope, dead code, accidental artifacts, migrations, secrets, logging, accessibility, and documentation.
+10. Update `PROJECT_PLAN.md` evidence/status and durable documentation when architecture or behavior changes.
+11. Hand off results, commands, limitations, manual checks, and unresolved risks; stop and wait for `next`.
+
+### Definition of done
+
+A task is not done because code runs. It is done only when:
+
+- approved acceptance criteria and material edge cases are implemented;
+- server-side authorization, validation, data integrity, idempotency, concurrency, and failure behavior are appropriate to risk;
+- migrations are generated, reviewed, tested, deploy-safe, and documented where applicable;
+- relevant automated tests pass in both deployment modes and on PostgreSQL where semantics require it;
+- responsive, accessible, keyboard, reduced-motion, error/loading/empty, and browser behavior is verified for visible changes;
+- logs and error paths are actionable without exposing secrets or unnecessary PII;
+- security, payment, inventory, privacy, SEO, and performance implications are reviewed as applicable;
+- documentation, `PROJECT_PLAN.md`, and `MISTAKES.md` reflect the new truth;
+- no credentials, customer data, local media, temporary screenshots, build artifacts, or unrelated changes enter the diff;
+- dead/duplicate code made obsolete by the task is removed when safe, but unrelated cleanup is deferred; and
+- the handoff distinguishes automated verification, readiness for owner acceptance, and actual owner acceptance.
+
+### Baseline local commands
+
+Use the repository virtual environment and `.env.example`; never commit `.env`.
 
 ```bash
 python manage.py check
 python manage.py test
 python manage.py makemigrations --check --dry-run
+python -m compileall Shoes web
 ```
 
-Also run `python -m compileall Shoes web` when full Django checks cannot run because PostgreSQL or external credentials are unavailable. For template or styling changes, start the development server and manually verify the affected page at mobile and desktop widths.
-
-Before handing off:
-
-- Review `git diff` and ensure only intended files changed.
-- Confirm no secrets or local environment files are staged.
-- Report which checks ran and any checks that could not run, including the reason.
+Run mode-specific and PostgreSQL-backed commands required by the change. Before handoff, run `git diff --check`, inspect `git diff`, confirm only intended files changed, and report any check that could not run and why.
