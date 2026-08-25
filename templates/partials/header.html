@@ -28,12 +28,16 @@
         </button>
 
         <a href="{% url 'core:home' %}" class="brand-logo" aria-label="TreadJoy home">
-            <img
-                src="{% static 'images/LogoClearBackground.png' %}"
-                alt="TreadJoy"
-                width="1536"
-                height="1024"
-            >
+            {% if development_logo_url %}
+                <img
+                    src="{{ development_logo_url }}"
+                    alt="TreadJoy"
+                    width="1536"
+                    height="1024"
+                >
+            {% else %}
+                <span class="brand-wordmark">TreadJoy</span>
+            {% endif %}
         </a>
 
         <nav class="desktop-navigation" aria-label="Primary navigation">

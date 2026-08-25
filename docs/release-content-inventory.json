@@ -1,0 +1,40 @@
+{
+  "schema_version": 1,
+  "assets": [
+    {
+      "id": "development-ai-logo",
+      "path": "media/development/treadjoy-ai-logo.png",
+      "source_type": "ai-generated",
+      "rights_status": "Development-only reference; prohibited from either public deployment.",
+      "allowed_environments": [
+        "local-debug"
+      ],
+      "public_release": false,
+      "sha256": "cd74f4db2773b6a4f155835388b61a153107500c1dbe841ca9c355a4c153f902",
+      "metadata_review": "Not a public asset. Keep outside static collection and production media storage.",
+      "alt_text_decision": "When shown in local development, it is the TreadJoy brand mark."
+    }
+  ],
+  "content_surfaces": [
+    {
+      "id": "homepage-development-media",
+      "paths": [
+        "templates/home.html"
+      ],
+      "reason": "Homepage media, video, community, impact, and roadmap slots are explicitly labeled development placeholders.",
+      "public_release": false
+    },
+    {
+      "id": "pending-social-links",
+      "paths": [
+        "templates/partials/header.html",
+        "templates/partials/footer.html"
+      ],
+      "reason": "Social destinations remain pending approval.",
+      "public_release": false
+    }
+  ],
+  "blocked_catalog_slugs": [
+    "treadjoy-test-shoe"
+  ]
+}

@@ -55,7 +55,7 @@ The approved deployment architecture is one tested release commit deployed to se
 - The dependency manifest contains roughly 161 pinned packages, including unrelated data-science/notebook packages; requirements-dev.txt is empty and no reproducible runtime/development lock workflow exists.
 - GitHub currently runs secret scanning only. There is no PostgreSQL application CI, dependency audit, lint/static check, build/release pipeline, or deployment status check.
 - There is no production hosting definition, STATIC_ROOT/storage backend, R2 integration, health/readiness endpoint, monitoring, analytics, backup/PITR procedure, restore drill, migration release process, or rollback runbook.
-- The catalog contains a public-facing test shoe and customer-like/test imagery. Homepage sections remain explicitly labeled development placeholders.
+- The catalog contains a public-facing test shoe and a customer-like classroom photo. Homepage sections remain explicitly labeled development placeholders.
 - Product detail lacks production imagery, size/fit, materials, care, compatibility explanation, shipping/returns context, and other purchase-confidence content.
 - SEO support is limited: sitemap, robots policy, canonicals, structured data, social metadata, production error pages, and measurement are absent.
 
@@ -158,10 +158,10 @@ P1 storefront, email, accessibility, SEO, performance, monitoring, and admin-usa
 
 ### A0.1 — Remove unsafe launch data and establish asset provenance
 
-- **Priority / status:** P0 — Not started.
+- **Priority / status:** P0 — In progress.
 - **Objective:** Ensure no test/customer-like data, unapproved image, hidden metadata, or development claim can enter a public release.
 - **Why it matters:** Publishing identifiable or unlicensed media creates privacy, trust, and legal risk; test catalog content makes a real store appear fraudulent or unfinished.
-- **Current state:** media/products/Aaron_Decker.lrcat.JPG is tracked and used by a test product; the running catalog exposes a test shoe and customer-like image; homepage blocks remain labeled development placeholders.
+- **Current state:** A tracked classroom photo is used by a test product; the running catalog exposes a test shoe and customer-like image; homepage blocks remain labeled development placeholders.
 - **Required work:** Inventory all committed/database-referenced assets and public copy; record owner/license/consent and permitted use; remove the tracked test image and launch-path test records; strip unnecessary EXIF from approved assets; create safe deterministic development fixtures/placeholders that cannot be mistaken for production content; add a pre-release content checklist.
 - **Dependencies:** None.
 - **Affected areas:** media, static/images, product records/fixtures, templates, seed/setup documentation, Git history review.
@@ -567,7 +567,7 @@ P1 storefront, email, accessibility, SEO, performance, monitoring, and admin-usa
 - **Priority / status:** P1 — Not started.
 - **Objective:** Measure and control Core Web Vitals, asset weight, query cost, and cache behavior on representative devices.
 - **Why it matters:** The audit found large source images and external fonts but could not collect a DevTools trace; unmeasured visual richness can damage conversion.
-- **Current state:** LogoClearBackground.png is roughly 436 KB with large transparent dimensions, Placeholder.jpg roughly 892 KB at 4000×2666 with metadata, CSS roughly 76 KB, JavaScript roughly 16 KB, and fonts load from Google; no budgets or production cache measurements exist.
+- **Current state:** The former AI-generated logo and unused placeholder image were large source assets; CSS is roughly 76 KB, JavaScript roughly 16 KB, and fonts load from Google; no budgets or production cache measurements exist.
 - **Required work:** Capture baseline Lighthouse/DevTools traces for key pages/modes; define owner-visible budgets for LCP, CLS, INP, server response, page/asset weight, and key query counts; generate responsive AVIF/WebP with intrinsic sizes; optimize logo/hero/posters; self-host licensed Fredoka/DM Sans subsets; defer YouTube; use hashed immutable static assets and controlled R2 variants; profile queries and add only justified caching/indexes; configure Cloudflare to bypass dynamic/session pages.
 - **Dependencies:** A7.1–A7.3, A8.1, and production-like Cloudflare/R2 environments.
 - **Affected areas:** static/media build, templates/CSS/JS/fonts, storage/CDN headers, Django queries, CI performance checks.
