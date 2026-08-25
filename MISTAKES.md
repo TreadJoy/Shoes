@@ -16,9 +16,9 @@
 - Result: PostgreSQL could not create its required shared-memory segment
   (`Operation not permitted`) during `initdb`. Retrying with filesystem-backed
   dynamic shared-memory configuration did not reach an initialized cluster.
-- Impact: no project database was changed, but the focused PostgreSQL suite
-  remains unavailable in this sandbox.
-- Containment: syntax, static checks, and the test code remain runnable; run
-  the focused suite on a host/container that permits PostgreSQL shared memory
-  before treating its database coverage as complete. A1.1 remains the durable
-  CI solution.
+- Impact: no project database was changed. The sandbox alone cannot host the
+  focused PostgreSQL suite.
+- Resolution: with approved elevated local-process access, a separate
+  temporary PostgreSQL 17 cluster ran the focused commerce suite (94 tests,
+  2 skipped) and research suite (31 tests, 3 skipped) successfully. A1.1
+  remains the durable CI solution.
