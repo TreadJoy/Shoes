@@ -55,7 +55,9 @@ The approved deployment architecture is one tested release commit deployed to se
 - The dependency manifest contains roughly 161 pinned packages, including unrelated data-science/notebook packages; requirements-dev.txt is empty and no reproducible runtime/development lock workflow exists.
 - GitHub currently runs secret scanning only. There is no PostgreSQL application CI, dependency audit, lint/static check, build/release pipeline, or deployment status check.
 - There is no production hosting definition, STATIC_ROOT/storage backend, R2 integration, health/readiness endpoint, monitoring, analytics, backup/PITR procedure, restore drill, migration release process, or rollback runbook.
-- The catalog contains a public-facing test shoe and a customer-like classroom photo. Homepage sections remain explicitly labeled development placeholders.
+- The catalog has been quarantined to its safe empty state, while homepage and
+  social sections remain explicitly labeled development placeholders that block
+  release until approved factual replacements exist.
 - Product detail lacks production imagery, size/fit, materials, care, compatibility explanation, shipping/returns context, and other purchase-confidence content.
 - SEO support is limited: sitemap, robots policy, canonicals, structured data, social metadata, production error pages, and measurement are absent.
 
@@ -158,17 +160,17 @@ P1 storefront, email, accessibility, SEO, performance, monitoring, and admin-usa
 
 ### A0.1 — Remove unsafe launch data and establish asset provenance
 
-- **Priority / status:** P0 — In progress.
+- **Priority / status:** P0 — Ready for owner acceptance.
 - **Objective:** Ensure no test/customer-like data, unapproved image, hidden metadata, or development claim can enter a public release.
 - **Why it matters:** Publishing identifiable or unlicensed media creates privacy, trust, and legal risk; test catalog content makes a real store appear fraudulent or unfinished.
-- **Current state:** A tracked classroom photo is used by a test product; the running catalog exposes a test shoe and customer-like image; homepage blocks remain labeled development placeholders.
+- **Current state:** The tracked test imagery and public test catalog have been quarantined, and the public catalog renders its safe empty state. Homepage and social placeholders remain intentionally documented release blockers pending approved factual content.
 - **Required work:** Inventory all committed/database-referenced assets and public copy; record owner/license/consent and permitted use; remove the tracked test image and launch-path test records; strip unnecessary EXIF from approved assets; create safe deterministic development fixtures/placeholders that cannot be mistaken for production content; add a pre-release content checklist.
 - **Dependencies:** None.
 - **Affected areas:** media, static/images, product records/fixtures, templates, seed/setup documentation, Git history review.
 - **Security considerations:** Do not print or redistribute personal metadata; confirm whether history cleanup is necessary before any destructive rewrite; keep development data out of production backups and analytics.
 - **Testing requirements:** Search tracked files and templates for removed names/paths; load both modes with a clean database; verify missing assets fail safely; inspect rendered catalog/homepage and media metadata.
 - **Acceptance criteria:** No unapproved/test/customer-like asset or test product is tracked or publicly rendered; every production asset has recorded provenance; placeholders are unmistakably nonproduction; owner approves the release content inventory.
-- **Implementation evidence (2026-08-25):** Local migrations quarantined the test product/variants and removed stale cart lines while preserving three order items; the local catalog renders its safe empty state and the old product route returns 404. The release-content command correctly fails on the documented homepage/social blockers. Local Git history and object storage no longer retain the classroom photo. The focused PostgreSQL test suite remains blocked because the configured role cannot create its test database; the limitation and rollback-only migration probes are recorded in `MISTAKES.md`. Remote history replacement still requires a force-push confirmation.
+- **Implementation evidence (2026-08-25):** Migrations quarantine the known product and both variants, remove stale cart lines, preserve three protected order records including the paid payment, and never restore unsafe content on rollback. The release-content command now validates inventory fields, unique paths, checksums, approval/environment state, metadata, AI provenance, and database-backed product images; it fails only on the intentionally documented homepage/social blockers. A disposable PostgreSQL 17 cluster passed 94 focused commerce tests (2 skipped) and 31 focused research tests (3 skipped), and browser smoke checks confirmed the empty catalog, retired-product 404, empty cart, and desktop/mobile text wordmark. Local history was rewritten and pruned; `origin/main` was force-updated with an exact lease, a fresh clone resolves to the rewritten commit, and retired raw-path/blob URLs return 404. Owner approval of the inventory and remote containment remains required before marking this task Complete.
 
 ### A0.2 — Remove confirmed dead and duplicate implementation paths
 
