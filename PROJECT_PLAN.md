@@ -168,6 +168,7 @@ P1 storefront, email, accessibility, SEO, performance, monitoring, and admin-usa
 - **Security considerations:** Do not print or redistribute personal metadata; confirm whether history cleanup is necessary before any destructive rewrite; keep development data out of production backups and analytics.
 - **Testing requirements:** Search tracked files and templates for removed names/paths; load both modes with a clean database; verify missing assets fail safely; inspect rendered catalog/homepage and media metadata.
 - **Acceptance criteria:** No unapproved/test/customer-like asset or test product is tracked or publicly rendered; every production asset has recorded provenance; placeholders are unmistakably nonproduction; owner approves the release content inventory.
+- **Implementation evidence (2026-08-25):** Local migrations quarantined the test product/variants and removed stale cart lines while preserving three order items; the local catalog renders its safe empty state and the old product route returns 404. The release-content command correctly fails on the documented homepage/social blockers. Local Git history and object storage no longer retain the classroom photo. The focused PostgreSQL test suite remains blocked because the configured role cannot create its test database; the limitation and rollback-only migration probes are recorded in `MISTAKES.md`. Remote history replacement still requires a force-push confirmation.
 
 ### A0.2 — Remove confirmed dead and duplicate implementation paths
 
