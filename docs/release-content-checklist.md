@@ -8,8 +8,12 @@ blocker; do not suppress it.
 
 - Every public image, logo, video poster, and product-media file appears in
   `release-content-inventory.json` with its source, rights/consent basis,
-  allowed environment, public-release status, checksum, metadata-review
-  result, and intentional alt-text decision.
+  allowed environment, explicit approval status, public-release status,
+  checksum, structured metadata-review result, and intentional alt-text
+  decision.
+- The recorded checksum matches the reviewed file, and the file has no EXIF,
+  XMP, IPTC, or comment metadata. A review status of `metadata-present` is a
+  release blocker until a clean derivative is approved.
 - No AI-generated image is present in the static collection, production media
   storage, or a public template.
 - Product media has documented ownership or license, required consents, and no

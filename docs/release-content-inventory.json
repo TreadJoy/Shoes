@@ -10,9 +10,16 @@
         "local-debug"
       ],
       "public_release": false,
+      "approval_status": "development-only",
       "sha256": "cd74f4db2773b6a4f155835388b61a153107500c1dbe841ca9c355a4c153f902",
-      "metadata_review": "Not a public asset. Keep outside static collection and production media storage.",
-      "alt_text_decision": "When shown in local development, it is the TreadJoy brand mark."
+      "metadata_review": {
+        "status": "not-applicable",
+        "notes": "Not a public asset. Keep outside static collection and production media storage."
+      },
+      "alt_text_decision": {
+        "kind": "not-public",
+        "text": "When shown in local development, it is the TreadJoy brand mark."
+      }
     }
   ],
   "content_surfaces": [
