@@ -267,3 +267,16 @@
   did not publish comments or artifacts.
 - Resolution: granted read-only pull-request metadata permission while keeping
   repository contents read-only and comments/artifact upload disabled.
+
+## 2026-08-26 — A1.1 Gitleaks action required a license after organization transfer
+
+- Attempted the required Gitleaks v3.0.0 check after transferring the private
+  repository from the personal account to the TreadJoy Enterprise organization.
+- Result: the action stopped before scanning because its licensing model
+  requires a `GITLEAKS_LICENSE` secret for organization-owned repositories.
+- Impact: no repository content or provider payload was exposed, but the
+  required `Security / Gitleaks` check failed independently of the deliberate
+  commerce-job failure used to prove branch protection.
+- Containment: restored the deliberate application failure separately and kept
+  the PR unmergeable while choosing between a free Gitleaks Action license and
+  a pinned official Gitleaks CLI/container scan.
