@@ -1,4 +1,7 @@
-from django.test import TestCase
+from unittest import skipUnless
+
+from django.db import IntegrityError, connection, transaction
+from django.test import TestCase, TransactionTestCase
 from django.urls import reverse
 
 from web.waitlist.models import WaitlistSignup
@@ -49,4 +52,18 @@ class WaitlistFlowTests(TestCase):
 
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "at most 100 characters")
+        self.assertFalse(WaitlistSignup.objects.exists())
+
+
+@skipUnless(
+    connection.vendor == "postgresql",
+    "Requires PostgreSQL transaction and uniqueness behavior.",
+)
+class WaitlistDatabaseContractTests(TransactionTestCase):
+    def test_unique_email_failure_rolls_back_the_atomic_write(self):
+        with self.assertRaises(IntegrityError):
+            with transaction.atomic():
+                WaitlistSignup.objects.create(email="rollback@example.com")
+                WaitlistSignup.objects.create(email="rollback@example.com")
+
         self.assertFalse(WaitlistSignup.objects.exists())

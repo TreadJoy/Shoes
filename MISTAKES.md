@@ -1,5 +1,47 @@
 # Verification Limitations
 
+## 2026-08-26 — A1.1 branch creation required managed Git approval
+
+- Attempted to create `codex/a1-1-postgresql-ci` with `git switch -c` inside
+  the default workspace sandbox.
+- Result: Git could not create the nested ref directory beneath `.git/refs`.
+- Impact: no source file, branch ref, or application/database state changed.
+- Resolution: reran the same scoped branch-creation command after explicit
+  managed approval; the implementation branch was created successfully.
+
+## 2026-08-26 — A1.1 staging required managed Git approval
+
+- Attempted to stage the reviewed A1.1 file list and run the cached whitespace
+  check.
+- Result: the default sandbox could not create `.git/index.lock`, so Git
+  stopped before staging any path.
+- Impact: no index, source file, commit, or remote state changed.
+- Resolution: rerun the same explicit file-list staging command with managed
+  Git approval, then repeat the cached diff and status checks before commit.
+
+## 2026-08-26 — A1.1 YAML check used a newer Ruby API signature
+
+- Attempted to parse both workflow files with `YAML.load_file(..., aliases:
+  true)`.
+- Result: the macOS system Ruby 2.6/Psych version rejected the `aliases`
+  keyword before parsing either file.
+- Impact: no workflow or repository file changed; the command did not report a
+  YAML defect.
+- Resolution: reran the parser with Ruby 2.6's positional `YAML.safe_load`
+  signature and alias support; both workflow files parsed successfully.
+
+## 2026-08-26 — A1.1 sandboxed dependency audit could not reach PyPI
+
+- Attempted a clean Python 3.12 installation of `requirements-dev.txt` before
+  reproducing the new dependency-audit job.
+- Result: the default sandbox could not resolve public PyPI, so pip stopped at
+  the first package without installing anything into the temporary virtual
+  environment.
+- Impact: no repository file, existing environment, or database changed.
+- Resolution: reran the same hash-enforced installation with approved network
+  access and a dedicated temporary pip cache. `pip check` and both runtime and
+  development lock audits passed with no known vulnerabilities.
+
 ## 2026-08-25 — Local PostgreSQL test database creation
 
 - Attempted the focused A0.1 Django test suite.
@@ -201,3 +243,88 @@
 - Containment: treat the CLI login result as the authoritative completion
   signal for local OAuth callbacks and verify final MCP registration through
   `codex mcp list` without inspecting callback URLs.
+
+## 2026-08-26 — A1.1 first GitHub application workflow was invalid
+
+- Attempted the first GitHub Actions run of the new commerce, research, and
+  dependency-audit workflow.
+- Result: GitHub Actions treats environment-variable names case-insensitively,
+  so defining both uppercase and lowercase HTTP proxy names made the workflow
+  invalid even though a generic YAML parser accepted the file. No jobs ran.
+- Impact: no application command, database service, or provider interaction
+  started in that run.
+- Resolution: retained the uppercase proxy variables, removed the duplicate
+  lowercase spellings, and will require a green GitHub-hosted run before
+  accepting A1.1.
+
+## 2026-08-26 — A1.1 first Gitleaks pull-request run lacked metadata permission
+
+- Attempted the first pull-request-triggered Gitleaks v3.0.0 scan with only
+  `contents: read` permission.
+- Result: the action returned HTTP 403 while listing the pull request's commits
+  because the workflow token lacked `pull-requests: read`.
+- Impact: checkout completed, but the secret scan did not execute. The action
+  did not publish comments or artifacts.
+- Resolution: granted read-only pull-request metadata permission while keeping
+  repository contents read-only and comments/artifact upload disabled.
+
+## 2026-08-26 — A1.1 Gitleaks action required a license after organization transfer
+
+- Attempted the required Gitleaks v3.0.0 check after transferring the private
+  repository from the personal account to the TreadJoy Enterprise organization.
+- Result: the action stopped before scanning because its licensing model
+  requires a `GITLEAKS_LICENSE` secret for organization-owned repositories.
+- Impact: no repository content or provider payload was exposed, but the
+  required `Security / Gitleaks` check failed independently of the deliberate
+  commerce-job failure used to prove branch protection.
+- Resolution: restored the deliberate application failure separately, then
+  replaced the licensed wrapper with the approved official Gitleaks CLI image,
+  pinned by version and Linux/AMD64 digest. The replacement scans all reachable
+  history without a license, provider token, repository secret, comments, or
+  uploaded artifacts.
+
+## 2026-08-26 — A1.1 local Gitleaks container reproduction lacked Docker
+
+- Attempted to reproduce the new digest-pinned Gitleaks container command on
+  the development workstation before pushing it to GitHub.
+- Result: the shell reported `command not found: docker`; the workflow YAML had
+  already parsed successfully, but the local container invocation did not run.
+- Impact: no image was downloaded and no repository or system state changed.
+- Resolution: ran the identical `gitleaks git --redact --no-banner
+  --log-opts=--all` scan with the installed Gitleaks 8.30.1 binary; all 45
+  commits scanned with no leaks. The exact container command remains subject to
+  GitHub-hosted Ubuntu verification.
+
+## 2026-08-26 — A1.1 combined documentation patch used mismatched context
+
+- Attempted one combined patch for the CI documentation and failure log.
+- Result: the patch referenced a `MISTAKES.md` heading while matching
+  `docs/ci.md`, so validation rejected the complete patch before writing.
+- Impact: neither file changed during that attempt.
+- Resolution: inspected the current context and applied the two scoped edits
+  with file-appropriate anchors.
+
+## 2026-08-26 — A1.1 acceptance-evidence patch used incomplete context
+
+- Attempted to add acceptance evidence to `docs/ci.md` and mark A1.1 complete
+  in one patch.
+- Result: the documentation hunk omitted part of the surrounding paragraph, so
+  patch validation rejected every hunk before writing.
+- Impact: no roadmap, documentation, or failure-log content changed during the
+  failed attempt.
+- Resolution: inspected both exact sections and applied the evidence with the
+  full current paragraph boundary as its anchor.
+
+## 2026-08-26 — A1.1 working-directory scan included ignored local secrets
+
+- Attempted `gitleaks dir` to cover the uncommitted acceptance-documentation
+  edits before their final commit.
+- Result: directory mode also scanned an existing ignored local environment
+  file and reported three findings. The command emitted only the finding count;
+  no values or paths were printed.
+- Impact: no finding was uploaded, logged to a repository file, staged, or
+  committed. The ignored local file was not modified or inspected further.
+- Resolution: use Gitleaks Git mode for the repository contract, which scans
+  every tracked commit and ref. Re-run that full-history scan after committing
+  the documentation so the final tracked content is covered without traversing
+  ignored developer secrets.
