@@ -188,16 +188,41 @@ P1 storefront, email, accessibility, SEO, performance, monitoring, and admin-usa
 
 ### A0.3 — Create minimal reproducible dependency manifests
 
-- **Priority / status:** P0 — Not started.
+- **Priority / status:** P0 — Ready for owner acceptance.
 - **Objective:** Replace the unrelated frozen environment with reviewed runtime and development dependency inputs and reproducible locks.
 - **Why it matters:** Unused packages expand attack surface, slow builds, obscure licenses, and make security upgrades harder.
-- **Current state:** requirements.txt contains roughly 161 packages, including unrelated notebook/data-science libraries; requirements-dev.txt is empty; no Python version or lock-generation policy is recorded.
+- **Current state:** Reviewed runtime and standalone development inputs now
+  produce hash-locked requirements files from public PyPI only. CPython 3.12
+  is recorded as the supported minor; the existing development virtual
+  environment was not replaced.
 - **Required work:** Derive direct dependencies from imports/settings; choose and document a supported Python minor compatible with the managed origin; create requirements.in for runtime inputs and requirements-dev.in for test/security tooling; use pip-tools to generate pinned requirements.txt and requirements-dev.txt; document upgrade/lock commands and license/vulnerability review; remove packages only after checks prove they are unused.
 - **Dependencies:** A0.2, so stale imports do not preserve dead dependencies.
 - **Affected areas:** requirements files, runtime documentation, CI setup, deployment build configuration.
 - **Security considerations:** Verify hashes or trusted index policy, package provenance, licenses, known vulnerabilities, and separate runtime from development-only tools; never embed private index credentials.
 - **Testing requirements:** Build a fresh virtual environment, install each lock independently, run pip check, compile, Django checks, both mode suites, admin/static collection smoke checks, and dependency audit.
 - **Acceptance criteria:** Fresh installs are deterministic; every direct package has a documented use; unrelated packages are gone; runtime image excludes development tools; CI can reproduce the environment.
+- **Implementation evidence (2026-08-26):** Added `.python-version`, seven
+  reviewed runtime inputs, and four development-only inputs; generated ordered
+  hash locks with pip-tools 7.6.1 and verified byte-identical regeneration
+  under a temporary CPython 3.12.14 build. Separate clean 3.12.14 runtime and
+  development environments installed with `--require-hashes`, passed `pip
+  check` and compile checks, and showed the runtime contains no pip-tools,
+  pip-audit, pip-licenses, or pre-commit. `pip-audit --require-hashes` reports
+  no known vulnerabilities for either lock. The auditable license inventory
+  covers every installed distribution, reports no unknown/custom license, and
+  flags `psycopg`/`psycopg-binary` as LGPL-3.0-only for owner review. A
+  disposable PostgreSQL 17 cluster migrated both modes from zero; Django
+  checks and `makemigrations --check --dry-run` passed, along with 147
+  commerce tests (6 skipped), 73 research tests (5 skipped), admin
+  autodiscovery, and isolated static collection. Research remained free of
+  commerce routes/models and Stripe initialization; commerce used synthetic
+  settings without external calls. The runtime lock uses `--no-allow-unsafe`.
+  The standalone development lock is the documented pip-tools 7.6.1 exception:
+  it uses `--allow-unsafe` solely to pin and hash its required `pip` and
+  `setuptools`, since omitting setuptools makes a clean hash-enforced install
+  fail. No CI workflow was added. Owner acceptance must approve the direct
+  dependency purposes, license inventory/audit results, and this narrowly
+  scoped development-lock exception.
 
 ## Phase 1 — Shared CI, configuration, and security foundation
 

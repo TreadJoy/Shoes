@@ -59,3 +59,131 @@
   completed successfully.
 - Containment: rerun research verification with the three Stripe variables
   explicitly empty so the process matches a valid research deployment.
+
+## 2026-08-26 — A0.3 standalone development lock omitted setuptools
+
+- Attempted a clean Python 3.12 installation of the generated
+  `requirements-dev.txt` with `--require-hashes`.
+- Result: pip-tools' `--no-allow-unsafe` output omitted its transitive
+  `setuptools` requirement, leaving it unpinned and causing pip to reject the
+  development lock under hash-checking mode.
+- Impact: the runtime lock installed and passed `pip check`; no project
+  database, application code, or existing virtual environment changed.
+- Resolution: the standalone development lock now deliberately uses
+  `--allow-unsafe` and fully pins/hashes both `pip` and `setuptools`; a second
+  clean Python 3.12.14 install passed `pip check`. The runtime lock retains
+  `--no-allow-unsafe`.
+
+## 2026-08-26 — A0.3 lock reproducibility comparison used the Git baseline
+
+- Attempted to confirm repeated lock generation with `git diff --exit-code`.
+- Result: the command compared the newly generated locks to the pre-A0.3
+  tracked freeze, so it reported the intended dependency replacement rather
+  than a regeneration difference.
+- Impact: the clean runtime and development installations completed; this did
+  not indicate a lock nondeterminism or modify the development database.
+- Containment: compare checksums immediately before and after a second ordered
+  generation run instead of comparing the implementation worktree to `HEAD`.
+
+## 2026-08-26 — A0.3 initial compatible lock failed vulnerability review
+
+- Attempted `pip-audit --require-hashes` against the initial runtime lock.
+- Result: 65 known vulnerabilities were reported across Django, Pillow,
+  cryptography, and transitive HTTP/parsing packages inherited from the old
+  compatible pins. Every report listed a fixed version within the approved
+  input ranges.
+- Impact: the audit correctly blocked acceptance before application or
+  database verification; no suppression was added.
+- Containment: regenerate both locks with an explicit compatible upgrade, then
+  repeat clean installation, audit, license, and application verification.
+
+## 2026-08-26 — A0.3 static smoke probe omitted Django settings
+
+- Attempted the temporary admin-autodiscovery and static-collection probe with
+  a direct Python process.
+- Result: the process did not set `DJANGO_SETTINGS_MODULE`, so Django stopped
+  before loading either deployment mode.
+- Impact: the temporary PostgreSQL cluster shut down cleanly; no static files,
+  application records, or development database state changed.
+- Containment: rerun both probes with `DJANGO_SETTINGS_MODULE=Shoes.settings`
+  and keep the temporary static roots isolated.
+
+## 2026-08-26 — A0.3 Python 3.12.14 PostgreSQL rerun used the macOS account
+
+- Attempted to create fresh disposable PostgreSQL databases and run the final
+  Python 3.12.14 mode suite with `DB_USER=ethanschoen`.
+- Result: the temporary cluster does not have that role, so database creation
+  and subsequent Django connections failed before migrations or tests.
+- Impact: the temporary server stopped normally; no application, development,
+  or existing disposable database was changed.
+- Resolution: reran with the cluster's `postgres` role using new temporary
+  databases. Both mode migrations, checks, migration-drift checks, and suites
+  passed under CPython 3.12.14; the cluster stopped normally afterward.
+
+## 2026-08-26 — A0.3 direct lock regeneration used an unwritable compiler cache
+
+- Attempted to regenerate both locks in place with the temporary Python 3.12.14
+  pip-tools environment.
+- Result: pip-tools inherited a cache path beneath the local user library that
+  is unavailable to the workspace sandbox, so it stopped before changing either
+  lock.
+- Impact: the prior lock files and temporary comparison copies remained
+  unchanged; no application or database state changed.
+- Resolution: set `PIP_TOOLS_CACHE_DIR` to a dedicated temporary directory.
+  The subsequent ordered regeneration completed before the final byte-for-byte
+  comparison.
+
+## 2026-08-26 — A0.3 sandboxed regeneration could not resolve public PyPI
+
+- Attempted the corrected in-place regeneration with a temporary pip-tools
+  cache directory.
+- Result: the sandbox could not resolve `pypi.org`, so pip-tools stopped before
+  writing either lock.
+- Impact: the pre-generation snapshots still match the tracked locks; no
+  application or database state changed.
+- Resolution: with approved network access, regenerated from public PyPI only
+  and then ran a second ordered generation. Both final lock files matched their
+  pre-repeat snapshots byte for byte.
+
+## 2026-08-26 — A0.3 final sandboxed audit could not reach the vulnerability service
+
+- Attempted the final `pip-audit --require-hashes` runs after byte-identical
+  lock regeneration.
+- Result: the sandbox could not resolve the public PyPI vulnerability endpoint,
+  so neither audit result was available from that attempt.
+- Impact: the locks, application, and databases were not changed.
+- Resolution: reran both exact hash-locked manifests with approved network
+  access; each reported no known vulnerabilities.
+
+## 2026-08-26 — Cloudflare setup shell did not expose `npx`
+
+- Attempted Cloudflare's published global skills installation command with
+  `npx` while setting up the Codex development environment.
+- Result: the shell reported `command not found: npx` before downloading or
+  installing anything.
+- Impact: no global skills, MCP configuration, repository code, or project data
+  changed during the failed attempt.
+- Containment: use Codex's bundled Node package runner to execute the equivalent
+  Cloudflare skills installation, then verify the installed skill paths before
+  registering the MCP servers.
+
+### Bundled package-runner retry
+
+- Attempted the equivalent installation through Codex's bundled `pnpm` runner.
+- Result: `pnpm` downloaded the `skills` CLI, but the generated launcher could
+  not find `node` on the child process `PATH`; the installer itself did not run.
+- Impact: only package-manager cache entries were downloaded; no skills, MCP
+  configuration, repository code, or project data changed.
+- Containment: expose the bundled Node binary directory on `PATH` for the
+  package runner, then repeat the same Cloudflare installer arguments.
+
+## 2026-08-26 — Cloudflare OAuth browser handle expired across approval pause
+
+- Attempted to reuse the prior in-app-browser tab handle after the user
+  completed the primary Cloudflare OAuth approval.
+- Result: the browser session no longer exposed that handle, so the bindings
+  authorization page was not opened on the first attempt.
+- Impact: no authorization request was submitted and no Cloudflare, MCP,
+  repository, or project state changed.
+- Containment: reconnect to the in-app browser, open a fresh bindings OAuth tab,
+  inspect the page, and preserve it for the required access-grant confirmation.
