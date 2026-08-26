@@ -187,3 +187,17 @@
   repository, or project state changed.
 - Containment: reconnect to the in-app browser, open a fresh bindings OAuth tab,
   inspect the page, and preserve it for the required access-grant confirmation.
+
+## 2026-08-26 — Cloudflare OAuth browser assertions did not match the consent flow
+
+- Attempted to combine each MCP server's first approval click with a regular-
+  expression callback assertion.
+- Result: the browser wrapper rejected that matcher after the clicks advanced
+  to Cloudflare's account-level consent pages. A later callback wait timed out
+  for the Builds tab, and browser policy correctly blocked reading the local
+  callback URLs because they contained OAuth response data.
+- Impact: no approval was duplicated. The user-authorized consent flow
+  completed, and all three waiting Codex processes reported successful login.
+- Containment: treat the CLI login result as the authoritative completion
+  signal for local OAuth callbacks and verify final MCP registration through
+  `codex mcp list` without inspecting callback URLs.
