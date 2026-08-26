@@ -58,8 +58,11 @@ its complete atomic write.
 
 The dependency job installs the standalone development lock, runs `pip check`,
 and audits both runtime and development manifests with hashes and no
-suppression. The Gitleaks job checks out complete Git history and disables PR
-comments and artifact uploads.
+suppression. The Gitleaks job checks out complete Git history and does not
+create PR comments or upload artifacts. It runs the official Gitleaks CLI
+image, pinned to its Linux/AMD64 registry digest, with the checkout mounted
+read-only. The scan uses `git --log-opts="--all"`, redacts findings, and requires
+no license, provider token, or repository secret.
 
 ## Local reproduction
 
@@ -109,16 +112,27 @@ Run `python manage.py test --keepdb --noinput` for commerce. For research, run:
 python manage.py test web.core web.products web.survey web.waitlist web.accounts --keepdb --noinput
 ```
 
+Reproduce the secret scan from a full checkout with Docker:
+
+```sh
+docker run --rm \
+  --user "$(id -u):$(id -g)" \
+  --volume "$PWD:/repo:ro" \
+  --workdir /repo \
+  ghcr.io/gitleaks/gitleaks:v8.30.1@sha256:b109bc5f8f76a38196a3e413704fc5b9e3c32360bce4e4b603bd6f45b3721dbb \
+  git --redact --no-banner --log-opts="--all" /repo
+```
+
 ## Pin updates
 
 GitHub actions use full commit SHAs with release-tag comments. Review the
 upstream release and security notes before changing either value, then verify
-the tag resolves to the committed SHA. PostgreSQL uses an exact minor,
-distribution, and registry digest. For an upgrade, review PostgreSQL's release
-notes, resolve the Docker Official Image digest with `docker buildx imagetools
-inspect`, update the tag and digest together, and require both application jobs
-to pass before merging. Do not replace these pins with floating major or
-`latest` references.
+the tag resolves to the committed SHA. PostgreSQL and Gitleaks use exact
+versions and registry digests. For an upgrade, review the upstream release and
+security notes, resolve the architecture-specific image digest with `docker
+buildx imagetools inspect`, update the tag and digest together, and require the
+affected checks to pass before merging. Do not replace these pins with floating
+major or `latest` references.
 
 ## Branch protection and failure proof
 
@@ -142,3 +156,6 @@ merging. Never merge the failure probe.
   add collected files to the repository or cache them.
 - Audit outages should be rerun after the advisory service recovers. Do not
   suppress findings or bypass the required check.
+- A Gitleaks image-pull failure should be diagnosed as registry availability or
+  a stale digest. Do not switch back to the licensed Action wrapper or add a
+  `GITLEAKS_LICENSE` secret merely to make CI green.

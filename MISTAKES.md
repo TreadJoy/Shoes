@@ -277,6 +277,29 @@
 - Impact: no repository content or provider payload was exposed, but the
   required `Security / Gitleaks` check failed independently of the deliberate
   commerce-job failure used to prove branch protection.
-- Containment: restored the deliberate application failure separately and kept
-  the PR unmergeable while choosing between a free Gitleaks Action license and
-  a pinned official Gitleaks CLI/container scan.
+- Resolution: restored the deliberate application failure separately, then
+  replaced the licensed wrapper with the approved official Gitleaks CLI image,
+  pinned by version and Linux/AMD64 digest. The replacement scans all reachable
+  history without a license, provider token, repository secret, comments, or
+  uploaded artifacts.
+
+## 2026-08-26 — A1.1 local Gitleaks container reproduction lacked Docker
+
+- Attempted to reproduce the new digest-pinned Gitleaks container command on
+  the development workstation before pushing it to GitHub.
+- Result: the shell reported `command not found: docker`; the workflow YAML had
+  already parsed successfully, but the local container invocation did not run.
+- Impact: no image was downloaded and no repository or system state changed.
+- Resolution: ran the identical `gitleaks git --redact --no-banner
+  --log-opts=--all` scan with the installed Gitleaks 8.30.1 binary; all 45
+  commits scanned with no leaks. The exact container command remains subject to
+  GitHub-hosted Ubuntu verification.
+
+## 2026-08-26 — A1.1 combined documentation patch used mismatched context
+
+- Attempted one combined patch for the CI documentation and failure log.
+- Result: the patch referenced a `MISTAKES.md` heading while matching
+  `docs/ci.md`, so validation rejected the complete patch before writing.
+- Impact: neither file changed during that attempt.
+- Resolution: inspected the current context and applied the two scoped edits
+  with file-appropriate anchors.
