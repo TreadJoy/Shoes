@@ -144,6 +144,34 @@ application job. Record the failed workflow run and GitHub's blocked merge
 state, revert the probe, and require all four checks to return to green before
 merging. Never merge the failure probe.
 
+## Acceptance evidence (2026-08-26)
+
+[Pull request #1](https://github.com/TreadJoy/Shoes/pull/1) established the
+checks and protection contract. The first complete green application and secret
+runs were [Application CI #2](https://github.com/TreadJoy/Shoes/actions/runs/32996910846)
+and [Secret Scan #30](https://github.com/TreadJoy/Shoes/actions/runs/32996910619).
+The private repository was then transferred into the TreadJoy Enterprise
+organization so GitHub could enforce the rule. No pre-existing branch rule was
+present. The new `main` rule requires the four names at the top of this document
+and requires branches to be current with `main` before merging.
+
+Commit `7676e4c` added an unconditional commerce-job failure. In
+[Application CI #3](https://github.com/TreadJoy/Shoes/actions/runs/33004202293),
+commerce failed while research and the dependency audit passed; GitHub marked
+the checks required and disabled the merge button. The probe was removed in the
+next commit and was never merged.
+
+At commit `91d9f4f`, [Application CI #5](https://github.com/TreadJoy/Shoes/actions/runs/33005044655)
+and [Secret Scan #33](https://github.com/TreadJoy/Shoes/actions/runs/33005044653)
+passed all four required checks. Commerce ran 152 tests with 6 skips, then
+passed both explicit row-lock race classes and the waitlist uniqueness/rollback
+contract. Research ran 78 installed-app tests with 5 skips and passed the same
+database contract. Both modes migrated blank databases, showed no migration
+drift, passed warning-fatal deployment checks, and collected static assets.
+Both dependency locks audited cleanly.
+The license-free Gitleaks CLI replacement scanned the full checkout successfully
+with the official version-and-digest-pinned image.
+
 ## Troubleshooting
 
 - A database-creation permission error means the test database was not

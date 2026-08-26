@@ -303,3 +303,28 @@
 - Impact: neither file changed during that attempt.
 - Resolution: inspected the current context and applied the two scoped edits
   with file-appropriate anchors.
+
+## 2026-08-26 — A1.1 acceptance-evidence patch used incomplete context
+
+- Attempted to add acceptance evidence to `docs/ci.md` and mark A1.1 complete
+  in one patch.
+- Result: the documentation hunk omitted part of the surrounding paragraph, so
+  patch validation rejected every hunk before writing.
+- Impact: no roadmap, documentation, or failure-log content changed during the
+  failed attempt.
+- Resolution: inspected both exact sections and applied the evidence with the
+  full current paragraph boundary as its anchor.
+
+## 2026-08-26 — A1.1 working-directory scan included ignored local secrets
+
+- Attempted `gitleaks dir` to cover the uncommitted acceptance-documentation
+  edits before their final commit.
+- Result: directory mode also scanned an existing ignored local environment
+  file and reported three findings. The command emitted only the finding count;
+  no values or paths were printed.
+- Impact: no finding was uploaded, logged to a repository file, staged, or
+  committed. The ignored local file was not modified or inspected further.
+- Resolution: use Gitleaks Git mode for the repository contract, which scans
+  every tracked commit and ref. Re-run that full-history scan after committing
+  the documentation so the final tracked content is covered without traversing
+  ignored developer secrets.

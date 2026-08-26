@@ -228,16 +228,38 @@ P1 storefront, email, accessibility, SEO, performance, monitoring, and admin-usa
 
 ### A1.1 — Add PostgreSQL CI for both deployment modes
 
-- **Priority / status:** P0 — Not started.
+- **Priority / status:** P0 — Complete (2026-08-26).
 - **Objective:** Make every release prove Django and database behavior against PostgreSQL in commerce and research modes.
 - **Why it matters:** SQLite skips the locking semantics used to prevent duplicate allocation and future overselling.
-- **Current state:** GitHub runs gitleaks only; audited SQLite runs passed 123 commerce and 61 research tests, while PostgreSQL concurrency tests could not run locally.
+- **Current state:** GitHub requires separate commerce and research PostgreSQL
+  jobs, a dependency audit, and a full-history Gitleaks scan on `main` with
+  strict branch freshness.
 - **Required work:** Add GitHub Actions with a pinned PostgreSQL service and least-privilege test credentials; run mode-specific Django checks/tests, migrations-from-zero, makemigrations --check, compile, static collection, dependency audit, secret scan, and production-configuration checks; cache only package downloads, not database state; make required checks branch-protection ready.
 - **Dependencies:** A0.3.
 - **Affected areas:** .github/workflows, test settings/environment helpers, requirements-dev, repository documentation.
 - **Security considerations:** Use synthetic CI secrets, restricted permissions, pinned action revisions, no fork access to sensitive values, and no external Stripe/email network calls.
 - **Testing requirements:** Exercise row locks, uniqueness, transaction rollback, research negative capability tests, and a deliberately failing check to prove the workflow blocks a merge.
 - **Acceptance criteria:** One commit produces green, separately visible commerce/research PostgreSQL jobs; concurrency tests execute rather than skip; required checks and troubleshooting instructions are documented.
+- **Implementation evidence (2026-08-26):** PR
+  [#1](https://github.com/TreadJoy/Shoes/pull/1) added explicit commerce and
+  research jobs against isolated digest-pinned PostgreSQL 17.11 services,
+  restricted application roles, guarded CI settings, blank-database migration
+  and drift checks, warning-fatal deployment checks, isolated static
+  collection, hash-enforced dependency auditing, and a shared PostgreSQL
+  uniqueness/atomic-rollback contract test. GitHub-hosted
+  [Application CI #5](https://github.com/TreadJoy/Shoes/actions/runs/33005044655)
+  passed 152 commerce tests (6 skipped), both explicit row-lock race classes,
+  and 78 research tests (5 skipped); both modes passed the explicit database
+  contract. [Secret Scan #33](https://github.com/TreadJoy/Shoes/actions/runs/33005044653)
+  passed with the official Gitleaks 8.30.1 image pinned to its Linux/AMD64
+  digest and needed no license or secret. The private repository moved into the
+  TreadJoy Enterprise organization so protection could be enforced. With no
+  prior branch rule to preserve, `main` now requires the four documented checks
+  and strict freshness. Commit `7676e4c` deliberately failed the required
+  commerce job in [Application CI #3](https://github.com/TreadJoy/Shoes/actions/runs/33004202293);
+  GitHub disabled merging while research and the dependency audit remained
+  green. The probe was removed without merging, and commit `91d9f4f` restored
+  all four checks to green.
 
 ### A1.2 — Harden and validate production settings
 
