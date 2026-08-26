@@ -243,3 +243,27 @@
 - Containment: treat the CLI login result as the authoritative completion
   signal for local OAuth callbacks and verify final MCP registration through
   `codex mcp list` without inspecting callback URLs.
+
+## 2026-08-26 — A1.1 first GitHub application workflow was invalid
+
+- Attempted the first GitHub Actions run of the new commerce, research, and
+  dependency-audit workflow.
+- Result: GitHub Actions treats environment-variable names case-insensitively,
+  so defining both uppercase and lowercase HTTP proxy names made the workflow
+  invalid even though a generic YAML parser accepted the file. No jobs ran.
+- Impact: no application command, database service, or provider interaction
+  started in that run.
+- Resolution: retained the uppercase proxy variables, removed the duplicate
+  lowercase spellings, and will require a green GitHub-hosted run before
+  accepting A1.1.
+
+## 2026-08-26 — A1.1 first Gitleaks pull-request run lacked metadata permission
+
+- Attempted the first pull-request-triggered Gitleaks v3.0.0 scan with only
+  `contents: read` permission.
+- Result: the action returned HTTP 403 while listing the pull request's commits
+  because the workflow token lacked `pull-requests: read`.
+- Impact: checkout completed, but the secret scan did not execute. The action
+  did not publish comments or artifacts.
+- Resolution: granted read-only pull-request metadata permission while keeping
+  repository contents read-only and comments/artifact upload disabled.

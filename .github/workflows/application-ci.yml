@@ -96,9 +96,6 @@ jobs:
           HTTP_PROXY: ${{ env.CI_DEAD_HTTP_PROXY }}
           HTTPS_PROXY: ${{ env.CI_DEAD_HTTP_PROXY }}
           NO_PROXY: 127.0.0.1,localhost
-          http_proxy: ${{ env.CI_DEAD_HTTP_PROXY }}
-          https_proxy: ${{ env.CI_DEAD_HTTP_PROXY }}
-          no_proxy: 127.0.0.1,localhost
         run: |
           python manage.py migrate --noinput
           python manage.py migrate --check
