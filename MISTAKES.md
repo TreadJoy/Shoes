@@ -1,5 +1,47 @@
 # Verification Limitations
 
+## 2026-08-26 — A1.1 branch creation required managed Git approval
+
+- Attempted to create `codex/a1-1-postgresql-ci` with `git switch -c` inside
+  the default workspace sandbox.
+- Result: Git could not create the nested ref directory beneath `.git/refs`.
+- Impact: no source file, branch ref, or application/database state changed.
+- Resolution: reran the same scoped branch-creation command after explicit
+  managed approval; the implementation branch was created successfully.
+
+## 2026-08-26 — A1.1 staging required managed Git approval
+
+- Attempted to stage the reviewed A1.1 file list and run the cached whitespace
+  check.
+- Result: the default sandbox could not create `.git/index.lock`, so Git
+  stopped before staging any path.
+- Impact: no index, source file, commit, or remote state changed.
+- Resolution: rerun the same explicit file-list staging command with managed
+  Git approval, then repeat the cached diff and status checks before commit.
+
+## 2026-08-26 — A1.1 YAML check used a newer Ruby API signature
+
+- Attempted to parse both workflow files with `YAML.load_file(..., aliases:
+  true)`.
+- Result: the macOS system Ruby 2.6/Psych version rejected the `aliases`
+  keyword before parsing either file.
+- Impact: no workflow or repository file changed; the command did not report a
+  YAML defect.
+- Resolution: reran the parser with Ruby 2.6's positional `YAML.safe_load`
+  signature and alias support; both workflow files parsed successfully.
+
+## 2026-08-26 — A1.1 sandboxed dependency audit could not reach PyPI
+
+- Attempted a clean Python 3.12 installation of `requirements-dev.txt` before
+  reproducing the new dependency-audit job.
+- Result: the default sandbox could not resolve public PyPI, so pip stopped at
+  the first package without installing anything into the temporary virtual
+  environment.
+- Impact: no repository file, existing environment, or database changed.
+- Resolution: reran the same hash-enforced installation with approved network
+  access and a dedicated temporary pip cache. `pip check` and both runtime and
+  development lock audits passed with no known vulnerabilities.
+
 ## 2026-08-25 — Local PostgreSQL test database creation
 
 - Attempted the focused A0.1 Django test suite.

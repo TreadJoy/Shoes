@@ -1,0 +1,251 @@
+name: Application CI
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: application-ci-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+env:
+  PYTHON_VERSION: "3.12.14"
+  CI_DB_PASSWORD: treadjoy-ci-database-password-not-secret
+  CI_DEAD_HTTP_PROXY: http://127.0.0.1:9
+
+jobs:
+  commerce-postgresql:
+    name: Application / Commerce PostgreSQL
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    env:
+      DJANGO_SETTINGS_MODULE: Shoes.ci_settings
+      TREADJOY_CI: "true"
+      TREADJOY_MODE: commerce
+      SECRET_KEY: treadjoy-ci-public-synthetic-key-7Q2z-not-a-secret-for-checks-only
+      DJANGO_DEBUG: "True"
+      ALLOWED_HOSTS: ci.invalid,testserver,localhost
+      DB_NAME: treadjoy_ci
+      DB_USER: treadjoy_ci
+      DB_PASSWORD: treadjoy-ci-database-password-not-secret
+      DB_HOST: 127.0.0.1
+      DB_PORT: "5432"
+      CI_DB_TEST_NAME: treadjoy_ci_test
+      STRIPE_SECRET_KEY: ci-stripe-secret-placeholder-not-a-provider-key
+      STRIPE_PUBLISHABLE_KEY: ci-stripe-publishable-placeholder-not-a-provider-key
+      STRIPE_WEBHOOK_SECRET: ci-stripe-webhook-placeholder-not-a-provider-key
+    services:
+      postgres:
+        image: postgres:17.11-bookworm@sha256:051f7b7b3abdd564d5d1bd1e8c4b9c1b6e77087d1dd22020ede611c096a272e0
+        env:
+          POSTGRES_DB: treadjoy_ci
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: treadjoy-ci-bootstrap-password-not-secret
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready --username postgres --dbname treadjoy_ci"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+
+    steps:
+      - name: Check out source
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          persist-credentials: false
+
+      - name: Set up Python
+        uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6.2.0
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: pip
+          cache-dependency-path: requirements.txt
+
+      - name: Install hash-locked runtime dependencies
+        run: |
+          python -m pip install --require-hashes --requirement requirements.txt
+          python -m pip check
+
+      - name: Configure ephemeral paths
+        run: echo "CI_STATIC_ROOT=$RUNNER_TEMP/treadjoy-static" >> "$GITHUB_ENV"
+
+      - name: Bootstrap restricted PostgreSQL databases
+        env:
+          POSTGRES_CONTAINER_ID: ${{ job.services.postgres.id }}
+        run: |
+          docker exec "$POSTGRES_CONTAINER_ID" psql --username postgres --dbname postgres --set ON_ERROR_STOP=1 --command "CREATE ROLE treadjoy_ci LOGIN PASSWORD 'treadjoy-ci-database-password-not-secret' NOSUPERUSER NOCREATEDB NOCREATEROLE NOINHERIT NOREPLICATION;"
+          docker exec "$POSTGRES_CONTAINER_ID" psql --username postgres --dbname postgres --set ON_ERROR_STOP=1 --command "ALTER DATABASE treadjoy_ci OWNER TO treadjoy_ci;"
+          docker exec "$POSTGRES_CONTAINER_ID" psql --username postgres --dbname postgres --set ON_ERROR_STOP=1 --command "CREATE DATABASE treadjoy_ci_test OWNER treadjoy_ci;"
+          docker exec --env PGPASSWORD="$CI_DB_PASSWORD" "$POSTGRES_CONTAINER_ID" psql --host 127.0.0.1 --username treadjoy_ci --dbname treadjoy_ci_test --set ON_ERROR_STOP=1 --command "SELECT current_database(), current_user;"
+
+      - name: Verify PostgreSQL version and role restrictions
+        run: |
+          python manage.py shell --command "from django.db import connection; cursor = connection.cursor(); cursor.execute(\"SELECT current_setting('server_version_num')::integer, rolsuper, rolcreatedb, rolcreaterole, rolreplication FROM pg_roles WHERE rolname = current_user\"); result = cursor.fetchone(); assert connection.vendor == 'postgresql'; assert result == (170011, False, False, False, False), result; print('PostgreSQL contract:', result)"
+
+      - name: Verify migrations from zero and migration drift
+        env: &blocked_provider_network
+          HTTP_PROXY: ${{ env.CI_DEAD_HTTP_PROXY }}
+          HTTPS_PROXY: ${{ env.CI_DEAD_HTTP_PROXY }}
+          NO_PROXY: 127.0.0.1,localhost
+          http_proxy: ${{ env.CI_DEAD_HTTP_PROXY }}
+          https_proxy: ${{ env.CI_DEAD_HTTP_PROXY }}
+          no_proxy: 127.0.0.1,localhost
+        run: |
+          python manage.py migrate --noinput
+          python manage.py migrate --check
+          python manage.py makemigrations --check --dry-run
+
+      - name: Run compile, configuration, and static checks
+        env: *blocked_provider_network
+        run: |
+          python -m compileall -q Shoes web
+          python manage.py check
+          DJANGO_DEBUG=False python manage.py check --deploy --fail-level WARNING
+          python manage.py collectstatic --noinput --clear
+          test -f "$CI_STATIC_ROOT/css/style.css"
+          test -f "$CI_STATIC_ROOT/js/navigation.js"
+
+      - name: Run commerce test suite
+        env: *blocked_provider_network
+        run: python manage.py test --keepdb --noinput --verbosity 1
+
+      - name: Prove PostgreSQL row-locking tests execute
+        env: *blocked_provider_network
+        run: |
+          python manage.py test web.orders.tests.test_inventory.ConcurrentInventoryAllocationTests web.orders.tests.test_preorder_allocation.ConcurrentPreorderAllocationTests --keepdb --noinput --verbosity 2
+
+      - name: Prove PostgreSQL uniqueness rollback executes
+        env: *blocked_provider_network
+        run: |
+          python manage.py test web.waitlist.tests.WaitlistDatabaseContractTests --keepdb --noinput --verbosity 2
+
+  research-postgresql:
+    name: Application / Research PostgreSQL
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    env:
+      DJANGO_SETTINGS_MODULE: Shoes.ci_settings
+      TREADJOY_CI: "true"
+      TREADJOY_MODE: research
+      SECRET_KEY: treadjoy-ci-public-synthetic-key-7Q2z-not-a-secret-for-checks-only
+      DJANGO_DEBUG: "True"
+      ALLOWED_HOSTS: ci.invalid,testserver,localhost
+      DB_NAME: treadjoy_ci
+      DB_USER: treadjoy_ci
+      DB_PASSWORD: treadjoy-ci-database-password-not-secret
+      DB_HOST: 127.0.0.1
+      DB_PORT: "5432"
+      CI_DB_TEST_NAME: treadjoy_ci_test
+    services:
+      postgres:
+        image: postgres:17.11-bookworm@sha256:051f7b7b3abdd564d5d1bd1e8c4b9c1b6e77087d1dd22020ede611c096a272e0
+        env:
+          POSTGRES_DB: treadjoy_ci
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: treadjoy-ci-bootstrap-password-not-secret
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready --username postgres --dbname treadjoy_ci"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+
+    steps:
+      - name: Check out source
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          persist-credentials: false
+
+      - name: Set up Python
+        uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6.2.0
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: pip
+          cache-dependency-path: requirements.txt
+
+      - name: Install hash-locked runtime dependencies
+        run: |
+          python -m pip install --require-hashes --requirement requirements.txt
+          python -m pip check
+
+      - name: Configure ephemeral paths
+        run: echo "CI_STATIC_ROOT=$RUNNER_TEMP/treadjoy-static" >> "$GITHUB_ENV"
+
+      - name: Bootstrap restricted PostgreSQL databases
+        env:
+          POSTGRES_CONTAINER_ID: ${{ job.services.postgres.id }}
+        run: |
+          docker exec "$POSTGRES_CONTAINER_ID" psql --username postgres --dbname postgres --set ON_ERROR_STOP=1 --command "CREATE ROLE treadjoy_ci LOGIN PASSWORD 'treadjoy-ci-database-password-not-secret' NOSUPERUSER NOCREATEDB NOCREATEROLE NOINHERIT NOREPLICATION;"
+          docker exec "$POSTGRES_CONTAINER_ID" psql --username postgres --dbname postgres --set ON_ERROR_STOP=1 --command "ALTER DATABASE treadjoy_ci OWNER TO treadjoy_ci;"
+          docker exec "$POSTGRES_CONTAINER_ID" psql --username postgres --dbname postgres --set ON_ERROR_STOP=1 --command "CREATE DATABASE treadjoy_ci_test OWNER treadjoy_ci;"
+          docker exec --env PGPASSWORD="$CI_DB_PASSWORD" "$POSTGRES_CONTAINER_ID" psql --host 127.0.0.1 --username treadjoy_ci --dbname treadjoy_ci_test --set ON_ERROR_STOP=1 --command "SELECT current_database(), current_user;"
+
+      - name: Verify PostgreSQL version and role restrictions
+        run: |
+          python manage.py shell --command "from django.db import connection; cursor = connection.cursor(); cursor.execute(\"SELECT current_setting('server_version_num')::integer, rolsuper, rolcreatedb, rolcreaterole, rolreplication FROM pg_roles WHERE rolname = current_user\"); result = cursor.fetchone(); assert connection.vendor == 'postgresql'; assert result == (170011, False, False, False, False), result; print('PostgreSQL contract:', result)"
+
+      - name: Verify migrations from zero and migration drift
+        env: *blocked_provider_network
+        run: |
+          python manage.py migrate --noinput
+          python manage.py migrate --check
+          python manage.py makemigrations --check --dry-run
+
+      - name: Run compile, configuration, and static checks
+        env: *blocked_provider_network
+        run: |
+          python -m compileall -q Shoes web
+          python manage.py check
+          DJANGO_DEBUG=False python manage.py check --deploy --fail-level WARNING
+          python manage.py collectstatic --noinput --clear
+          test -f "$CI_STATIC_ROOT/css/style.css"
+          test -f "$CI_STATIC_ROOT/js/navigation.js"
+
+      - name: Run installed research application tests
+        env: *blocked_provider_network
+        run: |
+          python manage.py test web.core web.products web.survey web.waitlist web.accounts --keepdb --noinput --verbosity 1
+
+      - name: Prove PostgreSQL uniqueness rollback executes
+        env: *blocked_provider_network
+        run: |
+          python manage.py test web.waitlist.tests.WaitlistDatabaseContractTests --keepdb --noinput --verbosity 2
+
+  dependency-audit:
+    name: Supply Chain / Dependency Audit
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - name: Check out source
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          persist-credentials: false
+
+      - name: Set up Python
+        uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6.2.0
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: pip
+          cache-dependency-path: |
+            requirements.txt
+            requirements-dev.txt
+
+      - name: Install hash-locked development dependencies
+        run: |
+          python -m pip install --require-hashes --requirement requirements-dev.txt
+          python -m pip check
+
+      - name: Audit runtime and development locks
+        run: |
+          python -m pip_audit --require-hashes --requirement requirements.txt
+          python -m pip_audit --require-hashes --requirement requirements-dev.txt

@@ -287,3 +287,94 @@ class DeploymentModeProcessTests(SimpleTestCase):
             "TREADJOY_MODE='research': STRIPE_SECRET_KEY",
             result.stderr,
         )
+
+
+class CISettingsProcessTests(SimpleTestCase):
+    project_root = Path(__file__).resolve().parents[3]
+
+    def environment(self):
+        environment = os.environ.copy()
+        environment.update(
+            {
+                "DJANGO_SETTINGS_MODULE": "Shoes.ci_settings",
+                "TREADJOY_CI": "true",
+                "TREADJOY_MODE": "research",
+                "SECRET_KEY": "ci-settings-process-test-secret-key",
+                "DJANGO_DEBUG": "True",
+                "ALLOWED_HOSTS": "localhost,testserver",
+                "DB_NAME": "treadjoy_ci",
+                "DB_USER": "treadjoy_ci",
+                "DB_PASSWORD": "ci-settings-process-test-password",
+                "DB_HOST": "127.0.0.1",
+                "DB_PORT": "5432",
+                "CI_DB_TEST_NAME": "treadjoy_ci_test",
+                "CI_STATIC_ROOT": "/tmp/treadjoy-ci-settings-static",
+                "STRIPE_SECRET_KEY": "",
+                "STRIPE_PUBLISHABLE_KEY": "",
+                "STRIPE_WEBHOOK_SECRET": "",
+            }
+        )
+        return environment
+
+    def run_setup(self, environment, script="import django; django.setup()"):
+        return subprocess.run(
+            [sys.executable, "-c", script],
+            cwd=self.project_root,
+            env=environment,
+            capture_output=True,
+            text=True,
+            timeout=30,
+            check=False,
+        )
+
+    def assert_failed_with(self, environment, message):
+        result = self.run_setup(environment)
+
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn(message, result.stderr)
+
+    def test_valid_ci_settings_define_isolated_test_services(self):
+        result = self.run_setup(
+            self.environment(),
+            """
+import django
+django.setup()
+from django.conf import settings
+assert settings.DATABASES["default"]["TEST"]["NAME"] == "treadjoy_ci_test"
+assert str(settings.STATIC_ROOT) == "/tmp/treadjoy-ci-settings-static"
+assert settings.EMAIL_BACKEND == "django.core.mail.backends.locmem.EmailBackend"
+""",
+        )
+
+        self.assertEqual(
+            result.returncode,
+            0,
+            msg=f"stdout:\n{result.stdout}\nstderr:\n{result.stderr}",
+        )
+
+    def test_ci_settings_require_explicit_guard(self):
+        environment = self.environment()
+        environment["TREADJOY_CI"] = ""
+
+        self.assert_failed_with(
+            environment,
+            "Shoes.ci_settings requires TREADJOY_CI=true",
+        )
+
+    def test_ci_settings_require_a_distinct_test_database(self):
+        environment = self.environment()
+        environment["CI_DB_TEST_NAME"] = environment["DB_NAME"]
+
+        self.assert_failed_with(
+            environment,
+            "CI_DB_TEST_NAME must differ from DB_NAME",
+        )
+
+    def test_ci_settings_require_an_absolute_static_root(self):
+        environment = self.environment()
+        environment["CI_STATIC_ROOT"] = "relative/staticfiles"
+
+        self.assert_failed_with(
+            environment,
+            "CI_STATIC_ROOT must be an absolute path",
+        )
