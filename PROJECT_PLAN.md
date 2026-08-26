@@ -188,7 +188,7 @@ P1 storefront, email, accessibility, SEO, performance, monitoring, and admin-usa
 
 ### A0.3 — Create minimal reproducible dependency manifests
 
-- **Priority / status:** P0 — Ready for owner acceptance.
+- **Priority / status:** P0 — Complete.
 - **Objective:** Replace the unrelated frozen environment with reviewed runtime and development dependency inputs and reproducible locks.
 - **Why it matters:** Unused packages expand attack surface, slow builds, obscure licenses, and make security upgrades harder.
 - **Current state:** Reviewed runtime and standalone development inputs now
@@ -220,9 +220,9 @@ P1 storefront, email, accessibility, SEO, performance, monitoring, and admin-usa
   The standalone development lock is the documented pip-tools 7.6.1 exception:
   it uses `--allow-unsafe` solely to pin and hash its required `pip` and
   `setuptools`, since omitting setuptools makes a clean hash-enforced install
-  fail. No CI workflow was added. Owner acceptance must approve the direct
-  dependency purposes, license inventory/audit results, and this narrowly
-  scoped development-lock exception.
+  fail. No CI workflow was added. The owner approved the direct dependency
+  purposes, license inventory/audit results, and this narrowly scoped
+  development-lock exception on 2026-08-26.
 
 ## Phase 1 — Shared CI, configuration, and security foundation
 
