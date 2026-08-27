@@ -6,3 +6,4 @@ Pillow>=12.1.1,<13
 psycopg[binary]>=3.3.4,<4
 python-decouple>=3.8,<4
 stripe>=15.1,<16
+django-storages[s3]>=1.14.6,<2

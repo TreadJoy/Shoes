@@ -1,5 +1,18 @@
 # TreadJoy
 
+## Domain status
+
+The owner confirmed on 2026-08-26 that `tread-joy.com` was purchased through
+Cloudflare as TreadJoy's intended base domain. This is a registration record,
+not an active-site claim: no public hostname, DNS record, TLS certificate,
+managed origin, R2 custom domain, or email service is configured by this
+repository change.
+
+`hello@tread-joy.com` and `noreply@tread-joy.com` are reserved future
+addresses, not active or monitored mailboxes. The existing `@treadjoy.com`
+contact-page and sender-default references are stale launch blockers and remain
+unchanged until the email service is configured.
+
 ## Commerce Stripe webhook
 
 The commerce deployment's signed webhook endpoint is:

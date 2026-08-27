@@ -5,13 +5,17 @@ from pathlib import Path
 from decouple import config
 from django.core.exceptions import ImproperlyConfigured
 
-from .settings import *  # noqa: F403
-
-
 if not config("TREADJOY_CI", default=False, cast=bool):
     raise ImproperlyConfigured(
         "Shoes.ci_settings requires TREADJOY_CI=true."
     )
+
+if config("TREADJOY_ENVIRONMENT", default="").strip() != "ci":
+    raise ImproperlyConfigured(
+        "Shoes.ci_settings requires TREADJOY_ENVIRONMENT=ci."
+    )
+
+from .settings import *  # noqa: F403, E402
 
 CI_DB_TEST_NAME = config("CI_DB_TEST_NAME", default="").strip()
 if not CI_DB_TEST_NAME:

@@ -11,6 +11,10 @@ The application workflow runs for pushes to `main`, pull requests targeting
 `main`, and manual dispatches. Each deployment mode receives a separate
 PostgreSQL service and process environment. The research job does not define
 any `STRIPE_*` variable and explicitly selects only installed research apps.
+Normal application tests use the guarded `ci` environment profile. Each job
+also loads a synthetic staging profile with `Shoes.settings` and runs the
+warning-fatal Django deployment check; its R2, SMTP, database, and hostname
+values are non-secret placeholders and no provider network call is permitted.
 
 ## Isolation and credentials
 
@@ -82,6 +86,8 @@ Set the normal Django database and deployment-mode variables, plus:
 ```sh
 export DJANGO_SETTINGS_MODULE=Shoes.ci_settings
 export TREADJOY_CI=true
+export TREADJOY_ENVIRONMENT=ci
+export TREADJOY_INGRESS=direct
 export CI_DB_TEST_NAME=treadjoy_ci_test
 export CI_STATIC_ROOT=/absolute/path/to/disposable/staticfiles
 ```
@@ -102,9 +108,20 @@ python manage.py migrate --check
 python manage.py makemigrations --check --dry-run
 python -m compileall -q Shoes web
 python manage.py check
-DJANGO_DEBUG=False python manage.py check --deploy --fail-level WARNING
+env DJANGO_SETTINGS_MODULE=Shoes.settings \
+  TREADJOY_ENVIRONMENT=staging \
+  TREADJOY_INGRESS=cloudflare-locked \
+  DJANGO_DEBUG=false \
+  ALLOWED_HOSTS=ci.invalid \
+  python manage.py check --deploy --fail-level WARNING
 python manage.py collectstatic --noinput --clear
 ```
+
+The public-profile command relies on the remaining synthetic R2, SMTP,
+database, CSRF, and HSTS variables supplied by the workflow. For a local
+reproduction, set the complete non-secret placeholder contract from
+`docs/production-configuration.md`; never substitute real provider credentials
+in a shared shell or committed file.
 
 Run `python manage.py test --keepdb --noinput` for commerce. For research, run:
 

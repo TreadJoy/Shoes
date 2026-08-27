@@ -21,6 +21,7 @@ installs only `requirements.txt`; it contains no development tools.
 | psycopg[binary] | Both modes | PostgreSQL database adapter with reproducible binary wheels. | `>=3.3.4,<4` retains the current major line. | psycopg.org / LGPL-3.0-only, owner review required |
 | python-decouple | Both modes | Environment-driven configuration. | `>=3.8,<4` retains its current major line. | github.com/henriquebastos/python-decouple / MIT |
 | stripe | Commerce only | Hosted Checkout and verified Stripe webhook processing. | `>=15.1,<16` retains the current major line. | stripe.com / MIT |
+| django-storages[s3] | Public environments | Django storage backend for R2-backed public media; its S3 extra provides boto3. | `>=1.14.6,<2` keeps the reviewed stable major line. | django-storages / BSD-3-Clause |
 
 Commerce-only packages are installed from the same release lock in research
 mode but cannot be initialized there: research settings reject Stripe

@@ -95,6 +95,7 @@ Customer configurators, standalone component sales, reviews, advanced promotions
 | Release sequence | Public research deployment before commerce | Shared security/infrastructure work and research launch precede payment launch |
 | Codebase | One tested release commit, no long-lived mode branches | Mode differences stay in fail-closed configuration and routing |
 | Hosting | Cloudflare edge plus managed Django/PostgreSQL origin | Do not target Cloudflare Containers for launch |
+| Domain ownership | Owner confirmed on 2026-08-26 that `tread-joy.com` was purchased through Cloudflare as TreadJoy's intended base domain | Hostname allocation and DNS, TLS, origin, R2, and email configuration remain incomplete |
 | Databases | Separate research and commerce PostgreSQL databases | Research data cannot become the commerce source of truth |
 | Launch product | Fixed, preconfigured shoe variants | No launch configurator or standalone component sales |
 | Inventory authority | Finished ProductVariant stock and preorder allocation | BOM/component records are compatibility/reference data at launch |
@@ -148,7 +149,7 @@ P1 storefront, email, accessibility, SEO, performance, monitoring, and admin-usa
 ### Major decisions still requiring owner or specialist approval
 
 - Managed Django/PostgreSQL origin vendor, region, service tier, connection-pooling limits, and recovery objectives.
-- Production email provider, sender domain, support address, and retry/escalation policy.
+- Production email provider, mailbox activation, SPF/DKIM/DMARC, and retry/escalation policy. `hello@tread-joy.com` and `noreply@tread-joy.com` are reserved future addresses, not active or monitored addresses.
 - Supported carriers, shipping service levels, live/contract/table rate source, order cutoff, holiday calendar, and unresponsive preorder-delay behavior.
 - Tax registrations/nexus treatment and product tax codes, confirmed with a qualified advisor before enabling collection.
 - Terms, privacy, cookie/analytics, shipping, return, warranty, accessibility, and contact disclosures reviewed for the actual business.
@@ -263,7 +264,7 @@ P1 storefront, email, accessibility, SEO, performance, monitoring, and admin-usa
 
 ### A1.2 — Harden and validate production settings
 
-- **Priority / status:** P0 — Not started.
+- **Priority / status:** P0 — Implemented; owner acceptance pending (2026-08-27).
 - **Objective:** Make unsafe or incomplete production configuration fail before serving traffic.
 - **Why it matters:** Current non-DEBUG settings are incomplete for a Cloudflare proxy, production origins, CSP, storage, email, and security invariants.
 - **Current state:** Settings enable several Django production protections when DEBUG is false but lack an explicit trusted-proxy contract, complete host/origin validation, CSP, production service validation, and environment separation.
@@ -273,6 +274,7 @@ P1 storefront, email, accessibility, SEO, performance, monitoring, and admin-usa
 - **Security considerations:** Prevent direct-origin/proxy spoofing, DEBUG leakage, wildcard hosts/origins, insecure cookies, accidental console email, and secrets in error messages; document key rotation.
 - **Testing requirements:** Matrix tests for valid/invalid commerce and research environments, Django check --deploy, header/cookie integration tests, direct-origin simulation, and no-secret error assertions.
 - **Acceptance criteria:** Each environment either starts with the complete approved security contract or exits with a redacted actionable error; CI proves both success and fail-closed cases.
+- **Implementation evidence (2026-08-27):** Added strict local/CI/staging/production settings axes, redacted typed configuration parsing, Cloudflare-locked proxy trust, host/origin/SMTP/database/R2 validation, manifest static storage, public R2 media URLs, CSP middleware, externalized base startup JavaScript, key-rotation support, and custom deployment checks. Added 18 focused settings, mode-boundary, and security-header tests. A clean CPython 3.12 development-lock install passed `pip check`; a public-like research profile passed `check --deploy` with only the two intentional HSTS rollout advisories and collected 134 manifest static files; the runtime lock audit reported no known vulnerabilities. This is repository-only evidence: no live DNS, Cloudflare, R2, database, SMTP, origin, or public deployment was configured.
 
 ### A1.3 — Establish logging, health, monitoring, and incident foundations
 
@@ -333,8 +335,8 @@ P1 storefront, email, accessibility, SEO, performance, monitoring, and admin-usa
 - **Priority / status:** P0 — Not started.
 - **Objective:** Deploy research mode through Cloudflare to a managed Django/PostgreSQL origin with repeatable release and recovery.
 - **Why it matters:** The research site is the first public validation surface and the production architecture rehearsal for commerce.
-- **Current state:** No hosting, R2, managed database, deployment definition, backups, observability, domain, or rollback process exists in the repository.
-- **Required work:** Select approved managed origin/vendor/region; provision separate research database and least-privilege roles; configure Cloudflare DNS, Full strict TLS, WAF/rate rules, origin lock-down, static/media caching, and R2 custom domain; configure secrets, email, logs, health checks, migrations, backups/PITR, restore and rollback; publish approved research privacy/terms/accessibility/contact content and basic canonical/robots/social metadata; complete keyboard, WCAG 2.2 AA, responsive, and performance launch checks; deploy one immutable release artifact and run launch/rollback rehearsals.
+- **Current state:** `tread-joy.com` has been purchased through Cloudflare as the intended base domain, but no research hostname allocation, DNS, TLS, managed origin, R2, managed database, deployment definition, backups, observability, or rollback process is configured.
+- **Required work:** Select an approved research hostname plus managed origin/vendor/region; provision a separate research database and least-privilege roles; configure Cloudflare DNS, Full strict TLS, WAF/rate rules, origin lock-down, static/media caching, and an R2 custom domain; configure secrets, email, logs, health checks, migrations, backups/PITR, restore and rollback; publish approved research privacy/terms/accessibility/contact content and basic canonical/robots/social metadata; complete keyboard, WCAG 2.2 AA, responsive, and performance launch checks; deploy one immutable release artifact and run launch/rollback rehearsals.
 - **Dependencies:** A0.1–A0.3, A1.1–A1.4, A2.1, and A2.2.
 - **Affected areas:** Hosting/IaC or deployment config, Cloudflare, R2/storage, database, CI/CD, settings, operations docs.
 - **Security considerations:** Separate research secrets/database from commerce; no Stripe credentials; restrict origin/admin; protect deploy credentials; cache only public safe responses; treat R2 custom-domain objects as public.
@@ -536,8 +538,8 @@ P1 storefront, email, accessibility, SEO, performance, monitoring, and admin-usa
 - **Priority / status:** P0 — Not started.
 - **Objective:** Deliver verified, accessible, retryable messages for account and order lifecycle events.
 - **Why it matters:** Customers need receipts, shipping information, delay choices, return/refund status, and secure guest access; console email is not production service.
-- **Current state:** Console backend is configured; there are no production templates/provider, delivery event records, retry/escalation workflow, or complete lifecycle messages.
-- **Required work:** Select provider/sender/support domain; configure SPF, DKIM, DMARC, bounce/complaint handling and suppression; create branded plain-text/HTML templates for verification/recovery, receipt, payment exception, shipment, preorder delay/consent, cancellation, return/exchange, refund, and guest access; enqueue/send after committed domain state using a reliable outbox/retry design appropriate to the managed origin; record delivery status without storing full content unnecessarily.
+- **Current state:** The console backend is configured. `hello@tread-joy.com` and `noreply@tread-joy.com` are reserved future addresses, while the legacy `@treadjoy.com` contact-page and sender-default references are stale launch blockers. There are no production templates/provider, active mailboxes, delivery event records, retry/escalation workflow, or complete lifecycle messages.
+- **Required work:** Select and configure an email provider; activate the intended `hello@tread-joy.com` support and `noreply@tread-joy.com` sender addresses; configure SPF, DKIM, DMARC, bounce/complaint handling and suppression; then replace the legacy `@treadjoy.com` code references. Create branded plain-text/HTML templates for verification/recovery, receipt, payment exception, shipment, preorder delay/consent, cancellation, return/exchange, refund, and guest access; enqueue/send after committed domain state using a reliable outbox/retry design appropriate to the managed origin; record delivery status without storing full content unnecessarily.
 - **Dependencies:** A1.3–A1.4, A3.3, A6.1–A6.3, and provider/brand approval.
 - **Affected areas:** settings, email/outbox models/services, templates, account/order workflows, monitoring, DNS.
 - **Security considerations:** Signed links expire/revoke; templates escape user data; avoid sensitive content in subject/previews; separate transactional from marketing consent; process bounces/complaints safely.
@@ -606,8 +608,8 @@ P1 storefront, email, accessibility, SEO, performance, monitoring, and admin-usa
 - **Objective:** Make approved public content discoverable without indexing private, duplicate, test, or mode-inappropriate pages.
 - **Why it matters:** Search visibility and trustworthy previews support validation/conversion, while incorrect indexing can expose customer or placeholder content.
 - **Current state:** Templates provide basic title/language/viewport but lack full meta descriptions, canonicals, social cards, sitemap, robots policy, structured data, and production 404/500 content.
-- **Required work:** Define indexable URL policy per mode; add canonical and robots directives, sitemap and robots.txt, Product/Offer/Breadcrumb/Organization structured data only from authoritative fields, Open Graph/Twitter metadata with approved images, semantic heading/link cleanup, clean pagination/query handling, favicon/manifest as appropriate, and branded accessible 404/500 pages; register webmaster tools after domain approval.
-- **Dependencies:** A7.1–A7.3 and production domains from A2.3/A9.1.
+- **Required work:** Define indexable URL policy per mode; add canonical and robots directives, sitemap and robots.txt, Product/Offer/Breadcrumb/Organization structured data only from authoritative fields, Open Graph/Twitter metadata with approved images, semantic heading/link cleanup, clean pagination/query handling, favicon/manifest as appropriate, and branded accessible 404/500 pages; register webmaster tools after the applicable public hostname and production DNS/TLS are active.
+- **Dependencies:** A7.1–A7.3 and activated production hostnames from A2.3/A9.1.
 - **Affected areas:** base/product/catalog/core templates, context processors, sitemap/robots/error views, URLs, settings, static media.
 - **Security considerations:** Never index account/cart/checkout/order/admin/search-private URLs or expose raw stock/PII; avoid structured claims not supported by current price/availability.
 - **Testing requirements:** Crawl both modes, validate status/canonical/robots/sitemap/schema, test query variants and error pages, verify no private URLs, and use search-engine schema tools in staging/public-safe pages.
@@ -646,8 +648,8 @@ P1 storefront, email, accessibility, SEO, performance, monitoring, and admin-usa
 - **Priority / status:** P0 — Not started.
 - **Objective:** Create production commerce infrastructure isolated from research and aligned with the tested release contract.
 - **Why it matters:** Real payments and PII require stronger separation, capacity, secrets, recovery, and origin controls than a development server.
-- **Current state:** No commerce hosting resources, database roles, object storage, secrets store, domain, capacity plan, or infrastructure definition exists.
-- **Required work:** Provision approved managed Django service and PostgreSQL region/tier; create runtime/migration/backup roles and pooling limits; configure separate commerce R2/media namespace, secrets, email, Stripe live placeholders, domain, Cloudflare Full strict TLS, origin lock-down, WAF/rate rules, admin perimeter, and health checks; deploy immutable artifacts from CI; document resource ownership/cost and scaling signals.
+- **Current state:** `tread-joy.com` has been purchased through Cloudflare as the intended base domain, but no commerce hostname allocation, hosting resources, database roles, object storage, secrets store, capacity plan, or infrastructure definition is configured.
+- **Required work:** Select an approved commerce hostname, managed Django service, and PostgreSQL region/tier; create runtime/migration/backup roles and pooling limits; configure separate commerce R2/media namespace, secrets, email, Stripe live placeholders, Cloudflare DNS and Full strict TLS, origin lock-down, WAF/rate rules, admin perimeter, and health checks; deploy immutable artifacts from CI; document resource ownership/cost and scaling signals.
 - **Dependencies:** A1.1–A1.4, research lessons from A2.3, and commerce settings/storage behavior from prior phases.
 - **Affected areas:** Hosting/IaC or deployment config, Cloudflare/R2, PostgreSQL, secrets, CI/CD, Django settings, operations docs.
 - **Security considerations:** No shared research database/secrets; least privilege and MFA; prevent origin bypass; restrict production console/database access; public R2 contains public media only; rotate bootstrap credentials.

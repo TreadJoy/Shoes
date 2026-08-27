@@ -1,0 +1,210 @@
+import os
+import subprocess
+import sys
+from pathlib import Path
+
+from django.http import HttpResponse
+from django.middleware.clickjacking import XFrameOptionsMiddleware
+from django.middleware.security import SecurityMiddleware
+from django.test import RequestFactory, SimpleTestCase, override_settings
+
+from Shoes.middleware import ContentSecurityPolicyMiddleware
+
+
+PUBLIC_SETUP_PROBE = r"""
+import django
+
+django.setup()
+
+from django.conf import settings
+from django.core.management import call_command
+
+assert settings.IS_PUBLIC_ENVIRONMENT
+assert not settings.DEBUG
+assert settings.SECURE_PROXY_SSL_HEADER == ("HTTP_X_FORWARDED_PROTO", "https")
+assert settings.EMAIL_BACKEND == "django.core.mail.backends.smtp.EmailBackend"
+assert settings.STORAGES["default"]["BACKEND"] == "storages.backends.s3.S3Storage"
+assert settings.STORAGES["staticfiles"]["BACKEND"] == "django.contrib.staticfiles.storage.ManifestStaticFilesStorage"
+assert settings.MEDIA_URL == "https://media.ci.invalid/media/"
+assert "https://media.ci.invalid" in settings.CONTENT_SECURITY_POLICY
+assert "upgrade-insecure-requests" in settings.CONTENT_SECURITY_POLICY
+call_command("check", "--deploy", "--fail-level", "WARNING")
+"""
+
+
+class PublicSettingsProcessTests(SimpleTestCase):
+    project_root = Path(__file__).resolve().parents[3]
+
+    def environment_for(self, mode="research"):
+        environment = os.environ.copy()
+        for name in list(environment):
+            if name.startswith("STRIPE_"):
+                environment.pop(name)
+        environment.update(
+            {
+                "DJANGO_SETTINGS_MODULE": "Shoes.settings",
+                "TREADJOY_ENVIRONMENT": "staging",
+                "TREADJOY_MODE": mode,
+                "TREADJOY_INGRESS": "cloudflare-locked",
+                "DJANGO_DEBUG": "false",
+                "SECRET_KEY": "public-settings-test-key-0123456789-ABCDEFGHIJKLMNOPQRSTUVWXYZ!",
+                "SECRET_KEY_FALLBACKS": "",
+                "ALLOWED_HOSTS": "ci.invalid",
+                "CSRF_TRUSTED_ORIGINS": "https://ci.invalid",
+                "DB_NAME": "treadjoy_public_check",
+                "DB_USER": "treadjoy_public_check",
+                "DB_PASSWORD": "public-database-password-not-a-secret",
+                "DB_HOST": "database.ci.invalid",
+                "DB_PORT": "5432",
+                "DB_SSLMODE": "require",
+                "STATIC_ROOT": "/tmp/treadjoy-public-settings-static",
+                "R2_ACCOUNT_ID": "publiccheckaccount",
+                "R2_BUCKET_NAME": "treadjoy-public-check",
+                "R2_ACCESS_KEY_ID": "public-r2-access-key-not-a-secret",
+                "R2_SECRET_ACCESS_KEY": "public-r2-secret-not-a-secret",
+                "R2_MEDIA_CUSTOM_DOMAIN": "media.ci.invalid",
+                "EMAIL_HOST": "smtp.ci.invalid",
+                "EMAIL_PORT": "587",
+                "EMAIL_HOST_USER": "public-check-user",
+                "EMAIL_HOST_PASSWORD": "public-email-password-not-a-secret",
+                "DEFAULT_FROM_EMAIL": "noreply@ci.invalid",
+                "SERVER_EMAIL": "errors@ci.invalid",
+                "SECURE_HSTS_SECONDS": "3600",
+                "SECURE_HSTS_INCLUDE_SUBDOMAINS": "false",
+                "SECURE_HSTS_PRELOAD": "false",
+                "GOOGLE_CLIENT_ID": "",
+                "GOOGLE_CLIENT_SECRET": "",
+                "STRIPE_SECRET_KEY": "",
+                "STRIPE_PUBLISHABLE_KEY": "",
+                "STRIPE_WEBHOOK_SECRET": "",
+            }
+        )
+        if mode == "commerce":
+            environment.update(
+                {
+                    "STRIPE_SECRET_KEY": "sk_test_public_settings_boundary",
+                    "STRIPE_PUBLISHABLE_KEY": "pk_test_public_settings_boundary",
+                    "STRIPE_WEBHOOK_SECRET": "whsec_public_settings_boundary",
+                }
+            )
+        return environment
+
+    def run_setup(self, environment, script=PUBLIC_SETUP_PROBE):
+        return subprocess.run(
+            [sys.executable, "-c", script],
+            cwd=self.project_root,
+            env=environment,
+            capture_output=True,
+            text=True,
+            timeout=30,
+            check=False,
+        )
+
+    def assert_setup_succeeds(self, environment):
+        result = self.run_setup(environment)
+        self.assertEqual(
+            result.returncode,
+            0,
+            msg=f"stdout:\n{result.stdout}\nstderr:\n{result.stderr}",
+        )
+
+    def assert_setup_fails(self, environment, message):
+        result = self.run_setup(environment, "import django; django.setup()")
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn(message, result.stderr)
+
+    def test_valid_staging_profiles_pass_deploy_checks(self):
+        for mode in ("commerce", "research"):
+            with self.subTest(mode=mode):
+                self.assert_setup_succeeds(self.environment_for(mode))
+
+    def test_public_profiles_fail_closed_for_required_services(self):
+        required_names = (
+            "ALLOWED_HOSTS",
+            "CSRF_TRUSTED_ORIGINS",
+            "DB_SSLMODE",
+            "STATIC_ROOT",
+            "R2_SECRET_ACCESS_KEY",
+            "EMAIL_HOST_PASSWORD",
+            "SECURE_HSTS_SECONDS",
+        )
+        for name in required_names:
+            with self.subTest(name=name):
+                environment = self.environment_for()
+                environment[name] = ""
+                self.assert_setup_fails(environment, name)
+
+    def test_public_profiles_reject_relaxed_or_inconsistent_security_values(self):
+        cases = (
+            ("DJANGO_DEBUG", "true", "DJANGO_DEBUG must be false"),
+            ("TREADJOY_INGRESS", "direct", "TREADJOY_INGRESS must be cloudflare-locked"),
+            ("ALLOWED_HOSTS", "*", "ALLOWED_HOSTS"),
+            ("CSRF_TRUSTED_ORIGINS", "http://ci.invalid", "CSRF_TRUSTED_ORIGINS"),
+            ("SECURE_HSTS_PRELOAD", "true", "SECURE_HSTS_PRELOAD requires"),
+        )
+        for name, value, message in cases:
+            with self.subTest(name=name):
+                environment = self.environment_for()
+                environment[name] = value
+                self.assert_setup_fails(environment, message)
+
+    def test_research_rejects_unknown_stripe_configuration(self):
+        environment = self.environment_for("research")
+        environment["STRIPE_FUTURE_TOKEN"] = "nonempty"
+        self.assert_setup_fails(environment, "STRIPE_FUTURE_TOKEN")
+
+    def test_configuration_errors_do_not_expose_secret_values(self):
+        marker = "do-not-print-this-public-r2-secret-marker"
+        environment = self.environment_for()
+        environment["R2_SECRET_ACCESS_KEY"] = marker
+        environment["EMAIL_HOST"] = ""
+        result = self.run_setup(environment, "import django; django.setup()")
+        self.assertNotEqual(result.returncode, 0)
+        self.assertNotIn(marker, result.stdout)
+        self.assertNotIn(marker, result.stderr)
+
+
+class SecurityHeaderTests(SimpleTestCase):
+    def response_for(self, **headers):
+        request = RequestFactory().get("/", **headers)
+        application = SecurityMiddleware(
+            ContentSecurityPolicyMiddleware(
+                XFrameOptionsMiddleware(lambda request: HttpResponse("ok"))
+            )
+        )
+        return application(request)
+
+    def test_csp_is_enforced_without_unsafe_inline_scripts(self):
+        response = self.response_for()
+
+        self.assertEqual(response.headers["X-Frame-Options"], "DENY")
+        self.assertEqual(response.headers["X-Content-Type-Options"], "nosniff")
+        self.assertEqual(response.headers["Referrer-Policy"], "same-origin")
+        self.assertEqual(response.headers["Cross-Origin-Opener-Policy"], "same-origin")
+        self.assertIn("script-src 'self'", response.headers["Content-Security-Policy"])
+        self.assertNotIn("script-src 'self' 'unsafe-inline'", response.headers["Content-Security-Policy"])
+        self.assertIn("frame-src https://www.youtube-nocookie.com", response.headers["Content-Security-Policy"])
+
+    @override_settings(
+        SECURE_SSL_REDIRECT=True,
+        SECURE_PROXY_SSL_HEADER=None,
+    )
+    def test_direct_ingress_does_not_trust_a_spoofed_forwarded_protocol(self):
+        response = self.response_for(HTTP_X_FORWARDED_PROTO="https")
+
+        self.assertEqual(response.status_code, 301)
+        self.assertTrue(response["Location"].startswith("https://"))
+
+    @override_settings(
+        SECURE_SSL_REDIRECT=True,
+        SECURE_PROXY_SSL_HEADER=("HTTP_X_FORWARDED_PROTO", "https"),
+        SECURE_HSTS_SECONDS=3600,
+        SESSION_COOKIE_SECURE=True,
+        CSRF_COOKIE_SECURE=True,
+        CSRF_COOKIE_HTTPONLY=True,
+    )
+    def test_trusted_proxy_requests_receive_https_headers(self):
+        response = self.response_for(HTTP_X_FORWARDED_PROTO="https")
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response["Strict-Transport-Security"], "max-age=3600")

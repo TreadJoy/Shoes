@@ -179,10 +179,15 @@ class DeploymentModeProcessTests(SimpleTestCase):
 
     def environment_for(self, mode):
         environment = os.environ.copy()
+        for name in list(environment):
+            if name.startswith("STRIPE_"):
+                environment.pop(name)
         environment.update(
             {
                 "DJANGO_SETTINGS_MODULE": "Shoes.settings",
+                "TREADJOY_ENVIRONMENT": "local",
                 "TREADJOY_MODE": mode,
+                "TREADJOY_INGRESS": "direct",
                 "SECRET_KEY": "mode-boundary-test-secret-key",
                 "DJANGO_DEBUG": "True",
                 "ALLOWED_HOSTS": "localhost,testserver",
@@ -245,8 +250,7 @@ class DeploymentModeProcessTests(SimpleTestCase):
 
                 self.assertNotEqual(result.returncode, 0)
                 self.assertIn(
-                    "TREADJOY_MODE must be set to either "
-                    "'commerce' or 'research'",
+                    "Invalid configuration for TREADJOY_MODE",
                     result.stderr,
                 )
 
@@ -270,8 +274,8 @@ class DeploymentModeProcessTests(SimpleTestCase):
 
                 self.assertNotEqual(result.returncode, 0)
                 self.assertIn(
-                    f"{missing_name} is required when "
-                    "TREADJOY_MODE='commerce'",
+                    f"Invalid configuration for {missing_name}: "
+                    "a non-empty value is required",
                     result.stderr,
                 )
 
@@ -283,7 +287,7 @@ class DeploymentModeProcessTests(SimpleTestCase):
 
         self.assertNotEqual(result.returncode, 0)
         self.assertIn(
-            "Stripe credentials must not be configured when "
+            "Stripe configuration must not be present when "
             "TREADJOY_MODE='research': STRIPE_SECRET_KEY",
             result.stderr,
         )
@@ -294,11 +298,16 @@ class CISettingsProcessTests(SimpleTestCase):
 
     def environment(self):
         environment = os.environ.copy()
+        for name in list(environment):
+            if name.startswith("STRIPE_"):
+                environment.pop(name)
         environment.update(
             {
                 "DJANGO_SETTINGS_MODULE": "Shoes.ci_settings",
                 "TREADJOY_CI": "true",
+                "TREADJOY_ENVIRONMENT": "ci",
                 "TREADJOY_MODE": "research",
+                "TREADJOY_INGRESS": "direct",
                 "SECRET_KEY": "ci-settings-process-test-secret-key",
                 "DJANGO_DEBUG": "True",
                 "ALLOWED_HOSTS": "localhost,testserver",
@@ -359,6 +368,15 @@ assert settings.EMAIL_BACKEND == "django.core.mail.backends.locmem.EmailBackend"
         self.assert_failed_with(
             environment,
             "Shoes.ci_settings requires TREADJOY_CI=true",
+        )
+
+    def test_ci_settings_require_the_ci_environment(self):
+        environment = self.environment()
+        environment["TREADJOY_ENVIRONMENT"] = "local"
+
+        self.assert_failed_with(
+            environment,
+            "Shoes.ci_settings requires TREADJOY_ENVIRONMENT=ci",
         )
 
     def test_ci_settings_require_a_distinct_test_database(self):

@@ -328,3 +328,24 @@
   every tracked commit and ref. Re-run that full-history scan after committing
   the documentation so the final tracked content is covered without traversing
   ignored developer secrets.
+
+## 2026-08-27 — A1.2 runtime license command assumed a development-only tool
+
+- Attempted to run `pip-licenses` after a clean, hash-enforced runtime-lock
+  installation.
+- Result: the command was unavailable because `pip-licenses` is intentionally
+  a development-only dependency; the runtime installation and its `pip check`
+  had already passed.
+- Impact: no repository file, database, or production service changed.
+- Resolution: use the clean development-lock license report for the five new
+  runtime transitive packages and do not add a reporting tool to runtime.
+
+## 2026-08-27 — A1.2 combined license and roadmap patch used stale table context
+
+- Attempted one patch for the license inventory, roadmap status, and failure
+  log using an assumed adjacent license-table row.
+- Result: patch validation rejected the whole edit before writing because the
+  current runtime table did not contain that exact adjacency.
+- Impact: no repository file changed during the failed attempt.
+- Resolution: inspected the current table and applied the license inventory,
+  roadmap, and failure-log edits with exact, scoped anchors.

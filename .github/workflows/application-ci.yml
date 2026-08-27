@@ -29,7 +29,9 @@ jobs:
     env:
       DJANGO_SETTINGS_MODULE: Shoes.ci_settings
       TREADJOY_CI: "true"
+      TREADJOY_ENVIRONMENT: ci
       TREADJOY_MODE: commerce
+      TREADJOY_INGRESS: direct
       SECRET_KEY: treadjoy-ci-public-synthetic-key-7Q2z-not-a-secret-for-checks-only
       DJANGO_DEBUG: "True"
       ALLOWED_HOSTS: ci.invalid,testserver,localhost
@@ -39,6 +41,23 @@ jobs:
       DB_HOST: 127.0.0.1
       DB_PORT: "5432"
       CI_DB_TEST_NAME: treadjoy_ci_test
+      DB_SSLMODE: require
+      STATIC_ROOT: /tmp/treadjoy-public-settings-static
+      R2_ACCOUNT_ID: ci-r2-account
+      R2_BUCKET_NAME: treadjoy-public-check
+      R2_ACCESS_KEY_ID: ci-r2-access-key-not-a-secret
+      R2_SECRET_ACCESS_KEY: ci-r2-secret-not-a-secret
+      R2_MEDIA_CUSTOM_DOMAIN: media.ci.invalid
+      EMAIL_HOST: smtp.ci.invalid
+      EMAIL_PORT: "587"
+      EMAIL_HOST_USER: ci-public-user
+      EMAIL_HOST_PASSWORD: ci-public-email-password-not-a-secret
+      DEFAULT_FROM_EMAIL: noreply@ci.invalid
+      SERVER_EMAIL: errors@ci.invalid
+      CSRF_TRUSTED_ORIGINS: https://ci.invalid
+      SECURE_HSTS_SECONDS: "3600"
+      SECURE_HSTS_INCLUDE_SUBDOMAINS: "false"
+      SECURE_HSTS_PRELOAD: "false"
       STRIPE_SECRET_KEY: ci-stripe-secret-placeholder-not-a-provider-key
       STRIPE_PUBLISHABLE_KEY: ci-stripe-publishable-placeholder-not-a-provider-key
       STRIPE_WEBHOOK_SECRET: ci-stripe-webhook-placeholder-not-a-provider-key
@@ -106,7 +125,7 @@ jobs:
         run: |
           python -m compileall -q Shoes web
           python manage.py check
-          DJANGO_DEBUG=False python manage.py check --deploy --fail-level WARNING
+          env DJANGO_SETTINGS_MODULE=Shoes.settings TREADJOY_ENVIRONMENT=staging TREADJOY_INGRESS=cloudflare-locked DJANGO_DEBUG=false ALLOWED_HOSTS=ci.invalid python manage.py check --deploy --fail-level WARNING
           python manage.py collectstatic --noinput --clear
           test -f "$CI_STATIC_ROOT/css/style.css"
           test -f "$CI_STATIC_ROOT/js/navigation.js"
@@ -132,7 +151,9 @@ jobs:
     env:
       DJANGO_SETTINGS_MODULE: Shoes.ci_settings
       TREADJOY_CI: "true"
+      TREADJOY_ENVIRONMENT: ci
       TREADJOY_MODE: research
+      TREADJOY_INGRESS: direct
       SECRET_KEY: treadjoy-ci-public-synthetic-key-7Q2z-not-a-secret-for-checks-only
       DJANGO_DEBUG: "True"
       ALLOWED_HOSTS: ci.invalid,testserver,localhost
@@ -142,6 +163,23 @@ jobs:
       DB_HOST: 127.0.0.1
       DB_PORT: "5432"
       CI_DB_TEST_NAME: treadjoy_ci_test
+      DB_SSLMODE: require
+      STATIC_ROOT: /tmp/treadjoy-public-settings-static
+      R2_ACCOUNT_ID: ci-r2-account
+      R2_BUCKET_NAME: treadjoy-public-check
+      R2_ACCESS_KEY_ID: ci-r2-access-key-not-a-secret
+      R2_SECRET_ACCESS_KEY: ci-r2-secret-not-a-secret
+      R2_MEDIA_CUSTOM_DOMAIN: media.ci.invalid
+      EMAIL_HOST: smtp.ci.invalid
+      EMAIL_PORT: "587"
+      EMAIL_HOST_USER: ci-public-user
+      EMAIL_HOST_PASSWORD: ci-public-email-password-not-a-secret
+      DEFAULT_FROM_EMAIL: noreply@ci.invalid
+      SERVER_EMAIL: errors@ci.invalid
+      CSRF_TRUSTED_ORIGINS: https://ci.invalid
+      SECURE_HSTS_SECONDS: "3600"
+      SECURE_HSTS_INCLUDE_SUBDOMAINS: "false"
+      SECURE_HSTS_PRELOAD: "false"
     services:
       postgres:
         image: postgres:17.11-bookworm@sha256:051f7b7b3abdd564d5d1bd1e8c4b9c1b6e77087d1dd22020ede611c096a272e0
@@ -203,7 +241,7 @@ jobs:
         run: |
           python -m compileall -q Shoes web
           python manage.py check
-          DJANGO_DEBUG=False python manage.py check --deploy --fail-level WARNING
+          env DJANGO_SETTINGS_MODULE=Shoes.settings TREADJOY_ENVIRONMENT=staging TREADJOY_INGRESS=cloudflare-locked DJANGO_DEBUG=false ALLOWED_HOSTS=ci.invalid python manage.py check --deploy --fail-level WARNING
           python manage.py collectstatic --noinput --clear
           test -f "$CI_STATIC_ROOT/css/style.css"
           test -f "$CI_STATIC_ROOT/js/navigation.js"

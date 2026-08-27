@@ -32,7 +32,7 @@ research process at the commerce database merely to simplify testing.
 Before starting each server, verify the active mode without exposing secrets:
 
 ```bash
-.venv/bin/python manage.py shell -c "from django.conf import settings; print(settings.TREADJOY_MODE, settings.DATABASES['default']['NAME'], hasattr(settings, 'STRIPE_SECRET_KEY'))"
+TREADJOY_ENVIRONMENT=local TREADJOY_INGRESS=direct .venv/bin/python manage.py shell -c "from django.conf import settings; print(settings.TREADJOY_MODE, settings.DATABASES['default']['NAME'], hasattr(settings, 'STRIPE_SECRET_KEY'))"
 ```
 
 Expected commerce output: `commerce`, the commerce database name, and `True`.
