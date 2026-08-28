@@ -1,4 +1,6 @@
 
+import uuid
+
 from django.conf import settings
 from django.core.exceptions import ValidationError
 from django.db import models, transaction
@@ -36,6 +38,7 @@ class Order(models.Model):
 
     class Status(models.TextChoices):
         PENDING_PAYMENT = "pending_payment", "Pending Payment"
+        REVIEW_REQUIRED = "review_required", "Review Required"
         PAID = "paid", "Paid"
         PROCESSING = "processing", "Processing"
         SHIPPED = "shipped", "Shipped"
@@ -64,6 +67,13 @@ class Order(models.Model):
         blank=True,
         null=True,
         related_name="checkout_orders",
+    )
+    checkout_attempt = models.OneToOneField(
+        "CheckoutAttempt",
+        on_delete=models.SET_NULL,
+        blank=True,
+        null=True,
+        related_name="order",
     )
     cart_reconciled_at = models.DateTimeField(blank=True, null=True)
     email = models.EmailField(
@@ -148,6 +158,28 @@ class Order(models.Model):
                     )
                 ),
                 name="order_fulfillment_snapshot_consistent",
+            ),
+            models.CheckConstraint(
+                condition=(
+                    models.Q(subtotal__gte=0)
+                    & models.Q(shipping_total__gte=0)
+                    & models.Q(tax_total__gte=0)
+                    & models.Q(discount_total__gte=0)
+                    & models.Q(grand_total__gte=0)
+                ),
+                name="order_totals_nonnegative",
+            ),
+            models.CheckConstraint(
+                condition=(
+                    models.Q(
+                        discount_total__lte=(
+                            models.F("subtotal")
+                            + models.F("shipping_total")
+                            + models.F("tax_total")
+                        )
+                    )
+                ),
+                name="order_discount_within_pretax_total",
             ),
         ]
 
@@ -550,14 +582,268 @@ class OrderItem(models.Model):
                 ),
                 name="order_item_fulfillment_snapshot_consistent",
             ),
+            models.CheckConstraint(
+                condition=(
+                    models.Q(unit_price__gte=0)
+                    & models.Q(line_total__gte=0)
+                    & models.Q(quantity__gte=1)
+                ),
+                name="order_item_amounts_nonnegative",
+            ),
         ]
 
     def __str__(self):
         return f"{self.quantity} x {self.product_name}"
 
-    def calculate_line_total(self):
-        return self.unit_price * self.quantity
 
+class OrderItemComponentSnapshot(models.Model):
+    """Immutable BOM facts copied when an order line is created."""
+
+    order_item = models.ForeignKey(
+        OrderItem,
+        on_delete=models.CASCADE,
+        related_name="component_snapshots",
+    )
+    part_type_code = models.CharField(max_length=30)
+    part_id_snapshot = models.PositiveBigIntegerField()
+    part_code = models.CharField(max_length=50)
+    part_variant_id_snapshot = models.PositiveBigIntegerField()
+    part_variant_sku = models.CharField(max_length=50)
+    quantity = models.PositiveSmallIntegerField()
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["part_type_code", "part_variant_sku"]
+        constraints = [
+            models.UniqueConstraint(
+                fields=["order_item", "part_type_code"],
+                name="unique_order_item_component_snapshot_slot",
+            ),
+            models.CheckConstraint(
+                condition=models.Q(quantity__gte=1),
+                name="order_item_component_snapshot_quantity_positive",
+            ),
+        ]
+
+    def save(self, *args, **kwargs):
+        if self.pk:
+            raise ValidationError("Order component snapshots are immutable.")
+        return super().save(*args, **kwargs)
+
+    def delete(self, *args, **kwargs):
+        raise ValidationError("Order component snapshots are immutable.")
+
+    def __str__(self):
+        return f"{self.order_item_id}: {self.part_type_code} / {self.part_variant_sku}"
+
+
+class CheckoutAttempt(models.Model):
+    """Short-lived server-side quote and payment attempt."""
+
+    class Status(models.TextChoices):
+        CREATED = "created", "Created"
+        STRIPE_CREATED = "stripe_created", "Stripe Checkout Created"
+        PAID = "paid", "Paid"
+        EXPIRED = "expired", "Expired"
+        FAILED = "failed", "Failed"
+        REVIEW_REQUIRED = "review_required", "Review Required"
+
+    id = models.UUIDField(default=uuid.uuid4, editable=False, unique=True, primary_key=True)
+    cart = models.ForeignKey(
+        "cart.Cart",
+        on_delete=models.SET_NULL,
+        blank=True,
+        null=True,
+        related_name="checkout_attempts",
+    )
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        blank=True,
+        null=True,
+        related_name="checkout_attempts",
+    )
+    email = models.EmailField(blank=True)
+    eligibility_state = models.CharField(max_length=2, blank=True)
+    status = models.CharField(
+        max_length=30,
+        choices=Status.choices,
+        default=Status.CREATED,
+        db_index=True,
+    )
+    currency = models.CharField(max_length=3, default="usd")
+    subtotal = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+    shipping_total = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+    tax_total = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+    discount_total = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+    grand_total = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+    idempotency_key = models.CharField(max_length=64, unique=True)
+    stripe_checkout_session_id = models.CharField(
+        max_length=255,
+        blank=True,
+        null=True,
+        unique=True,
+    )
+    stripe_payment_intent_id = models.CharField(max_length=255, blank=True)
+    review_reason = models.CharField(max_length=255, blank=True)
+    reconciled_at = models.DateTimeField(blank=True, null=True)
+    expires_at = models.DateTimeField(db_index=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(
+                fields=["cart"],
+                condition=(
+                    models.Q(cart__isnull=False)
+                    & models.Q(status__in=["created", "stripe_created"])
+                ),
+                name="unique_active_checkout_attempt_per_cart",
+            ),
+            models.CheckConstraint(
+                condition=(
+                    models.Q(subtotal__gte=0)
+                    & models.Q(shipping_total__gte=0)
+                    & models.Q(tax_total__gte=0)
+                    & models.Q(discount_total__gte=0)
+                    & models.Q(grand_total__gte=0)
+                ),
+                name="checkout_attempt_totals_nonnegative",
+            ),
+            models.CheckConstraint(
+                condition=models.Q(
+                    discount_total__lte=(
+                        models.F("subtotal")
+                        + models.F("shipping_total")
+                        + models.F("tax_total")
+                    )
+                ),
+                name="checkout_attempt_discount_within_pretax_total",
+            ),
+        ]
+
+
+class CheckoutQuoteLine(models.Model):
+    attempt = models.ForeignKey(
+        CheckoutAttempt,
+        on_delete=models.CASCADE,
+        related_name="quote_lines",
+    )
+    variant = models.ForeignKey(
+        "products.ProductVariant",
+        on_delete=models.PROTECT,
+        related_name="checkout_quote_lines",
+    )
+    preorder_batch = models.ForeignKey(
+        "products.PreorderBatch",
+        on_delete=models.PROTECT,
+        blank=True,
+        null=True,
+        related_name="checkout_quote_lines",
+    )
+    fulfillment_type = models.CharField(max_length=20, choices=Order.FulfillmentType.choices)
+    sku = models.CharField(max_length=50)
+    product_name = models.CharField(max_length=255)
+    size = models.CharField(max_length=50, blank=True)
+    color = models.CharField(max_length=100, blank=True)
+    preorder_batch_code = models.CharField(max_length=50, blank=True)
+    estimated_tender_start = models.DateField(blank=True, null=True)
+    estimated_tender_end = models.DateField(blank=True, null=True)
+    unit_price = models.DecimalField(max_digits=10, decimal_places=2)
+    quantity = models.PositiveIntegerField()
+    line_total = models.DecimalField(max_digits=10, decimal_places=2)
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(
+                fields=["attempt", "variant", "preorder_batch"],
+                name="unique_checkout_quote_variant_batch",
+                nulls_distinct=False,
+            ),
+            models.CheckConstraint(
+                condition=(
+                    models.Q(unit_price__gte=0)
+                    & models.Q(line_total__gte=0)
+                    & models.Q(quantity__gte=1)
+                ),
+                name="checkout_quote_line_amounts_nonnegative",
+            ),
+        ]
+
+
+class CheckoutQuoteComponent(models.Model):
+    """Immutable BOM fact captured when the server creates a quote."""
+
+    quote_line = models.ForeignKey(
+        CheckoutQuoteLine,
+        on_delete=models.CASCADE,
+        related_name="component_snapshots",
+    )
+    part_type_code = models.CharField(max_length=50)
+    part_id_snapshot = models.PositiveBigIntegerField()
+    part_code = models.CharField(max_length=50)
+    part_variant_id_snapshot = models.PositiveBigIntegerField()
+    part_variant_sku = models.CharField(max_length=100)
+    quantity = models.PositiveIntegerField()
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(
+                fields=["quote_line", "part_type_code"],
+                name="unique_checkout_quote_component_slot",
+            ),
+            models.CheckConstraint(
+                condition=models.Q(quantity__gte=1),
+                name="checkout_quote_component_quantity_positive",
+            ),
+        ]
+
+
+class InventoryReservation(models.Model):
+    class Status(models.TextChoices):
+        ACTIVE = "active", "Active"
+        COMMITTED = "committed", "Committed"
+        RELEASED = "released", "Released"
+        REVIEW_REQUIRED = "review_required", "Review Required"
+
+    attempt = models.ForeignKey(
+        CheckoutAttempt,
+        on_delete=models.CASCADE,
+        related_name="reservations",
+    )
+    variant = models.ForeignKey(
+        "products.ProductVariant",
+        on_delete=models.PROTECT,
+        related_name="inventory_reservations",
+    )
+    preorder_batch = models.ForeignKey(
+        "products.PreorderBatch",
+        on_delete=models.PROTECT,
+        blank=True,
+        null=True,
+        related_name="inventory_reservations",
+    )
+    quantity = models.PositiveIntegerField()
+    status = models.CharField(max_length=30, choices=Status.choices, default=Status.ACTIVE, db_index=True)
+    expires_at = models.DateTimeField(db_index=True)
+    released_at = models.DateTimeField(blank=True, null=True)
+    committed_at = models.DateTimeField(blank=True, null=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(
+                fields=["attempt", "variant", "preorder_batch"],
+                name="unique_inventory_reservation_variant_batch",
+                nulls_distinct=False,
+            ),
+            models.CheckConstraint(
+                condition=models.Q(quantity__gte=1),
+                name="inventory_reservation_quantity_positive",
+            ),
+        ]
 
 class InventoryAllocation(models.Model):
     class Status(models.TextChoices):
@@ -790,7 +1076,15 @@ class Refund(models.Model):
 class StripeEvent(models.Model):
     stripe_event_id = models.CharField(max_length=255, unique=True)
     event_type = models.CharField(max_length=255)
+    provider_created_at = models.DateTimeField(blank=True, null=True)
+    api_version = models.CharField(max_length=50, blank=True)
+    amount = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True)
+    currency = models.CharField(max_length=3, blank=True)
+    processing_attempts = models.PositiveSmallIntegerField(default=0)
+    error_code = models.CharField(max_length=100, blank=True)
     processed = models.BooleanField(default=False)
+    # Retained temporarily for expand/contract migration compatibility. New
+    # events must use the bounded audit fields above instead of raw payloads.
     raw_event = models.JSONField(blank=True, null=True)
     created_at = models.DateTimeField(auto_now_add=True)
     processed_at = models.DateTimeField(blank=True, null=True)

@@ -5,10 +5,15 @@ from django.db.models import Q
 from django.utils import timezone
 
 from .models import (
+    CheckoutAttempt,
+    CheckoutQuoteComponent,
+    CheckoutQuoteLine,
     InventoryAllocation,
     InventoryAllocationItem,
+    InventoryReservation,
     Order,
     OrderItem,
+    OrderItemComponentSnapshot,
     OrderStatusEvent,
     Payment,
     Refund,
@@ -49,7 +54,10 @@ class OrderAdminForm(forms.ModelForm):
             status__in=FULFILLMENT_BLOCKING_STATUSES,
         ).exists()
 
-        if allocation_is_blocked and status in fulfillment_statuses:
+        if (
+            self.instance.status == Order.Status.REVIEW_REQUIRED
+            and status in fulfillment_statuses
+        ) or (allocation_is_blocked and status in fulfillment_statuses):
             raise forms.ValidationError(
                 "Resolve the inventory review before fulfilling this order."
             )
@@ -344,6 +352,41 @@ class OrderItemAdmin(admin.ModelAdmin):
     )
 
 
+@admin.register(OrderItemComponentSnapshot)
+class OrderItemComponentSnapshotAdmin(admin.ModelAdmin):
+    list_display = (
+        "order_item",
+        "part_type_code",
+        "part_code",
+        "part_variant_sku",
+        "quantity",
+        "created_at",
+    )
+    list_select_related = ("order_item", "order_item__order")
+    search_fields = (
+        "order_item__order__id",
+        "part_type_code",
+        "part_code",
+        "part_variant_sku",
+    )
+    readonly_fields = (
+        "order_item",
+        "part_type_code",
+        "part_id_snapshot",
+        "part_code",
+        "part_variant_id_snapshot",
+        "part_variant_sku",
+        "quantity",
+        "created_at",
+    )
+
+    def has_add_permission(self, request):
+        return False
+
+    def has_delete_permission(self, request, obj=None):
+        return False
+
+
 @admin.register(ShippingAddress)
 class ShippingAddressAdmin(admin.ModelAdmin):
     list_display = (
@@ -394,6 +437,7 @@ class ShipmentAdmin(admin.ModelAdmin):
 
 @admin.register(Payment)
 class PaymentAdmin(admin.ModelAdmin):
+    exclude = ("raw_response",)
     list_display = (
         "order",
         "amount",
@@ -419,8 +463,98 @@ class PaymentAdmin(admin.ModelAdmin):
         "raw_response",
     )
 
+
+@admin.register(CheckoutAttempt)
+class CheckoutAttemptAdmin(admin.ModelAdmin):
+    list_display = (
+        "id",
+        "status",
+        "email",
+        "grand_total",
+        "stripe_checkout_session_id",
+        "expires_at",
+        "created_at",
+    )
+    list_filter = ("status", "currency", "created_at")
+    search_fields = ("id", "email", "stripe_checkout_session_id", "idempotency_key")
+    readonly_fields = [field.name for field in CheckoutAttempt._meta.fields]
+
+    def has_add_permission(self, request):
+        return False
+
+    def has_delete_permission(self, request, obj=None):
+        return False
+
+
+@admin.register(CheckoutQuoteLine)
+class CheckoutQuoteLineAdmin(admin.ModelAdmin):
+    list_display = (
+        "attempt",
+        "sku",
+        "quantity",
+        "unit_price",
+        "line_total",
+        "fulfillment_type",
+    )
+    list_select_related = ("attempt", "variant", "preorder_batch")
+    search_fields = ("attempt__id", "sku", "product_name")
+    readonly_fields = [field.name for field in CheckoutQuoteLine._meta.fields]
+
+    def has_add_permission(self, request):
+        return False
+
+    def has_delete_permission(self, request, obj=None):
+        return False
+
+
+@admin.register(CheckoutQuoteComponent)
+class CheckoutQuoteComponentAdmin(admin.ModelAdmin):
+    list_display = (
+        "quote_line",
+        "part_type_code",
+        "part_variant_sku",
+        "quantity",
+    )
+    list_select_related = ("quote_line__attempt",)
+    search_fields = (
+        "quote_line__attempt__id",
+        "part_type_code",
+        "part_variant_sku",
+    )
+    readonly_fields = [field.name for field in CheckoutQuoteComponent._meta.fields]
+
+    def has_add_permission(self, request):
+        return False
+
+    def has_delete_permission(self, request, obj=None):
+        return False
+
+
+@admin.register(InventoryReservation)
+class InventoryReservationAdmin(admin.ModelAdmin):
+    list_display = (
+        "attempt",
+        "variant",
+        "quantity",
+        "status",
+        "expires_at",
+        "committed_at",
+        "released_at",
+    )
+    list_filter = ("status", "expires_at")
+    list_select_related = ("attempt", "variant", "preorder_batch")
+    search_fields = ("attempt__id", "variant__sku")
+    readonly_fields = [field.name for field in InventoryReservation._meta.fields]
+
+    def has_add_permission(self, request):
+        return False
+
+    def has_delete_permission(self, request, obj=None):
+        return False
+
 @admin.register(StripeEvent)
 class StripeEventAdmin(admin.ModelAdmin):
+    exclude = ("raw_event",)
     list_display = (
         "stripe_event_id",
         "event_type",
@@ -617,6 +751,7 @@ class InventoryAllocationAdmin(admin.ModelAdmin):
 
 @admin.register(Refund)
 class RefundAdmin(admin.ModelAdmin):
+    exclude = ("raw_response",)
     list_display = (
         "stripe_refund_id",
         "payment",

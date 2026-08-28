@@ -128,19 +128,24 @@ Do not create final-sale categories or policy exceptions without explicit approv
 - **Rendering:** server-rendered Django templates. There is no public API or SPA architecture.
 - **Frontend:** semantic HTML, centralized CSS/design tokens, and small vanilla JavaScript enhancements.
 - **Database:** PostgreSQL is the authoritative transactional store. Correctness relies on transactions and row locking in high-risk workflows.
-- **Authentication:** Django authentication plus django-allauth, with a configured Google provider. Current identity and email-verification behavior requires production hardening before commerce launch.
-- **Catalog:** `Product`, finished `ProductVariant`, compatibility groups, parts, part variants, and product BOM/component relationships.
-- **Cart:** database-backed carts identified by an authenticated user or guest session; cart ownership/merge constraints remain roadmap work.
-- **Checkout/payments:** hosted Stripe Checkout with signed webhooks and an idempotency event record. Current checkout/payment reconciliation and reservation behavior are not launch-complete.
-- **Orders:** order and line-item snapshots, payment/refund records, order-status events, shipments, and transactional paid-order inventory allocation.
+- **Authentication:** Django authentication plus django-allauth account flows. Google/social authentication is removed for now; username login and optional email verification remain, with production hardening still required before commerce launch.
+- **Catalog:** `Product`, finished `ProductVariant` (expanded selling/compare-at price fields), compatibility groups, parts, part variants, and product BOM/component relationships. Active catalog pricing is read from variants with a one-release legacy fallback during migration.
+- **Cart:** database-backed carts identified by exactly one authenticated user or nonblank guest session. Principal constraints, transactional mutations, and sign-in merge with availability notices are implemented in `web/cart/services.py`.
+- **Checkout/payments:** hosted Stripe Checkout with signed webhooks, server-side attempts and immutable quote/BOM facts, one-active-attempt-per-cart idempotency, 30-minute finished-SKU/preorder reservations, Stripe-collected shipping addresses, and bounded provider audit fields. One retrieved-Session reconciler creates paid/review orders only after exact server-side verification. PostgreSQL/provider/operations acceptance remains a commerce launch gate.
+- **Orders:** durable orders are created only for reconciled paid payments or financially meaningful review exceptions. They retain line/preorder/BOM snapshots, payment/refund records, status events, shipments, and transactional inventory allocation; the broader Phase 5 historical-address/state-machine hardening is still pending.
 - **Email:** console backend in development; no production transactional provider is configured.
-- **Static/media:** project static files and local development media; production R2/CDN storage is not implemented.
-- **Operations:** no production deployment definition, full CI pipeline, health/readiness endpoints, monitoring, backup automation, or rollback runbook yet.
+- **Static/media:** local development uses project static files and local media. Public-environment settings use manifest static storage and an R2-backed public-media configuration, but no live R2 bucket, custom domain, CDN path, or origin static service has been provisioned or verified.
+- **Operations:** PostgreSQL application CI, dependency auditing, full-history secret scanning, and a fail-closed production-settings contract are implemented. No production deployment definition, health/readiness endpoints, monitoring, backup automation, restore drill, or rollback runbook exists yet.
 - **Optional systems:** no required Redis, Celery, search service, or generalized CMS. Add them only in response to measured need.
 
 ### Deployment modes
 
 `TREADJOY_MODE` must be explicitly set to `commerce` or `research`; invalid or missing production configuration must fail closed.
+
+For developer convenience only, a bare `python manage.py runserver` invocation
+supplies local defaults and uses SQLite when no database variables are explicitly
+provided. Migrations, tests, CI, and every public deployment still require the
+explicit configuration described above.
 
 - Commerce registers `cart` and `orders`, requires valid Stripe configuration, and uses the commerce database.
 - Research excludes commerce apps/routes and rejects Stripe credentials. Shared presentation must not provide a crafted-request path around this boundary.
@@ -155,14 +160,14 @@ Do not create final-sale categories or policy exceptions without explicit approv
 - `web/cart/`: authenticated and guest carts plus cart context.
 - `web/orders/`: checkout, Stripe webhooks, payments/refunds, order history, shipment, and inventory allocation.
 - `web/accounts/`: account-related views/forms layered around django-allauth.
-- `web/survey/` and `web/waitlist/`: research and relationship flows.
+- `web/survey/` and `web/waitlist/`: anonymous survey responses and normalized, source-controlled waitlist relationship flows.
 - `templates/`: shared and app-namespaced Django templates; shared chrome belongs in `templates/base.html` and `templates/partials/`.
 - `static/`: CSS, JavaScript, and committed public assets.
 - `media/`: local development uploads. Do not commit customer uploads or unapproved development imagery.
-- `.github/workflows/secret-scan.yml`: current secret-scanning workflow.
+- `.github/workflows/`: separate PostgreSQL application CI, dependency-audit, and full-history secret-scanning workflows.
 - `PROJECT_PLAN.md`: evidence-based current-state assessment and dependency-ordered implementation roadmap.
 
-`web/views.py` is an unrouted legacy implementation that duplicates old survey, account, cart, and Stripe behavior. `web/models.py` and `web/tests.py` are empty legacy scaffolds. Some duplicate/legacy route or view names also remain in active apps. Treat them as verified cleanup candidates, not extension points; confirm references and tests before removal.
+The former root-level `web/views.py`, `web/models.py`, `web/tests.py`, comment-only `web/admin.py`, and unused root `web/apps.py` legacy scaffolds were removed in Phase 1. Active behavior belongs to the domain apps above; confirm references and both deployment modes before removing any future legacy path.
 
 ## 5. Engineering and backend standards
 

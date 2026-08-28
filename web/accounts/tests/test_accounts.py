@@ -1,10 +1,6 @@
 from django.contrib.auth import get_user_model
 from django.test import TestCase, override_settings
 from django.urls import reverse
-from django.utils.encoding import force_bytes
-from django.utils.http import urlsafe_base64_encode
-
-from web.accounts.tokens import account_activation_token
 
 
 @override_settings(
@@ -53,43 +49,6 @@ class AccountFlowTests(TestCase):
 
         self.assertRedirects(response, reverse("account_signup"))
 
-    def test_valid_custom_activation_activates_and_logs_in_user(self):
-        user = get_user_model().objects.create_user(
-            username="inactive",
-            email="inactive@example.com",
-            password=self.password,
-            is_active=False,
-        )
-        uid = urlsafe_base64_encode(force_bytes(user.pk))
-        token = account_activation_token.make_token(user)
-
-        response = self.client.get(
-            reverse("accounts:activate", args=[uid, token])
-        )
-
-        self.assertRedirects(response, reverse("core:home"))
-        user.refresh_from_db()
-        self.assertTrue(user.is_active)
-        self.assertEqual(int(self.client.session["_auth_user_id"]), user.pk)
-
-    def test_invalid_custom_activation_does_not_activate_user(self):
-        user = get_user_model().objects.create_user(
-            username="still-inactive",
-            email="still-inactive@example.com",
-            password=self.password,
-            is_active=False,
-        )
-        uid = urlsafe_base64_encode(force_bytes(user.pk))
-
-        response = self.client.get(
-            reverse("accounts:activate", args=[uid, "invalid-token"])
-        )
-
-        self.assertEqual(response.status_code, 200)
-        self.assertContains(response, "activation link is invalid or has expired")
-        user.refresh_from_db()
-        self.assertFalse(user.is_active)
-
     def test_password_reset_entry_accepts_known_email(self):
         get_user_model().objects.create_user(
             username="reset-user",
@@ -103,3 +62,11 @@ class AccountFlowTests(TestCase):
         )
 
         self.assertEqual(response.status_code, 302)
+
+    def test_admin_login_is_guarded_by_allauth_before_django_admin(self):
+        response = self.client.get("/admin/login/")
+
+        self.assertEqual(response.status_code, 302)
+        self.assertTrue(
+            response["Location"].startswith(reverse("account_login"))
+        )

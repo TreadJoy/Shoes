@@ -44,6 +44,9 @@ def _require_preorder_superuser(actor):
 
 
 def live_preorder_batch_for_product(product):
+    prefetched = getattr(product, "_live_preorder_batches", None)
+    if prefetched is not None:
+        return prefetched[0] if prefetched else None
     return (
         PreorderBatch.objects
         .filter(
@@ -68,11 +71,20 @@ def variant_availability(variant):
             ),
         )
 
-    allocation = (
-        batch.variant_allocations
-        .filter(variant=variant)
-        .first()
+    prefetched_allocations = getattr(batch, "_prefetched_objects_cache", {}).get(
+        "variant_allocations"
     )
+    if prefetched_allocations is not None:
+        allocation = next(
+            (
+                candidate
+                for candidate in prefetched_allocations
+                if candidate.variant_id == variant.id
+            ),
+            None,
+        )
+    else:
+        allocation = batch.variant_allocations.filter(variant=variant).first()
     available_quantity = 0
     if (
         batch.status == PreorderBatch.Status.OPEN

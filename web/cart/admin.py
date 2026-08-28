@@ -38,7 +38,7 @@ class CartItemAdmin(admin.ModelAdmin):
         "added_at",
     )
     search_fields = (
-        "product__name",
+        "variant__product__name",
         "cart__user__username",
         "cart__session_key",
     )

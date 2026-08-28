@@ -1,14 +1,16 @@
 {% extends "base.html" %}
 
-{% block extra_head %}
-    {% if not is_paid and not is_refunded %}
-        <meta http-equiv="refresh" content="3">
-    {% endif %}
-{% endblock %}
-
 {% block content %}
     <section class="order-success-page">
-        {% if is_refunded %}
+        {% if is_review_required %}
+            <h1>Payment Under Review</h1>
+
+            <p>
+                We received a payment that requires staff review. Your order will
+                not be fulfilled until that review is complete. TreadJoy will
+                contact you about the required refund or next step.
+            </p>
+        {% elif is_refunded %}
             <h1>Your order has been refunded</h1>
 
             <p>
@@ -21,14 +23,15 @@
                 Your payment was successful and your order has been placed.
             </p>
         {% else %}
-            <h1>Order received</h1>
+            <h1>Payment Processing</h1>
 
             <p>
-                Your order was created and your payment is still processing.
-                This page may update after Stripe confirms the payment.
+                Stripe has not yet confirmed a paid order. No order or reusable
+                shipping address is stored until payment reconciliation finishes.
             </p>
         {% endif %}
 
+    {% if order %}
     <div class="order-summary-card">
         <h2>Order #{{ order.id }}</h2>
 
@@ -112,10 +115,22 @@
     {% empty %}
         <p>No order items found.</p>
     {% endfor %}
+    {% else %}
+        <div class="order-summary-card">
+            <h2>Checkout {{ attempt.id }}</h2>
+            <p><strong>Status:</strong> {{ attempt.get_status_display }}</p>
+            <p><strong>Email:</strong> {{ attempt.email }}</p>
+            <p><strong>Total:</strong> ${{ attempt.grand_total|floatformat:2 }}</p>
+        </div>
+    {% endif %}
 
-    {% if not is_paid and not is_refunded %}
+    {% if not is_paid and not is_refunded and not is_review_required %}
         <p>
-            Refresh this page in a few seconds if your payment has already completed.
+            If you have completed payment, check the status once below while
+            Stripe finishes processing it.
+        </p>
+        <p>
+            <a href="?check=1">Check payment status</a>
         </p>
     {% endif %}
 </section>

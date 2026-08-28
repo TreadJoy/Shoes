@@ -1,6 +1,7 @@
 from decimal import Decimal
 from unittest import SkipTest
 
+from django.contrib.auth import get_user_model
 from django.conf import settings
 from django.test import Client, SimpleTestCase, TestCase
 from django.urls import NoReverseMatch, resolve, reverse
@@ -80,6 +81,10 @@ class CartFlowTests(TestCase):
             {},
             follow=True,
         )
+        self.assertEqual(
+            response.redirect_chain[0][0],
+            reverse("products:product_list"),
+        )
         self.assertContains(response, "Please select a size and color.")
         self.assertFalse(CartItem.objects.exists())
 
@@ -134,3 +139,33 @@ class CartFlowTests(TestCase):
         self.add_item()
 
         self.assertEqual(str(CartItem.objects.get()), "1 x Cart Shoe")
+
+    def test_login_merges_guest_cart_and_reports_availability_reduction(self):
+        self.variant.stock_quantity = 2
+        self.variant.save(update_fields=["stock_quantity"])
+        user = get_user_model().objects.create_user(
+            username="merge-user",
+            password="CorrectHorseBattery9!",
+        )
+        account_cart = Cart.objects.create(user=user)
+        CartItem.objects.create(
+            cart=account_cart,
+            variant=self.variant,
+            quantity=2,
+        )
+
+        self.add_item()
+        response = self.client.post(
+            reverse("account_login"),
+            {
+                "login": "merge-user",
+                "password": "CorrectHorseBattery9!",
+            },
+            follow=True,
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Reduced Cart Shoe to 2")
+        self.assertEqual(Cart.objects.filter(user=None).count(), 0)
+        merged_item = CartItem.objects.get(cart=account_cart)
+        self.assertEqual(merged_item.quantity, 2)

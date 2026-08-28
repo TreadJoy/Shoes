@@ -2,7 +2,9 @@ from decimal import Decimal
 from unittest import skipIf, skipUnless
 
 from django.conf import settings
+from django.db import connection
 from django.test import TestCase
+from django.test.utils import CaptureQueriesContext
 from django.urls import reverse
 
 from web.products.models import Product, ProductVariant
@@ -45,8 +47,30 @@ class ProductCatalogTests(TestCase):
 
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, self.product.name)
-        self.assertContains(response, "$85.00")
+        self.assertContains(response, "$80.00")
         self.assertNotContains(response, self.inactive_product.name)
+
+    def test_catalog_query_count_is_bounded_as_variants_increase(self):
+        for product_number in range(4):
+            product = Product.objects.create(
+                name=f"Query Budget Shoe {product_number}",
+                slug=f"query-budget-shoe-{product_number}",
+                price=Decimal("100.00"),
+            )
+            for variant_number in range(3):
+                ProductVariant.objects.create(
+                    product=product,
+                    sku=f"TJ-QUERY-{product_number}-{variant_number}",
+                    size=str(variant_number + 7),
+                    color="Black",
+                    stock_quantity=3,
+                )
+
+        with CaptureQueriesContext(connection) as queries:
+            response = self.client.get(reverse("products:product_list"))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertLessEqual(len(queries), 8)
 
     @skipUnless(settings.IS_COMMERCE_MODE, "Commerce product-detail behavior")
     def test_detail_uses_variant_override_and_exposes_available_option(self):

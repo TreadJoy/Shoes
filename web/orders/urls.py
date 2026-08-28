@@ -9,6 +9,11 @@ app_name = "orders"
 urlpatterns = [
     path("", views.order_list, name="order_list"),
     path("checkout/", views.checkout, name="checkout"),
+    path(
+        "success/attempt/<uuid:attempt_id>/",
+        views.checkout_success,
+        name="checkout_success",
+    ),
     path("success/<int:order_id>/", views.order_success, name="order_success"),
     path(
         "history/",

@@ -106,8 +106,6 @@ INSTALLED_APPS = [
     "django.contrib.sites",
     "allauth",
     "allauth.account",
-    "allauth.socialaccount",
-    "allauth.socialaccount.providers.google",
     "web.core.apps.CoreConfig",
     "web.products",
     "web.survey",
@@ -153,16 +151,28 @@ TEMPLATES = [
 WSGI_APPLICATION = "Shoes.wsgi.application"
 
 
-DATABASES = {
-    "default": {
-        "ENGINE": "django.db.backends.postgresql",
-        "NAME": environment.string("DB_NAME", required=True),
-        "USER": environment.string("DB_USER", required=True),
-        "PASSWORD": environment.string("DB_PASSWORD", required=True),
-        "HOST": environment.string("DB_HOST", default="127.0.0.1", required=True),
-        "PORT": environment.integer("DB_PORT", minimum=1, maximum=65535, default=5432),
+_use_bare_runserver_sqlite = (
+    TREADJOY_ENVIRONMENT == "local"
+    and os.environ.get("TREADJOY_RUNSERVER_DEFAULTS") == "1"
+)
+if _use_bare_runserver_sqlite:
+    DATABASES = {
+        "default": {
+            "ENGINE": "django.db.backends.sqlite3",
+            "NAME": BASE_DIR / "db.sqlite3",
+        }
     }
-}
+else:
+    DATABASES = {
+        "default": {
+            "ENGINE": "django.db.backends.postgresql",
+            "NAME": environment.string("DB_NAME", required=True),
+            "USER": environment.string("DB_USER", required=True),
+            "PASSWORD": environment.string("DB_PASSWORD", required=True),
+            "HOST": environment.string("DB_HOST", default="127.0.0.1", required=True),
+            "PORT": environment.integer("DB_PORT", minimum=1, maximum=65535, default=5432),
+        }
+    }
 if IS_PUBLIC_ENVIRONMENT:
     _db_sslmode = environment.choice("DB_SSLMODE", _VALID_DB_SSLMODES)
     DATABASES["default"]["OPTIONS"] = {"sslmode": _db_sslmode}
@@ -253,7 +263,6 @@ DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
 _STRIPE_SETTING_NAMES = (
     "STRIPE_SECRET_KEY",
-    "STRIPE_PUBLISHABLE_KEY",
     "STRIPE_WEBHOOK_SECRET",
 )
 
@@ -264,7 +273,6 @@ def _required_commerce_setting(name: str) -> str:
 
 if IS_COMMERCE_MODE:
     STRIPE_SECRET_KEY = _required_commerce_setting("STRIPE_SECRET_KEY")
-    STRIPE_PUBLISHABLE_KEY = _required_commerce_setting("STRIPE_PUBLISHABLE_KEY")
     STRIPE_WEBHOOK_SECRET = _required_commerce_setting("STRIPE_WEBHOOK_SECRET")
 else:
     _configured_stripe_settings = {
@@ -309,24 +317,9 @@ LOGOUT_REDIRECT_URL = "core:home"
 ACCOUNT_LOGIN_REDIRECT_URL = "core:home"
 ACCOUNT_LOGOUT_REDIRECT_URL = "core:home"
 ACCOUNT_SIGNUP_REDIRECT_URL = "core:home"
-
-GOOGLE_CLIENT_ID = environment.string("GOOGLE_CLIENT_ID", default="")
-GOOGLE_CLIENT_SECRET = environment.string("GOOGLE_CLIENT_SECRET", default="")
-if bool(GOOGLE_CLIENT_ID) != bool(GOOGLE_CLIENT_SECRET):
-    raise ImproperlyConfigured(
-        "GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET must be configured together."
-    )
-SOCIALACCOUNT_PROVIDERS = {
-    "google": {
-        "APP": {
-            "client_id": GOOGLE_CLIENT_ID,
-            "secret": GOOGLE_CLIENT_SECRET,
-            "key": "",
-        },
-        "SCOPE": ["profile", "email"],
-        "AUTH_PARAMS": {"access_type": "online"},
-    }
-}
+ACCOUNT_LOGIN_METHODS = {"username"}
+ACCOUNT_EMAIL_VERIFICATION = "optional"
+ACCOUNT_ADAPTER = "web.accounts.adapter.TreadJoyAccountAdapter"
 
 HOMEPAGE_YOUTUBE_VIDEO_ID = environment.string(
     "HOMEPAGE_YOUTUBE_VIDEO_ID", default=""

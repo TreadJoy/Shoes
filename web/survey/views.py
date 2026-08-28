@@ -33,12 +33,7 @@ def survey_question(request, question_number):
         if question_number < len(SURVEY_STEPS):
             return redirect("survey:survey_question", question_number + 1)
 
-        if not request.session.session_key:
-            request.session.create()
-
         SurveyResponse.objects.create(
-            user=request.user if request.user.is_authenticated else None,
-            session_key=request.session.session_key,
             **draft,
         )
         del request.session[SURVEY_DRAFT_SESSION_KEY]

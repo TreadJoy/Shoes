@@ -86,7 +86,7 @@
                         {% endif %}
 
                         <span class="catalog-card-badges">
-                            {% if item.product.sale_price and is_commerce_mode %}
+                            {% if item.on_sale and is_commerce_mode %}
                                 <span class="product-badge product-badge-sale">Sale</span>
                             {% endif %}
                             {% if item.is_preorder %}
@@ -107,13 +107,23 @@
                             </h2>
                         </div>
 
-                        {% if item.product.sale_price %}
+                        {% if item.on_sale %}
                             <p class="product-price">
-                                <span class="old-price">${{ item.product.price }}</span>
-                                <strong>${{ item.product.sale_price }}</strong>
+                                <span class="old-price">${{ item.compare_at_price }}</span>
+                                {% if item.price_min == item.price_max %}
+                                    <strong>${{ item.price_min }}</strong>
+                                {% else %}
+                                    <strong>${{ item.price_min }}–${{ item.price_max }}</strong>
+                                {% endif %}
                             </p>
                         {% else %}
-                            <p class="product-price">${{ item.product.price }}</p>
+                            <p class="product-price">
+                                {% if item.price_min == item.price_max %}
+                                    ${{ item.price_min }}
+                                {% else %}
+                                    ${{ item.price_min }}–${{ item.price_max }}
+                                {% endif %}
+                            </p>
                         {% endif %}
 
                         {% if item.product.description %}

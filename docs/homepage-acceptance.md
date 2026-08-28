@@ -1,5 +1,10 @@
 # TreadJoy Homepage Acceptance Scripts
 
+Historical evidence snapshot: browser evidence was captured on 2026-08-18;
+the operational script version was last updated at base commit
+`a046d47d1b8b639c7fe34def214f803a28d01616` on 2026-08-27. Re-run every script
+against the current release candidate before owner acceptance.
+
 These scripts are for final owner acceptance. On 2026-08-18, agent-controlled
 Chrome preflight passed the five target widths in both modes, the interactive
 navigation checks, research waitlist submissions, and commerce-route isolation.

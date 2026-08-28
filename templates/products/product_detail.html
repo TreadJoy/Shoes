@@ -43,20 +43,30 @@
                     <span class="product-badge product-badge-preorder">{{ availability_label }}</span>
                 {% elif not has_available_variants %}
                     <span class="product-badge product-badge-sold-out">Sold Out</span>
-                {% elif product.sale_price and is_commerce_mode %}
+                {% elif on_sale and is_commerce_mode %}
                     <span class="product-badge product-badge-sale">Sale</span>
                 {% endif %}
             </div>
 
             <h1>{{ product.name }}</h1>
 
-            {% if product.sale_price %}
+            {% if on_sale %}
                 <p class="product-detail-price">
-                    <span class="old-price">${{ product.price }}</span>
-                    <strong>${{ product.sale_price }}</strong>
+                    <span class="old-price">${{ compare_at_price }}</span>
+                    {% if price_min == price_max %}
+                        <strong>${{ price_min }}</strong>
+                    {% else %}
+                        <strong>${{ price_min }}–${{ price_max }}</strong>
+                    {% endif %}
                 </p>
             {% else %}
-                <p class="product-detail-price">${{ product.price }}</p>
+                <p class="product-detail-price">
+                    {% if price_min == price_max %}
+                        ${{ price_min }}
+                    {% else %}
+                        ${{ price_min }}–${{ price_max }}
+                    {% endif %}
+                </p>
             {% endif %}
 
             {% if product.description %}
@@ -86,7 +96,6 @@
                     class="product-purchase-panel add-to-cart-form"
                 >
                     {% csrf_token %}
-                    <input type="hidden" name="product_id" value="{{ product.id }}">
 
                     <div class="purchase-panel-heading">
                         <h2>Choose Your Pair</h2>

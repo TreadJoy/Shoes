@@ -1,7 +1,7 @@
 # TreadJoy Production Roadmap
 
-- Last repository audit: 2026-08-25
-- Audited commit: 719c29360a3e806dd6cc280c9ef0f61846a66639
+- Last repository audit: 2026-08-28
+- Audited base commit: a046d47d1b8b639c7fe34def214f803a28d01616
 - Document purpose: living assessment, decision record, and dependency-ordered path from the current repository to research launch and then commerce launch.
 
 ## How to use this plan
@@ -18,7 +18,7 @@
 
 ### Current architecture
 
-TreadJoy is a Django 5.2 and PostgreSQL application rendered with Django templates, centralized CSS, and small vanilla JavaScript enhancements. It uses django-allauth with a configured Google provider, Stripe-hosted Checkout and signed webhooks, database-backed authenticated/guest carts, order snapshots, shipment records, and Django admin. There is no SPA, public API, background queue, cache service, search service, production object storage, or generalized CMS.
+TreadJoy is a Django 5.2 and PostgreSQL application rendered with Django templates, centralized CSS, and small vanilla JavaScript enhancements. It uses django-allauth account flows without Google/social authentication for now, Stripe-hosted Checkout and signed webhooks, database-backed authenticated/guest carts, order snapshots, shipment records, and Django admin. Public-environment settings configure manifest static files and R2-backed public media, but no live origin, bucket, custom domain, or CDN path has been provisioned. There is no SPA, public API, background queue, cache service, search service, or generalized CMS.
 
 The codebase supports two fail-closed modes selected by TREADJOY_MODE:
 
@@ -30,6 +30,8 @@ The approved deployment architecture is one tested release commit deployed to se
 ### Major strengths
 
 - Mode-aware settings and routes fail closed, and automated negative tests exercise research-mode isolation.
+- Hash-locked runtime/development dependencies, PostgreSQL CI for both modes, dependency auditing, and full-history secret scanning are implemented and documented.
+- Public-environment settings validate hosts, origins, proxy ingress, PostgreSQL TLS, SMTP, R2 media, static collection, CSP, secure cookies, and staged HSTS before startup.
 - Preorder batches have capacity/allocation invariants, explicit state transitions, append-only events, and strong tests.
 - Order items snapshot product, SKU, size, color, price, fulfillment type, and preorder promises.
 - Stripe webhooks verify signatures, persist unique event IDs, and process inside database transactions.
@@ -40,21 +42,19 @@ The approved deployment architecture is one tested release commit deployed to se
 
 ### Major problems and production risks
 
-- Checkout creates an address, order, and lines before the Stripe API call, has no request idempotency key, and can leave duplicate/orphan pending orders after failure or retry.
-- No timed inventory reservation exists. Stock is deducted only after payment; competing customers can pay for the same final unit and enter a manual refund workflow.
-- Payment processing overwrites expected order totals from Stripe event values rather than reconciling amount, currency, order/session ownership, and eligible payment status.
-- Session completion can be treated as paid without a complete asynchronous-payment/failure/expiry/dispute lifecycle.
-- Cart identity permits ambiguous or duplicate guest ownership and has no tested login/signup merge.
-- Customer deletion can remove address relationships needed for historical understanding; money formula constraints and some catalog price constraints are absent.
+- Checkout now creates a server-side attempt, immutable quote/BOM facts, a unique idempotency key, and atomic 30-minute finished-SKU reservations without creating an abandoned order or address. The remaining launch risk is operational verification of the PostgreSQL races and the managed expiry schedule.
+- One retrieved-Session reconciler now verifies payment state, test/live mode, Checkout ownership, expected amount/currency metadata, actual amount/currency, PaymentIntent, reservation age, and the Stripe-collected address before creating a paid or review-required order. Dispute/chargeback operations and production alerting remain launch work.
+- Catalog pricing now has variant selling/compare-at fields with a compatibility fallback, and catalog availability reads use a bounded prefetch path; full price-field contraction and some order money formula constraints remain open.
+- Customer deletion can remove address relationships needed for historical understanding; order formula constraints remain deferred until legacy totals can be safely backfilled.
 - Ordinary Django admin forms/actions can edit important financial/provider fields, delete commerce records, or bypass a centralized order state machine.
-- Authentication behavior is not production coherent: email verification is optional, effective login is username-based while UI copy says email or username, Google sign-in is configured without a complete public flow, and terms/privacy acceptance is not durably recorded.
+- Authentication still needs production hardening: email verification is optional and effective login is username-based; terms/privacy acceptance is not durably recorded, and stronger verification/MFA policy remains a separate launch decision.
 - There is no application rate limiting, brute-force/abuse control, production email provider, data-retention schedule, consent versioning, unsubscribe/suppression system, or complete staff-permission model.
 - Shipping and tax totals are hardcoded to zero. Contiguous-US validation, carriers, service levels, rate source, tax registrations, product tax codes, and customer disclosures are not implemented.
 - Cancellation, return, exchange, inspection, and customer-initiated refund workflows do not yet represent the approved policy.
-- Raw Stripe payloads are retained without an approved field-minimization/retention policy; production logging, redaction, alerting, and operational replay tooling are absent.
-- The dependency manifest contains roughly 161 pinned packages, including unrelated data-science/notebook packages; requirements-dev.txt is empty and no reproducible runtime/development lock workflow exists.
-- GitHub currently runs secret scanning only. There is no PostgreSQL application CI, dependency audit, lint/static check, build/release pipeline, or deployment status check.
-- There is no production hosting definition, STATIC_ROOT/storage backend, R2 integration, health/readiness endpoint, monitoring, analytics, backup/PITR procedure, restore drill, migration release process, or rollback runbook.
+- New Stripe event/payment/refund writes retain bounded audit fields instead of raw payloads. Legacy raw fields remain temporarily for expand/backfill/verify/backup/contract safety; production retention approval, alerting, and controlled replay tooling remain open.
+- The reviewed dependency inputs and hash-locked runtime/development manifests are reproducible; Phase 1 removed the Google/social extra and refreshed both locks and the license inventory.
+- GitHub runs separate commerce/research PostgreSQL jobs, a dependency audit, and full-history secret scanning. There is still no deployment pipeline or deployment-status check.
+- Production configuration includes `STATIC_ROOT`, manifest static storage, and an R2 media backend contract. No live hosting, DNS/TLS path, R2 resource, health/readiness endpoint, monitoring, analytics, backup/PITR procedure, restore drill, migration release process, or rollback runbook has been provisioned or verified.
 - The catalog has been quarantined to its safe empty state, while homepage and
   social sections remain explicitly labeled development placeholders that block
   release until approved factual replacements exist.
@@ -63,30 +63,35 @@ The approved deployment architecture is one tested release commit deployed to se
 
 ### Missing or intentionally deferred functionality
 
-Launch work still includes reservations, payment reconciliation, shipping/tax, verified transactional email, historical order protection, secure guest-order access, operational returns/refunds, production catalog/assets, legal disclosures, accessibility/performance validation, Cloudflare/origin infrastructure, monitoring, backups, and launch rehearsal.
+Launch work still includes shipping rates/tax decisions, verified transactional email, historical order protection, secure durable guest-order access, operational returns/refunds and disputes, production catalog/assets, legal disclosures, accessibility/performance validation, Cloudflare/origin infrastructure, monitoring, backups, and launch rehearsal. Phase 4 reservation and core Checkout reconciliation code is implemented but still requires PostgreSQL CI/deployment acceptance.
 
 Customer configurators, standalone component sales, reviews, advanced promotions, advanced search, Redis, a task queue, and Cloudflare Containers are deliberately deferred until evidence shows that they solve a real launch or post-launch problem.
 
 ### Repository and documentation discrepancies
 
 - The prior AGENTS.md called the project a proof of concept with no established policies but later declared detailed fulfillment and return policies approved. The rewritten manual treats them as approved provisional launch policy.
-- The login UI claims email-or-username access, while effective django-allauth settings currently use username login.
+- The login UI and effective django-allauth settings now both use username login; email verification remains optional by policy.
 - A product description describes a test shoe being used while the server is in production; test content is not valid production catalog data.
-- web/views.py contains unrouted, duplicated legacy flows and hardcoded local behavior; active features live in app-specific modules.
-- Empty web/models.py and web/tests.py scaffolds and duplicate/legacy route/view names can mislead agents into extending the wrong implementation.
-- README.md documents selected Stripe/preorder operations but is not a complete architecture, setup, deployment, or operations guide.
+- The former root-level `web/views.py`, `web/models.py`, and `web/tests.py` scaffolds were removed in A0.2, but older documentation continued to describe them as present.
+- The comment-only root `web/admin.py` and unused `web/apps.py` were removed in Phase 1; active features live in domain apps.
+- Before the 2026-08-28 cleanup phase, README.md documented selected Stripe/preorder operations but was not a complete developer entry point.
 
 ### Verified evidence and limitations
 
-- The worktree was clean at audit start. GitHub had one main branch, no open issues or pull requests, and only the gitleaks workflow.
-- python manage.py check passed.
-- A commerce-mode SQLite in-memory run passed 123 tests with 8 skips.
-- A research-mode SQLite in-memory run passed 61 tests with 8 skips.
-- PostgreSQL-only concurrency tests did not run because the configured local database role cannot create a test database. SQLite success is not evidence that row-locking behavior works.
-- python -m compileall Shoes web passed, and pip check reported no installed-package conflicts.
-- Browser inspection at desktop and mobile sizes confirmed responsive navigation, focus return, Escape dismissal, and scroll lock. It also confirmed visible development placeholders, test catalog data, and launch-incomplete product content.
-- Chrome DevTools performance tracing was unavailable, so there are no measured Core Web Vitals, network waterfall, or Lighthouse accessibility results. Establishing measured baselines is roadmap work.
-- No secret values were printed during the audit. Secret-pattern/history review found no current tracked credential file; the repository still records a prior contained exposure in its operating history, so rotation and incident discipline remain mandatory.
+- The worktree was clean at the 2026-08-28 audit start at base commit `a046d47`; no repository file was changed during the inspection or aggregate database preflight.
+- Commerce and research Django checks pass. The 2026-08-28 Phase 0 rerun passed 161 isolated commerce tests with 9 skips and 87 installed-app research tests with 6 skips.
+- GitHub-hosted PostgreSQL CI is the locking/concurrency authority. Its latest recorded acceptance evidence at commit `91d9f4f` passed 152 commerce tests, both explicit row-lock race classes, and 78 research tests. The local PostgreSQL role still cannot create a Django test database.
+- `makemigrations --check --dry-run`, Python compilation, and `pip check` pass. The configured local database was unavailable inside the default sandbox but allowed aggregate-only reads through the approved local process boundary.
+- A targeted catalog probe with five products and three variants each rendered successfully in 18 queries; 15 were repeated preorder-batch lookups. This is the cleanup program's performance baseline, not an accepted budget.
+- Phase 0 collected 134 static files in a disposable directory, found no known vulnerabilities in either hash-locked dependency manifest, and found no leaks across all 48 reachable Git commits or the changed-document credential-pattern scan.
+- Phase 1 removed the verified dead/authentication paths without schema changes. On 2026-08-28 both deployment-mode checks passed; the isolated SQLite suites passed 160 commerce tests (9 skipped) and 86 research tests (6 skipped); both refreshed locks installed with hashes and passed `pip check` and `pip-audit`; disposable `collectstatic` copied 134 files; and full-history Gitleaks again found no leaks. The release-content command could not reach the sandboxed local PostgreSQL instance in this environment, so its previously recorded two expected content blockers remain authoritative.
+- The commerce release-content command still fails on exactly the two documented homepage-media and pending-social-link blockers. That is an expected public-release stop, not a Phase 0 regression.
+- Browser evidence recorded in the homepage documents is historical. No current Core Web Vitals, network waterfall, Lighthouse accessibility result, or post-cleanup visual baseline exists yet.
+- No secret or customer values were printed. Aggregate preflight counts only are recorded below; the repository's prior contained-exposure history still makes rotation and incident discipline mandatory.
+
+### Refactor and cleanup preflight (2026-08-28)
+
+The local development database contained no case-insensitive waitlist duplicate groups, linked survey users/session keys, social accounts/apps/tokens, nonzero component-stock rows, duplicate nonblank order Checkout Session or PaymentIntent groups, orphaned shipping addresses, or orders missing a shipping address. It contained two pending-payment orders, two Stripe event rows with raw payloads, and one payment row with a raw payload. Later cleanup must preserve and reconcile those financial records before any contraction; these counts do not establish the state of staging, production, or a future commerce database.
 
 ## Approved decision log
 
@@ -104,6 +109,11 @@ Customer configurators, standalone component sales, reviews, advanced promotions
 | Preorder payment | Full payment when ordered | Payment, delay notification, and cancellation/refund behavior must support preorders |
 | Payment boundary | Stripe-hosted Checkout | Never collect or store raw card data |
 | Shipping | Contiguous United States, paid available service levels | Address validation and rate/service source must be approved before launch |
+| Social authentication cleanup | Remove Google authentication for now | Use django-allauth account flows without the Google provider until a complete public flow is approved |
+| Survey identity | Anonymous responses | Remove user and raw session links without adding replacement tracking identifiers |
+| Waitlist data | Email plus optional first name | Normalize email, constrain source attribution, and retain no additional profile data |
+| Cart merge | Combine with an explicit availability notice | Keep distinct items, combine identical SKU/batch quantities, and disclose every cap or removal |
+| Checkout address | Stripe collects the full address | Retain only a transient state eligibility check before redirect and snapshot the retrieved address only for paid/review records |
 
 ### Authoritative implementation references
 
@@ -130,6 +140,28 @@ Re-check current versions when the related task begins; these links guide design
 8. Finish licensed product/brand content and the customer journey.
 9. Verify accessibility, SEO, privacy, and performance.
 10. Provision commerce infrastructure, rehearse failure/rollback, complete independent audits, and launch.
+
+### Approved refactor and cleanup sequence
+
+The 2026-08-28 cleanup review adds a gated implementation stream without replacing the dependency-ordered launch roadmap. Complete and verify one phase, update this document and the operating manual, then wait for owner `next` approval:
+
+0. Restore documentation and evidence accuracy. **Complete on 2026-08-28.**
+1. Remove proven dead paths and the approved Google/custom-auth surface. **Complete on 2026-08-28.**
+2. Minimize survey/waitlist data and enforce cart ownership/mutation rules. **Complete on 2026-08-28.**
+3. Consolidate variant pricing, availability, preorder administration, and historical BOM snapshots. **Complete on 2026-08-28.**
+4. Add Checkout attempts, 30-minute reservations, and authoritative Stripe reconciliation. **Complete on 2026-08-28; PostgreSQL/deployment acceptance remains a launch gate.**
+5. Protect order/address history and centralize staff-visible state transitions.
+6. Remove only visually verified template/static duplication and complete the documentation audit.
+
+Phase 0 changed Markdown only. It corrected current-state claims, recorded the aggregate-only data preflight, expanded the developer entry point, preserved the append-only failure history, and labeled dated homepage evidence as historical. Both modes, migration drift, compilation, static collection, dependency health/audits, release-content blockers, isolated suites, and secret scans were rechecked before handoff.
+
+Phase 1 removed verified dead scaffolding/helpers/templates, the custom activation implementation, unsafe referrer fallback, unused session/form values, and Google/social authentication configuration. It preserved the allauth username-login and optional-verification policy, routed Django admin login through allauth's secure admin wrapper, refreshed the hash-locked runtime/development dependencies and license inventory, and aligned login copy and deployment tests. Full validation evidence is recorded below and in `MISTAKES.md`; no database schema or historical commerce data was changed.
+
+Phase 2 made completed survey responses anonymous and added an unlink migration while retaining compatibility columns for a later contract migration. It normalized and deduplicated waitlist records, constrained source attribution, and enforced case-insensitive email uniqueness. Cart rows now require exactly one authenticated or guest principal, guest sessions are unique, cart mutations are transactional and availability-aware, broad context-processor suppression is removed, and allauth sign-in merges the guest cart atomically with explicit reduction/removal notices. Aggregate preflight found no rows requiring deduplication or identifier unlinking in the local database. The isolated SQLite commerce suite passed 161 tests (9 skipped), and the installed-app research suite passed 86 tests (6 skipped); PostgreSQL locking/concurrency coverage remains a CI requirement. No survey identifiers or raw provider payloads were printed.
+
+Phase 3 added variant selling and compare-at price fields with the approved precedence backfill and a one-release legacy dual-read fallback, moved catalog display values to active-variant price ranges, and reduced the measured five-product/three-variant catalog path from 18 queries to 3 (under the eight-query budget). It added nonnegative product/order amount constraints and a discount bound while deferring formula constraints that current legacy totals cannot satisfy without rewriting history. Finished-SKU availability continues through the existing authoritative service, with prefetched live preorder batches and allocations. Component stock was removed from staff edit/list workflows but its legacy column remains pending owner review outside the zero-row local preflight; it remains non-authoritative. Order item BOM composition is copied into immutable component snapshot rows, including a migration backfill and admin read view. The isolated SQLite commerce suite passed 163 tests (9 skipped), and the installed-app research suite passed 87 tests (6 skipped). PostgreSQL locking and migration verification remain CI requirements.
+
+Phase 4 completed the Checkout lifecycle on 2026-08-28. Checkout now commits an attempt, immutable quote/BOM snapshots, one active-attempt-per-cart constraint, a stable Stripe idempotency key, and 30-minute finished-SKU/preorder reservations before the provider call; no durable order or full address is created for an abandoned attempt. Ambiguous Stripe failures retry the same key, definite creation failures release inventory, hosted Checkout collects the U.S. address, and success pages perform only a bounded manual status check. One retrieved-Session reconciler is shared by webhooks and the success return and requires paid state plus exact environment, mode, attempt/Session ownership, amount, currency, PaymentIntent, metadata, reservation age, and contiguous-state agreement. It creates paid orders exactly once, copies address/price/preorder/BOM snapshots, and commits inventory once; paid mismatches and late payments create durable `REVIEW_REQUIRED` order/payment records without fulfillment or inventory commitment. Session expiry/async failure and the scheduler command release idempotently; PaymentIntent events no longer mutate orders independently. New provider records use bounded audit fields, migration `0020` backfills those fields, and the backup-gated purge command supports later payload contraction without deleting data during deployment. SQLite passes 178 commerce tests with 10 skips (including the new PostgreSQL last-unit reservation race) and research passes 88 tests with 6 skips. PostgreSQL CI, scheduler provisioning, webhook subscription/configuration, restricted-key rollout, alerting, and backup-verified legacy payload purge remain deployment/launch acceptance, not missing Phase 4 application code.
 
 ### Critical path
 
@@ -267,7 +299,7 @@ P1 storefront, email, accessibility, SEO, performance, monitoring, and admin-usa
 - **Priority / status:** P0 — Implemented; owner acceptance pending (2026-08-27).
 - **Objective:** Make unsafe or incomplete production configuration fail before serving traffic.
 - **Why it matters:** Current non-DEBUG settings are incomplete for a Cloudflare proxy, production origins, CSP, storage, email, and security invariants.
-- **Current state:** Settings enable several Django production protections when DEBUG is false but lack an explicit trusted-proxy contract, complete host/origin validation, CSP, production service validation, and environment separation.
+- **Current state:** The repository implements explicit local/CI/staging/production profiles, Cloudflare-locked ingress validation, exact hosts/origins, PostgreSQL TLS policy, SMTP/R2/static requirements, CSP, secure cookies, and staged HSTS checks. Owner acceptance and live provider/origin validation remain pending; repository configuration is not deployed infrastructure.
 - **Required work:** Keep the current settings architecture incremental; add typed environment parsing and mode-aware validation; require explicit ALLOWED_HOSTS/CSRF origins/database/email/storage values; configure secure cookies, SSL redirect, HSTS rollout, referrer/frame/content-type controls, CSP, proxy SSL header only for the locked origin path, trusted origins, production static/media storage, and a startup check that research rejects all Stripe configuration.
 - **Dependencies:** A0.3 and A1.1.
 - **Affected areas:** Shoes/settings.py or a narrowly split settings package, .env.example, deployment checks, tests.
@@ -278,7 +310,7 @@ P1 storefront, email, accessibility, SEO, performance, monitoring, and admin-usa
 
 ### A1.3 — Establish logging, health, monitoring, and incident foundations
 
-- **Priority / status:** P0 — Not started.
+- **Priority / status:** P0 — Complete (2026-08-28).
 - **Objective:** Make service health and business-critical failures visible without exposing sensitive data.
 - **Why it matters:** Payment, reservation, inventory, email, and deployment failures cannot rely on console logs or customer reports.
 - **Current state:** Application logging is basic; there are no health/readiness endpoints, error monitor, alert routes, correlation IDs, runbooks, or provider-event failure dashboard.
@@ -322,7 +354,7 @@ P1 storefront, email, accessibility, SEO, performance, monitoring, and admin-usa
 - **Priority / status:** P0 — Not started.
 - **Objective:** Collect survey/waitlist/account data transparently and resiliently without exposing or spamming participants.
 - **Why it matters:** Research mode still handles personal data and public forms; weak consent and anti-abuse controls can harm reputation before commerce launches.
-- **Current state:** Waitlist email is normalized/unique and surveys support session drafts, but signup count is public, consent/version/unsubscribe/suppression are absent, email uses console backend, and public forms have no complete rate/bot controls.
+- **Current state:** Waitlist email is case-insensitively normalized/unique with controlled source values, and completed surveys are anonymous (session drafts remain transient). Signup count is public, consent/version/unsubscribe/suppression are absent, email uses console backend, and public forms have no complete rate/bot controls.
 - **Required work:** Decide whether public signup count remains; add privacy notice/consent version/timestamps and marketing preference separation; configure verified transactional/marketing sender behavior and suppression/unsubscribe; add application throttling plus scoped Cloudflare rate/WAF or Turnstile only where evidence supports it; define survey/waitlist retention and staff export/access; add accessible success/error states.
 - **Dependencies:** A1.3, A1.4, and an approved email provider decision.
 - **Affected areas:** waitlist, survey, accounts/allauth, forms/templates, email configuration, Cloudflare rules, admin/export tooling.
@@ -347,11 +379,11 @@ P1 storefront, email, accessibility, SEO, performance, monitoring, and admin-usa
 
 ### A3.1 — Strengthen catalog, money, and cart database invariants
 
-- **Priority / status:** P0 — Not started.
+- **Priority / status:** P0 — Partially implemented in cleanup Phase 3; remaining catalog/order work open (2026-08-28).
 - **Objective:** Move stable commerce truths from application convention into understandable PostgreSQL constraints.
 - **Why it matters:** Invalid prices, ambiguous carts, or inconsistent totals can create financial loss and records that admin/database tools cannot safely interpret.
-- **Current state:** Variant stock and price override have some checks; Product price/sale relationships and order money formulas are under-constrained; Cart permits ambiguous identity and duplicate guest races.
-- **Required work:** Add named checks for nonnegative prices/totals/quantities and approved sale-price relationships; enforce exactly one cart principal and uniqueness for active user/session carts; define normalized currency representation; add indexes for real catalog/cart/order access paths; use staged data migrations to repair development rows before constraints.
+- **Current state:** Variant selling/compare-at prices, product price checks, order nonnegative/discount bounds, and cart principal constraints are implemented. Order arithmetic formulas remain deferred because legacy totals are not consistently decomposed; normalized currency and broader catalog/order invariants remain open.
+- **Required work:** Retain PostgreSQL coverage for the implemented constraints; establish a verified legacy-total backfill before adding formula checks; define normalized currency representation; add indexes for real catalog/cart/order access paths; use staged migrations for remaining constraints.
 - **Dependencies:** A0.1, A0.2, A1.1, and approved handling for any invalid development data.
 - **Affected areas:** products, cart, orders models/migrations/services/admin, schema documentation.
 - **Security considerations:** Never trust client values during cleanup; avoid logging invalid PII; review migration locks and rollback; do not invent discount policy while constraining arithmetic.
@@ -360,10 +392,10 @@ P1 storefront, email, accessibility, SEO, performance, monitoring, and admin-usa
 
 ### A3.2 — Preserve historical customer, order, and payment records
 
-- **Priority / status:** P0 — Not started.
+- **Priority / status:** P0 — Partially implemented in cleanup Phase 3; address/history work remains (2026-08-28).
 - **Objective:** Prevent account, address, catalog, or admin changes from erasing what occurred in a commercial transaction.
 - **Why it matters:** Support, refunds, taxes, disputes, and audits depend on stable historical facts.
-- **Current state:** OrderItem snapshots many product facts, but ShippingAddress belongs to a user with cascade behavior and order/admin relationships can lose or mutate important history; deletion/retention policy is incomplete.
+- **Current state:** OrderItem snapshots product facts and immutable BOM component snapshots are now recorded/backfilled. ShippingAddress still belongs to a user with cascade behavior and order/admin relationships can lose or mutate important history; deletion/retention policy is incomplete.
 - **Required work:** Apply the approved retention matrix; snapshot checkout name/email/full address/country and shipping/tax/service promises on the order; protect or anonymize user/catalog relations without cascading commercial history; add immutable identifiers/timestamps and database protections; define abandoned-order cleanup separately from paid records.
 - **Dependencies:** A1.4 and A3.1.
 - **Affected areas:** accounts, orders, addresses, payments/refunds, admin, migrations, privacy/export/deletion services.
@@ -373,15 +405,15 @@ P1 storefront, email, accessibility, SEO, performance, monitoring, and admin-usa
 
 ### A3.3 — Correct authentication, cart merge, and guest order access
 
-- **Priority / status:** P0 — Not started.
+- **Priority / status:** P0 — Partially implemented in cleanup Phases 1–2; guest order access and policy records remain open (2026-08-28).
 - **Objective:** Provide coherent optional accounts and secure continuity from guest browsing through payment and later support.
 - **Why it matters:** Identity confusion can expose another customer's cart/order or strand a purchaser without access.
-- **Current state:** Allauth effective login is username-based while UI says email or username; email verification is optional; no guest-cart merge, signed guest-order access, order claiming, or durable terms/privacy acceptance exists.
-- **Required work:** Approve and implement one login identifier policy; configure verification/recovery/social login consistently; define deterministic cart merge conflict rules and rotate session identifiers at authentication boundaries; issue expiring/revocable signed guest-order links to the checkout email; allow safe authenticated claiming after re-verification; record legal notice versions without coupling operational email to marketing consent.
+- **Current state:** Allauth effective login and UI are username-based, email verification is optional, and guest-cart merge now combines/caps items with visible notices across the session-rotation boundary. Signed guest-order access, order claiming, and durable terms/privacy acceptance remain open.
+- **Required work:** Retain the approved username-login/optional-verification policy and exercise it through staging email flows; preserve and extend deterministic cart-merge/session-rotation coverage; issue expiring/revocable signed guest-order links to the checkout email; allow safe authenticated claiming after re-verification; record legal notice versions without coupling operational email to marketing consent.
 - **Dependencies:** A1.2, A1.4, A2.2 where shared, A3.1, and owner approval of identity/claim expiration policy.
 - **Affected areas:** accounts/allauth settings/templates/adapters, cart services, orders access, email, consent records, sessions.
 - **Security considerations:** Prevent enumeration, link leakage/replay, session fixation, cross-user merge, social-account confusion, and unauthorized claim; hash/store tokens safely and redact them from logs.
-- **Testing requirements:** Signup/login/recovery/verification, Google path, guest/auth cart cases, concurrent merge, link expiry/revocation/replay, cross-user order denial, claim conflict, session rotation, and accessibility.
+- **Testing requirements:** Signup/login/recovery/verification, explicit absence of unapproved social providers, guest/auth cart cases, concurrent merge, link expiry/revocation/replay, cross-user order denial, claim conflict, session rotation, and accessibility.
 - **Acceptance criteria:** UI and effective auth behavior match; every cart/order is accessible only by its legitimate guest/account principal; merge/claim rules are documented and idempotent; recovery and verification work through the production email path.
 
 ### A3.4 — Establish staff roles and safe commerce administration
@@ -404,7 +436,7 @@ P1 storefront, email, accessibility, SEO, performance, monitoring, and admin-usa
 - **Priority / status:** P0 — Not started.
 - **Objective:** Represent temporary claims on finished SKU/preorder capacity independently from cart display and final allocation.
 - **Why it matters:** A precise durable model is required to prevent oversell and reconcile abandoned/expired Checkout Sessions.
-- **Current state:** No reservation record exists; Checkout validates current availability and stock/preorder capacity is reduced only after payment.
+- **Current state:** `CheckoutAttempt`, immutable quote/BOM facts, and finished-SKU/preorder `InventoryReservation` rows represent active, committed, released, and review-required claims. Opaque attempt UUIDs, expiry timestamps, one-active-attempt-per-cart uniqueness, nonnegative constraints, and read-only admin inspection are implemented.
 - **Required work:** Design a reservation aggregate tied to cart/order, ProductVariant or preorder allocation, Stripe Checkout Session when created, quantity, created/expires timestamps, state, idempotency key, release/commit reason, and audit events; define active uniqueness/indexes and allowed state transitions; make 30 minutes the approved TTL; document availability as on-hand/allocation minus active reservations and committed sales.
 - **Dependencies:** A3.1–A3.3.
 - **Affected areas:** products/preorders, cart, orders, new migrations/services/admin read views.
@@ -414,10 +446,10 @@ P1 storefront, email, accessibility, SEO, performance, monitoring, and admin-usa
 
 ### A4.2 — Implement atomic reserve, release, and payment commit services
 
-- **Priority / status:** P0 — Not started.
+- **Priority / status:** P0 — Ready for owner acceptance; PostgreSQL CI evidence required.
 - **Objective:** Guarantee that concurrent customers cannot reserve or commit more finished inventory than exists.
 - **Why it matters:** This is the core overselling control and must remain correct under retries and process failure.
-- **Current state:** Paid allocation uses row locks, but no prepayment reservation participates in availability and shortages become manual refund review after charge.
+- **Current state:** Checkout locks the cart and authoritative finished SKU/preorder rows, reprices and validates fulfillment, subtracts nonexpired active reservations, and creates a 30-minute reservation atomically. Reconciliation commits its own reservation and allocation once; definite failure/expiry releases it, while late/shortfall payment becomes review-required without an inventory commitment. A PostgreSQL last-unit race test is present but skipped by SQLite.
 - **Required work:** Centralize availability calculation; lock SKU/preorder allocation and relevant active reservations; atomically create/refresh the caller's reservation; reject shortages before Stripe Session creation; release idempotently on cancellation/expiry/failure; commit exactly once after reconciled payment; adapt paid allocation to consume the matching reservation instead of decrementing independently; retain a manual exception only for impossible/reconciliation failures.
 - **Dependencies:** A4.1.
 - **Affected areas:** products availability/preorder services, orders allocation/payment services, cart/checkout, admin exception views.
@@ -427,10 +459,10 @@ P1 storefront, email, accessibility, SEO, performance, monitoring, and admin-usa
 
 ### A4.3 — Reconcile expiration and abandoned reservations operationally
 
-- **Priority / status:** P0 — Not started.
+- **Priority / status:** P0 — In progress (application complete; operations pending).
 - **Objective:** Release inventory promptly when Checkout expires and detect any reservation/provider state drift.
 - **Why it matters:** Webhooks can be delayed or missed; relying on a single delivery can strand scarce inventory.
-- **Current state:** No checkout.session.expired handling, expiry sweep, reservation backlog alert, or provider reconciliation exists.
+- **Current state:** Signed Session expiry/async-failure events and an idempotent `release_expired_reservations` command release nonpaid claims; paid/review orders cannot be swept, and read-only admin inspection is available. The managed scheduler, backlog/drift alert, and production runbook are not provisioned.
 - **Required work:** Add a safe idempotent expiry service and periodic reconciliation mechanism appropriate to the managed origin; release locally expired nonpaid reservations under documented safeguards; accept provider state as an explicit future input rather than embedding API calls in the core transition; record failures and alert on backlog/drift; provide staff read-only inspection and controlled retry. A5.3 will set the Stripe Session expiry, and A5.4 will wire provider expiry/failure events and bounded stale-session lookup into this service.
 - **Dependencies:** A1.3 and A4.2.
 - **Affected areas:** orders webhooks/services, reservation model, scheduling mechanism, monitoring, admin/operations runbook.
@@ -442,7 +474,7 @@ P1 storefront, email, accessibility, SEO, performance, monitoring, and admin-usa
 
 ### A5.1 — Implement launch shipping services and address eligibility
 
-- **Priority / status:** P0 — Not started.
+- **Priority / status:** P0 — Ready for owner acceptance; provider/PostgreSQL acceptance pending.
 - **Objective:** Quote, charge, snapshot, and fulfill approved contiguous-US shipping services consistently.
 - **Why it matters:** Zero-dollar placeholder shipping and unrestricted addresses create direct financial loss and broken customer promises.
 - **Current state:** Checkout collects a US-style address and stores zero shipping total; country defaults to the United States but Alaska, Hawaii, territories, PO boxes, carriers, rates, and service levels are not authoritatively handled.
@@ -471,7 +503,7 @@ P1 storefront, email, accessibility, SEO, performance, monitoring, and admin-usa
 - **Priority / status:** P0 — Not started.
 - **Objective:** Ensure one customer intent creates at most one order, reservation, and active Stripe Checkout Session.
 - **Why it matters:** Current order-before-Stripe behavior can leave orphan records and duplicate customer charges/holds under retries.
-- **Current state:** A valid POST creates address/order/items inside PostgreSQL, then calls Stripe outside that transaction; no client intent/idempotency record prevents repeated orders or sessions.
+- **Current state:** A valid POST atomically creates/reuses one active attempt per locked cart, snapshots the authoritative quote/BOM, and reserves inventory before the network call. Stripe Checkout is created after commit through an instance-scoped client with a stable idempotency key; ambiguous network/API/rate-limit failures reuse the attempt/key, definite rejection releases it, and no abandoned order/address is created.
 - **Required work:** Introduce a server-generated checkout intent/idempotency key scoped to the cart/principal and material quote version; validate/reprice cart and create order snapshot/reservation transactionally; call Stripe with the same idempotency key; persist the resulting Session through a retry-safe state machine; on provider failure retain a diagnosable retryable attempt without duplicating the order/reservation; expire superseded attempts; avoid holding database locks during network calls.
 - **Dependencies:** A3.2–A3.3, A4.2–A4.3, A5.1, and A5.2.
 - **Affected areas:** checkout views/forms/services, order/payment-attempt schema, reservations, Stripe client, session state, customer error UX.
@@ -481,10 +513,10 @@ P1 storefront, email, accessibility, SEO, performance, monitoring, and admin-usa
 
 ### A5.4 — Reconcile Stripe payments and complete webhook lifecycle
 
-- **Priority / status:** P0 — Not started.
+- **Priority / status:** P0 — In progress (core reconciliation complete; dispute/operations pending).
 - **Objective:** Advance money/order/inventory state only after a signed Stripe event matches the expected order and an eligible payment state.
 - **Why it matters:** Authentic webhook transport does not guarantee correct amount, currency, metadata, Session ownership, or payment completion.
-- **Current state:** mark_order_as_paid can overwrite order totals from event values; session completion is not fully gated by payment_status; expiration, async failure, disputes, and durable processing-failure diagnostics are incomplete; integration uses global stripe.api_key and explicitly card-only methods.
+- **Current state:** New Checkout events retrieve the authoritative Session and use one idempotent reconciler shared with the success return. It verifies paid state, mode/livemode, attempt/Session ownership, amount, currency, PaymentIntent, metadata, reservation age, and Stripe-collected address; expected totals are never overwritten. Valid payment creates the order/address/payment/snapshots and commits inventory once; mismatches create a durable review record without fulfillment. Explicit Stripe clients, dynamic payment methods, async success/failure, expiry, duplicate/out-of-order protection, bounded audit fields, and raw-payload migration tooling are implemented. Dispute/chargeback handling, production alerts/replay, webhook/provider configuration, and backup-verified payload purge remain open.
 - **Required work:** Upgrade the Stripe SDK/API version through reviewed changelogs and contract tests; use an explicit Stripe client and restricted key; omit hardcoded payment methods if approved dynamic methods are safe; retrieve/verify bounded provider objects when needed; reconcile order ID, Checkout Session, PaymentIntent, amount, currency, metadata, livemode, expected status, and reservation before transition; never overwrite expected totals to make a mismatch pass; handle checkout completed/expired, async success/failure, payment success/failure, refund updates/failures, disputes/chargebacks, duplicates, and out-of-order events; persist attempt count, processing result/error code, and safe replay controls; alert on mismatch/failure.
 - **Dependencies:** A1.3, A4.3, A5.3, and Stripe Dashboard/test configuration.
 - **Affected areas:** orders/views.py, payment/webhook services/models/admin, Stripe settings/client, reservations, monitoring, tests/runbooks.
@@ -553,7 +585,7 @@ P1 storefront, email, accessibility, SEO, performance, monitoring, and admin-usa
 - **Priority / status:** P1 — Not started.
 - **Objective:** Replace test records with approved sellable variants and enough structured information for a customer to evaluate the product.
 - **Why it matters:** A polished shell cannot convert or reduce returns if product facts, imagery, fit, and availability are incomplete.
-- **Current state:** One test shoe with inconsistent color casing, raw stock counts, one customer-like image, and minimal description is publicly visible; product/variant schema lacks several merchandising facts.
+- **Current state:** A0.1 quarantined the known test catalog and customer-like image, so the public catalog currently renders its safe empty state. Approved production products, imagery, fit, care, and other merchandising facts remain absent, and the product/variant schema still lacks several launch facts.
 - **Required work:** Define minimum launch product data for SKU/name/slug/audience/category/prices/status, ordered variant values, size/fit guide, materials/care, included modular components/compatibility explanation, weight/dimensions where operationally needed, preorder/stock promise, approved claims, and multi-angle responsive media with alt text/provenance; add validation/admin completeness checks; normalize catalog values; expose customer-friendly availability without raw counts.
 - **Dependencies:** A0.1, A3.1, A4.2, A5.1–A5.2, and approved product facts/assets.
 - **Affected areas:** products models/admin/forms/services/templates, media/R2, structured data, fixtures/import tools.
@@ -689,7 +721,7 @@ P1 storefront, email, accessibility, SEO, performance, monitoring, and admin-usa
 - **Priority / status:** P0 — Not started.
 - **Objective:** Independently challenge every launch-critical invariant in a production-like environment.
 - **Why it matters:** Component tests cannot prove the integrated business survives concurrency, retries, hostile input, provider failure, or operator mistakes.
-- **Current state:** Existing tests are meaningful but run incompletely on SQLite and the production infrastructure/workflows do not yet exist.
+- **Current state:** Required CI runs commerce and research against PostgreSQL and explicitly exercises the existing allocation row-lock races. Production infrastructure, integrated provider workflows, browser/accessibility/performance coverage, backup restoration, rollback rehearsal, and independent review do not yet exist.
 - **Required work:** Freeze a release candidate; run all PostgreSQL mode/unit/integration/browser/accessibility/performance suites; perform dependency/secret/configuration review and targeted threat-model penetration tests; rehearse last-unit reservation, payment success/failure/async/expiry/refund/dispute, webhook replay/out-of-order, cart merge/guest access, fulfillment, returns, email failure, backup restore, bad migration/deploy rollback, origin bypass, and research direct-request attacks; commission appropriate external security review before live card acceptance.
 - **Dependencies:** All P0 implementation tasks through A9.3 and P1 launch-experience tasks A7–A8.
 - **Affected areas:** Entire application, providers, infrastructure, staff workflows, documentation, launch candidate.

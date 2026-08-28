@@ -92,11 +92,11 @@ export CI_DB_TEST_NAME=treadjoy_ci_test
 export CI_STATIC_ROOT=/absolute/path/to/disposable/staticfiles
 ```
 
-Commerce additionally requires nonempty synthetic `STRIPE_SECRET_KEY`,
-`STRIPE_PUBLISHABLE_KEY`, and `STRIPE_WEBHOOK_SECRET`. A research deployment
-must omit all three. When reproducing CI in a shared local worktree whose
-commerce `.env` defines them, explicitly override all three with empty values
-for that process so research settings cannot load the commerce values.
+Commerce additionally requires nonempty synthetic `STRIPE_SECRET_KEY` and
+`STRIPE_WEBHOOK_SECRET`. A research deployment must omit both. When
+reproducing CI in a shared local worktree whose commerce `.env` defines them,
+explicitly override both with empty values for that process so research
+settings cannot load the commerce values.
 
 Run the same checks as the workflow:
 

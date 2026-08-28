@@ -1,12 +1,48 @@
 from django.shortcuts import render, get_object_or_404
-from django.db.models import Q
+from django.db.models import Prefetch, Q
 
-from .models import Product
+from .models import PreorderBatch, Product, ProductVariant
 from .services import PREORDER, variant_availability
 
 
+def _catalog_queryset():
+    variant_queryset = ProductVariant.objects.select_related("product")
+    live_batches = (
+        PreorderBatch.objects.filter(
+            status__in=[PreorderBatch.Status.OPEN, PreorderBatch.Status.PAUSED]
+        )
+        .prefetch_related("variant_allocations")
+    )
+    return Product.objects.prefetch_related(
+        Prefetch("variants", queryset=variant_queryset),
+        Prefetch(
+            "preorder_batches",
+            queryset=live_batches,
+            to_attr="_live_preorder_batches",
+        ),
+    )
+
+
+def _price_summary(product, variants):
+    active_variants = [variant for variant in variants if variant.is_active]
+    prices = [variant.current_price() for variant in active_variants]
+    if not prices:
+        prices = [product.current_price()]
+    compare_prices = [
+        variant.compare_price()
+        for variant in active_variants
+        if variant.compare_price() is not None
+    ]
+    return {
+        "price_min": min(prices),
+        "price_max": max(prices),
+        "compare_at_price": max(compare_prices) if compare_prices else None,
+        "on_sale": bool(compare_prices),
+    }
+
+
 def product_list(request):
-    products = Product.objects.filter(is_active=True).prefetch_related("variants")
+    products = _catalog_queryset().filter(is_active=True)
     audience = request.GET.get("audience", "")
     category = request.GET.get("category", "")
     query = request.GET.get("q", "").strip()[:100]
@@ -26,7 +62,13 @@ def product_list(request):
         category = ""
 
     if sale_only:
-        products = products.filter(sale_price__isnull=False)
+        products = products.filter(
+            Q(sale_price__isnull=False)
+            | Q(
+                variants__is_active=True,
+                variants__compare_at_price__isnull=False,
+            )
+        ).distinct()
 
     if query:
         products = products.filter(
@@ -50,9 +92,14 @@ def product_list(request):
 
     catalog_items = []
     for product in products:
+        variants = list(product.variants.all())
+        for variant in variants:
+            # Reuse the parent instance so availability can use its prefetched
+            # live preorder batches instead of re-querying per SKU.
+            variant.product = product
         availabilities = [
             variant_availability(variant)
-            for variant in product.variants.all()
+            for variant in variants
         ]
         has_available_variants = any(
             availability.is_available
@@ -71,12 +118,15 @@ def product_list(request):
         else:
             availability_label = "Sold Out"
 
-        catalog_items.append({
-            "product": product,
-            "availability_label": availability_label,
-            "has_available_variants": has_available_variants,
-            "is_preorder": is_preorder,
-        })
+        catalog_items.append(
+            {
+                "product": product,
+                "availability_label": availability_label,
+                "has_available_variants": has_available_variants,
+                "is_preorder": is_preorder,
+                **_price_summary(product, variants),
+            }
+        )
 
     return render(request, "products/product_list.html", {
         "products": products,
@@ -92,16 +142,19 @@ def product_list(request):
 
 def product_detail(request, slug):
     product = get_object_or_404(
-        Product.objects.prefetch_related("variants"),
+        _catalog_queryset(),
         slug=slug,
         is_active=True,
     )
+    variants = list(product.variants.all())
+    for variant in variants:
+        variant.product = product
     variant_options = [
         {
             "variant": variant,
             "availability": variant_availability(variant),
         }
-        for variant in product.variants.all()
+        for variant in variants
     ]
     preorder_batch = next(
         (
@@ -130,4 +183,5 @@ def product_detail(request, slug):
         "preorder_batch": preorder_batch,
         "has_available_variants": has_available_variants,
         "availability_label": availability_label,
+        **_price_summary(product, variants),
     })

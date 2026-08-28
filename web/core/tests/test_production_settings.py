@@ -72,10 +72,7 @@ class PublicSettingsProcessTests(SimpleTestCase):
                 "SECURE_HSTS_SECONDS": "3600",
                 "SECURE_HSTS_INCLUDE_SUBDOMAINS": "false",
                 "SECURE_HSTS_PRELOAD": "false",
-                "GOOGLE_CLIENT_ID": "",
-                "GOOGLE_CLIENT_SECRET": "",
                 "STRIPE_SECRET_KEY": "",
-                "STRIPE_PUBLISHABLE_KEY": "",
                 "STRIPE_WEBHOOK_SECRET": "",
             }
         )
@@ -83,7 +80,6 @@ class PublicSettingsProcessTests(SimpleTestCase):
             environment.update(
                 {
                     "STRIPE_SECRET_KEY": "sk_test_public_settings_boundary",
-                    "STRIPE_PUBLISHABLE_KEY": "pk_test_public_settings_boundary",
                     "STRIPE_WEBHOOK_SECRET": "whsec_public_settings_boundary",
                 }
             )

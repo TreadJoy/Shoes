@@ -12,7 +12,8 @@ if not settings.IS_COMMERCE_MODE:
     raise SkipTest("Cart and checkout tests require commerce mode.")
 
 from web.cart.models import Cart
-from web.orders.models import Order
+from web.orders.models import CheckoutAttempt, Order
+from web.orders.services import reconcile_retrieved_checkout_session
 from web.products.models import (
     PreorderBatch,
     PreorderVariantAllocation,
@@ -181,7 +182,7 @@ class PreorderCartAndCheckoutTests(TestCase):
         self.batch.status = PreorderBatch.Status.PAUSED
         self.batch.save()
 
-        with patch("web.orders.views.stripe.checkout.Session.create") as create:
+        with patch("web.orders.views.create_stripe_checkout_session") as create:
             response = self.client.post(
                 reverse("orders:checkout"),
                 self.checkout_data(),
@@ -200,7 +201,7 @@ class PreorderCartAndCheckoutTests(TestCase):
         )
 
         with patch(
-            "web.orders.views.stripe.checkout.Session.create",
+            "web.orders.views.create_stripe_checkout_session",
             return_value=checkout_session,
         ) as create:
             response = self.client.post(
@@ -213,31 +214,61 @@ class PreorderCartAndCheckoutTests(TestCase):
             checkout_session.url,
             fetch_redirect_response=False,
         )
-        order = Order.objects.get()
-        item = order.items.get()
-        self.assertEqual(order.fulfillment_type, Order.FulfillmentType.PREORDER)
-        self.assertEqual(order.preorder_batch, self.batch)
-        self.assertEqual(order.estimated_tender_start, date(2026, 10, 12))
-        self.assertEqual(item.preorder_batch_code, "LAUNCH-2026")
-        self.assertEqual(item.estimated_tender_end, date(2026, 10, 23))
+        self.assertFalse(Order.objects.exists())
+        attempt = CheckoutAttempt.objects.get()
+        quote_line = attempt.quote_lines.get()
+        self.assertEqual(
+            quote_line.fulfillment_type, Order.FulfillmentType.PREORDER
+        )
+        self.assertEqual(quote_line.preorder_batch, self.batch)
+        self.assertEqual(quote_line.estimated_tender_start, date(2026, 10, 12))
+        self.assertEqual(quote_line.preorder_batch_code, "LAUNCH-2026")
+        self.assertEqual(quote_line.estimated_tender_end, date(2026, 10, 23))
         stripe_line = create.call_args.kwargs["line_items"][0]
         self.assertIn(
             "estimated to ship",
             stripe_line["price_data"]["product_data"]["description"],
         )
 
-        original_start = order.estimated_tender_start
-        original_end = item.estimated_tender_end
+        original_start = quote_line.estimated_tender_start
+        original_end = quote_line.estimated_tender_end
         self.batch.estimated_tender_start = date(2026, 11, 2)
         self.batch.estimated_tender_end = date(2026, 11, 13)
         self.batch.save()
-        order.refresh_from_db()
-        item.refresh_from_db()
+        reconcile_retrieved_checkout_session({
+            "id": attempt.stripe_checkout_session_id,
+            "client_reference_id": str(attempt.id),
+            "payment_status": "paid",
+            "payment_intent": "pi_preorder_snapshot",
+            "mode": "payment",
+            "livemode": False,
+            "amount_subtotal": 10000,
+            "amount_total": 10000,
+            "currency": "usd",
+            "metadata": {
+                "checkout_attempt_id": str(attempt.id),
+                "expected_amount": "10000",
+                "currency": "usd",
+            },
+            "shipping_details": {
+                "name": "Preorder Customer",
+                "address": {
+                    "line1": "100 Test Street",
+                    "city": "Chicago",
+                    "state": "IL",
+                    "postal_code": "60601",
+                    "country": "US",
+                },
+            },
+            "customer_details": {"email": "preorder@example.com"},
+        })
+        order = Order.objects.get()
+        item = order.items.get()
         self.assertEqual(order.estimated_tender_start, original_start)
         self.assertEqual(item.estimated_tender_end, original_end)
 
         confirmation = self.client.get(
-            reverse("orders:order_success", args=[order.pk])
+            reverse("orders:checkout_success", args=[attempt.pk])
         )
         self.assertContains(confirmation, "Preorder")
         self.assertContains(confirmation, "Oct 12")

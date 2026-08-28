@@ -1,5 +1,9 @@
 # TreadJoy Homepage Implementation Decisions
 
+Historical snapshot: decisions and implementation state recorded on 2026-08-18
+at commit `6a8c2b10ea9df7409f9aa16064cd737256975599`. Current code and approved
+policy take precedence where they differ.
+
 Last updated: 2026-08-18
 
 Figma workspace: <https://www.figma.com/design/VPcb3JwUkrp3Yrd85tPjYp>

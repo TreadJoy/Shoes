@@ -1,5 +1,10 @@
 # TreadJoy Homepage Stage Handoff
 
+Historical snapshot: evidence captured on 2026-08-18 at commit
+`6a8c2b10ea9df7409f9aa16064cd737256975599`. Re-run the acceptance checks
+against the current release candidate; this document is not current launch
+approval.
+
 Status: implementation and agent-controlled Chrome preflight complete; owner
 acceptance and Figma reconciliation pending.
 

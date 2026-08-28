@@ -1,3 +1,4 @@
+from datetime import datetime, timezone as datetime_timezone
 from decimal import Decimal
 import stripe
 import json
@@ -14,31 +15,45 @@ from django.http import HttpResponse
 from django.utils import timezone
 from django.views.decorators.csrf import csrf_exempt
 
-from web.cart.views import get_or_create_cart
-from web.products.services import (
-    AvailabilityError,
-    validate_cart_items_for_checkout,
-)
+from web.cart.services import get_or_create_cart
+from web.products.services import AvailabilityError
 
 from .forms import CheckoutForm
 from .models import (
+    CheckoutAttempt,
     Order,
-    OrderItem,
     OrderStatusEvent,
-    ShippingAddress,
     Payment,
     StripeEvent
 )
 from .services import (
     UnmatchedRefundPaymentError,
     allocate_inventory_for_paid_order,
+    commit_attempt_reservations,
+    create_checkout_attempt,
+    CheckoutReconciliationResult,
+    reconcile_retrieved_checkout_session,
     reconcile_paid_order_cart,
+    release_attempt_reservations,
+    retrieve_checkout_session,
     synchronize_refund,
 )
 
-stripe.api_key = settings.STRIPE_SECRET_KEY
-
 logger = logging.getLogger(__name__)
+
+
+def create_stripe_checkout_session(*, idempotency_key, **params):
+    """Create hosted Checkout through an instance-scoped Stripe client."""
+    client = stripe.StripeClient(settings.STRIPE_SECRET_KEY)
+    return client.v1.checkout.sessions.create(
+        params,
+        options={"idempotency_key": idempotency_key},
+    )
+
+
+def retrieve_stripe_checkout_session(session_id):
+    """Retrieve authoritative Checkout state from Stripe for reconciliation."""
+    return retrieve_checkout_session(session_id)
 
 def create_order_status_event(order, from_status, to_status, note=""):
 
@@ -74,20 +89,26 @@ def mark_order_as_paid(
         reconcile_paid_order_cart(order)
         return False
 
+    expected_total_cents = int(order.grand_total * Decimal("100"))
+    expected_subtotal_cents = int(order.subtotal * Decimal("100"))
+    if (
+        amount_total_cents != expected_total_cents
+        or (
+            amount_subtotal_cents is not None
+            and amount_subtotal_cents != expected_subtotal_cents
+        )
+        or currency.lower() != "usd"
+    ):
+        raise ValueError("Legacy payment does not match the order quote.")
+
     previous_status = order.status
 
     order.status = Order.Status.PAID
-    order.grand_total = Decimal(amount_total_cents or 0) / Decimal("100")
 
     update_fields = [
         "status",
-        "grand_total",
         "updated_at",
     ]
-
-    if amount_subtotal_cents is not None:
-        order.subtotal = Decimal(amount_subtotal_cents or 0) / Decimal("100")
-        update_fields.append("subtotal")
 
     if checkout_session_id:
         order.stripe_checkout_session_id = checkout_session_id
@@ -114,11 +135,20 @@ def mark_order_as_paid(
             "amount": order.grand_total,
             "currency": currency,
             "status": Payment.Status.SUCCEEDED,
-            "raw_response": raw_response or {},
+            # Provider payloads are intentionally not persisted. Reconciliation
+            # fields above are the durable audit record.
+            "raw_response": {},
         },
     )
 
-    allocate_inventory_for_paid_order(order)
+    allocation = allocate_inventory_for_paid_order(order)
+    if order.checkout_attempt_id:
+        commit_attempt_reservations(
+            order.checkout_attempt,
+            review_required=(
+                allocation.status != allocation.Status.ALLOCATED
+            ),
+        )
     reconcile_paid_order_cart(order)
 
     return True
@@ -139,162 +169,99 @@ def checkout(request):
             })
 
         try:
-            with transaction.atomic():
-                cart_items = list(
-                    cart.items.select_related(
-                        "variant",
-                        "variant__product",
-                    )
-                )
-
-                if not cart_items:
-                    messages.error(request, "Your cart is empty.")
-                    return redirect("cart:cart_detail")
-
-                cart_availability = validate_cart_items_for_checkout(
-                    cart_items
-                )
-                preorder_batch = cart_availability.preorder_batch
-
-                order_line_total = sum(
-                    cart_item.line_total()
-                    for cart_item in cart_items
-                )
-
-                shipping_address = ShippingAddress.objects.create(
-                    user=request.user if request.user.is_authenticated else None,
-                    full_name=form.cleaned_data["full_name"],
-                    email=form.cleaned_data["email"],
-                    address_line_1=form.cleaned_data["address_line_1"],
-                    address_line_2=form.cleaned_data["address_line_2"],
-                    city=form.cleaned_data["city"],
-                    state=form.cleaned_data["state"],
-                    postal_code=form.cleaned_data["postal_code"],
-                )
-
-                order = Order.objects.create(
-                    user=request.user if request.user.is_authenticated else None,
-                    shipping_address=shipping_address,
-                    source_cart=cart,
-                    email=shipping_address.email,
-                    full_name=shipping_address.full_name,
-                    status=Order.Status.PENDING_PAYMENT,
-                    fulfillment_type=cart_availability.fulfillment_type,
-                    preorder_batch=preorder_batch,
-                    estimated_tender_start=(
-                        preorder_batch.estimated_tender_start
-                        if preorder_batch is not None
-                        else None
-                    ),
-                    estimated_tender_end=(
-                        preorder_batch.estimated_tender_end
-                        if preorder_batch is not None
-                        else None
-                    ),
-                    subtotal=order_line_total,
-                    shipping_total=Decimal("0.00"),
-                    tax_total=Decimal("0.00"),
-                    discount_total=Decimal("0.00"),
-                    grand_total=order_line_total,
-                )
-                create_order_status_event(
-                    order=order,
-                    from_status="",
-                    to_status=Order.Status.PENDING_PAYMENT,
-                    note="Order created at checkout."
-                )
-
-                checkout_order_ids = request.session.get("checkout_order_ids", [])
-
-                if order.id not in checkout_order_ids:
-                    checkout_order_ids.append(order.id)
-
-                request.session["checkout_order_ids"] = checkout_order_ids
-                request.session.modified = True
-
-                for cart_item in cart_items:
-                    unit_price = cart_item.unit_price()
-                    line_total = cart_item.line_total()
-                    variant = cart_item.variant
-
-                    OrderItem.objects.create(
-                        order=order,
-                        product=variant.product,
-                        variant=variant,
-                        fulfillment_type=cart_availability.fulfillment_type,
-                        preorder_batch=preorder_batch,
-                        preorder_batch_code=(
-                            preorder_batch.code
-                            if preorder_batch is not None
-                            else ""
-                        ),
-                        estimated_tender_start=(
-                            preorder_batch.estimated_tender_start
-                            if preorder_batch is not None
-                            else None
-                        ),
-                        estimated_tender_end=(
-                            preorder_batch.estimated_tender_end
-                            if preorder_batch is not None
-                            else None
-                        ),
-                        product_name=variant.product.name,
-                        sku=variant.sku,
-                        size=variant.size,
-                        color=variant.color,
-                        unit_price=unit_price,
-                        quantity=cart_item.quantity,
-                        line_total=line_total,
-                    )
-
-                # Do not reduce inventory here yet.
-                # Do not clear the cart here yet.
-                # Stripe webhook will handle that after payment succeeds.
-
+            checkout_attempt = create_checkout_attempt(
+                cart,
+                user=request.user,
+                email=form.cleaned_data["email"],
+                eligibility_state=form.cleaned_data["state"],
+            )
         except (AvailabilityError, ValueError) as error:
             messages.error(request, str(error))
             return redirect("cart:cart_detail")
 
         success_url = request.build_absolute_uri(
-            reverse("orders:order_success", args=[order.id,])
+            reverse("orders:checkout_success", args=[checkout_attempt.id])
         )
 
         cancel_url = request.build_absolute_uri(
             reverse("cart:cart_detail")
         )
 
+        attempt_ids = request.session.get("checkout_attempt_ids", [])
+        attempt_id = str(checkout_attempt.id)
+        if attempt_id not in attempt_ids:
+            attempt_ids.append(attempt_id)
+        request.session["checkout_attempt_ids"] = attempt_ids[-20:]
+        request.session.modified = True
+
         try:
-            checkout_session = stripe.checkout.Session.create(
+            checkout_session = create_stripe_checkout_session(
                 mode="payment",
-                payment_method_types=["card"],
-                line_items=build_stripe_line_items(order),
+                line_items=build_stripe_line_items(checkout_attempt),
                 success_url=success_url,
                 cancel_url=cancel_url,
-                customer_email=order.email,
+                customer_email=checkout_attempt.email,
+                client_reference_id=str(checkout_attempt.id),
+                expires_at=int(checkout_attempt.expires_at.timestamp()),
+                shipping_address_collection={"allowed_countries": ["US"]},
                 metadata={
-                    "order_id": str(order.id),
+                    "checkout_attempt_id": str(checkout_attempt.id),
+                    "expected_amount": str(
+                        int(checkout_attempt.grand_total * Decimal("100"))
+                    ),
+                    "currency": checkout_attempt.currency,
                 },
                 payment_intent_data={
                     "metadata": {
-                        "order_id": str(order.id),
+                        "checkout_attempt_id": str(checkout_attempt.id),
+                        "expected_amount": str(
+                            int(checkout_attempt.grand_total * Decimal("100"))
+                        ),
+                        "currency": checkout_attempt.currency,
                     }
                 },
+                integration_identifier="treadjoy_checkout_xqnvkzpr",
                 automatic_tax={
                     "enabled": False,
                 },
+                idempotency_key=checkout_attempt.idempotency_key,
             )
         except stripe.error.StripeError as error:
-
+            # Network/time-out failures are ambiguous: keep the reservation and
+            # idempotency key so the same attempt can be retried safely. Release
+            # only when Stripe definitively rejected session creation.
+            ambiguous_errors = (
+                stripe.error.APIConnectionError,
+                stripe.error.APIError,
+                stripe.error.RateLimitError,
+            )
+            if not isinstance(error, ambiguous_errors):
+                release_attempt_reservations(checkout_attempt)
             messages.error(
                 request,
                 "Payment checkout failed. Please try again.",
             )
             return redirect("cart:cart_detail")
 
-        order.stripe_checkout_session_id = checkout_session.id
-        order.save(update_fields=["stripe_checkout_session_id"])
-
-        request.session["completed_order_id"] = order.id
+        with transaction.atomic():
+            checkout_attempt = CheckoutAttempt.objects.select_for_update().get(
+                pk=checkout_attempt.pk
+            )
+            if (
+                checkout_attempt.stripe_checkout_session_id
+                and checkout_attempt.stripe_checkout_session_id != checkout_session.id
+            ):
+                release_attempt_reservations(
+                    checkout_attempt,
+                    status=CheckoutAttempt.Status.REVIEW_REQUIRED,
+                )
+                messages.error(request, "Payment checkout requires staff review.")
+                return redirect("cart:cart_detail")
+            checkout_attempt.status = CheckoutAttempt.Status.STRIPE_CREATED
+            checkout_attempt.stripe_checkout_session_id = checkout_session.id
+            checkout_attempt.save(
+                update_fields=["status", "stripe_checkout_session_id", "updated_at"]
+            )
 
         return redirect(checkout_session.url)
 
@@ -302,6 +269,54 @@ def checkout(request):
         "cart": cart,
         "form": form,
     })
+
+
+def checkout_success(request, attempt_id):
+    attempt = get_object_or_404(CheckoutAttempt, pk=attempt_id)
+    session_attempt_ids = request.session.get("checkout_attempt_ids", [])
+    user_owns_attempt = (
+        request.user.is_authenticated and attempt.user_id == request.user.id
+    )
+    guest_owns_attempt = (
+        attempt.user_id is None and str(attempt.id) in session_attempt_ids
+    )
+    if not user_owns_attempt and not guest_owns_attempt:
+        raise PermissionDenied
+
+    result = None
+    if request.GET.get("check") == "1" and attempt.stripe_checkout_session_id:
+        try:
+            result = handle_checkout_session_completed(
+                {"id": attempt.stripe_checkout_session_id}
+            )
+        except stripe.error.StripeError:
+            logger.info(
+                "Stripe status check unavailable for checkout attempt %s.",
+                attempt.id,
+            )
+    attempt.refresh_from_db()
+    order = (
+        Order.objects.select_related("payment")
+        .prefetch_related("items__variant")
+        .filter(checkout_attempt=attempt)
+        .first()
+    )
+    payment = getattr(order, "payment", None) if order else None
+    return render(
+        request,
+        "orders/order_success.html",
+        {
+            "attempt": attempt,
+            "order": order,
+            "is_paid": bool(order and order.status == Order.Status.PAID),
+            "is_refunded": bool(order and order.status == Order.Status.REFUNDED),
+            "is_review_required": bool(
+                order and order.status == Order.Status.REVIEW_REQUIRED
+            ),
+            "payment": payment,
+            "reconciliation_result": result,
+        },
+    )
 def order_success(request, order_id):
     order = get_object_or_404(
         Order.objects
@@ -324,6 +339,19 @@ def order_success(request, order_id):
 
     if not user_owns_order and not guest_session_owns_order:
         raise PermissionDenied
+
+    if (
+        request.GET.get("check") == "1"
+        and order.stripe_checkout_session_id
+        and order.status == Order.Status.PENDING_PAYMENT
+    ):
+        try:
+            handle_checkout_session_completed(
+                {"id": order.stripe_checkout_session_id}
+            )
+        except stripe.error.StripeError:
+            logger.info("Stripe status check unavailable for order %s.", order.id)
+        order.refresh_from_db()
 
     payment = getattr(order, "payment", None)
     is_paid = (
@@ -378,13 +406,10 @@ def order_detail(request, order_id):
     )
 
 
-def build_stripe_line_items(order):
+def build_stripe_line_items(attempt):
     line_items = []
 
-    for item in order.items.select_related(
-        "variant",
-        "variant__product",
-    ):
+    for item in attempt.quote_lines.all():
         product_data = {
             "name": item.product_name,
             "metadata": {
@@ -407,7 +432,7 @@ def build_stripe_line_items(order):
 
         line_items.append({
             "price_data": {
-                "currency": "usd",
+                "currency": attempt.currency,
                 "product_data": product_data,
                 "unit_amount": int(item.unit_price * 100),
             },
@@ -450,11 +475,30 @@ def stripe_webhook(request):
     )
 
     with transaction.atomic():
+        event_object = event_data.get("data", {}).get("object") or {}
+        event_created = event_data.get("created")
+        provider_created_at = (
+            datetime.fromtimestamp(event_created, tz=datetime_timezone.utc)
+            if event_created
+            else None
+        )
+        amount_cents = (
+            event_object.get("amount_total")
+            or event_object.get("amount_received")
+            or event_object.get("amount")
+        )
         stripe_event, created = StripeEvent.objects.get_or_create(
             stripe_event_id=stripe_event_id,
             defaults={
                 "event_type": event_type,
-                "raw_event": event_data,
+                "provider_created_at": provider_created_at,
+                "api_version": event_data.get("api_version") or "",
+                "amount": (
+                    Decimal(amount_cents) / Decimal("100")
+                    if amount_cents is not None
+                    else None
+                ),
+                "currency": event_object.get("currency") or "",
             },
         )
 
@@ -467,15 +511,19 @@ def stripe_webhook(request):
 
         if event_type == "checkout.session.completed":
             session = event_data["data"]["object"]
-            handle_checkout_session_completed(session)
-
-        elif event_type == "payment_intent.succeeded":
-            payment_intent = event_data["data"]["object"]
-            handle_payment_intent_succeeded(payment_intent)
+            reconciliation = handle_checkout_session_completed(session)
+            stripe_event.error_code = reconciliation.reason if reconciliation else ""
 
         elif event_type == "checkout.session.async_payment_succeeded":
             session = event_data["data"]["object"]
-            handle_checkout_session_completed(session)
+            reconciliation = handle_checkout_session_completed(session)
+            stripe_event.error_code = reconciliation.reason if reconciliation else ""
+
+        elif event_type in {
+            "checkout.session.expired",
+            "checkout.session.async_payment_failed",
+        }:
+            handle_checkout_session_expired(event_data["data"]["object"])
 
         elif event_type in [
             "refund.created",
@@ -488,14 +536,22 @@ def stripe_webhook(request):
                 synchronize_refund(refund, event_type=event_type)
             except UnmatchedRefundPaymentError as error:
                 logger.error("Unable to match Stripe refund: %s", error)
+                stripe_event.processing_attempts += 1
+                stripe_event.error_code = "unmatched_refund_payment"
+                stripe_event.save(
+                    update_fields=["processing_attempts", "error_code"]
+                )
                 return HttpResponse(status=500)
 
+        stripe_event.processing_attempts += 1
         stripe_event.processed = True
         stripe_event.processed_at = timezone.now()
         stripe_event.save(
             update_fields=[
+                "processing_attempts",
                 "processed",
                 "processed_at",
+                "error_code",
             ]
         )
 
@@ -510,58 +566,53 @@ def get_order_id_from_metadata(stripe_object):
 
     return int(order_id)
 
+
 def handle_checkout_session_completed(session):
-    logger.info("handle_checkout_session_completed called.")
-    logger.info("Checkout session metadata: %s", session.get("metadata"))
+    session = retrieve_stripe_checkout_session(session.get("id", ""))
+    session = session.to_dict_recursive() if hasattr(session, "to_dict_recursive") else session
+    result = reconcile_retrieved_checkout_session(session)
+    if result.state != "legacy":
+        return result
 
+    # Compatibility for historical pending orders created before CheckoutAttempt.
     order_id = get_order_id_from_metadata(session)
+    order = Order.objects.filter(pk=order_id).first() if order_id else None
+    payment_intent_id = session.get("payment_intent") or ""
+    if isinstance(payment_intent_id, dict):
+        payment_intent_id = payment_intent_id.get("id", "")
+    expected_cents = int(order.grand_total * Decimal("100")) if order else None
+    if (
+        order is not None
+        and order.status == Order.Status.PENDING_PAYMENT
+        and session.get("payment_status") == "paid"
+        and session.get("amount_total") == expected_cents
+        and (session.get("currency") or "").lower() == "usd"
+        and payment_intent_id
+    ):
+        mark_order_as_paid(
+            order,
+            amount_total_cents=expected_cents,
+            amount_subtotal_cents=int(order.subtotal * Decimal("100")),
+            payment_intent_id=payment_intent_id,
+            checkout_session_id=session.get("id", "") or "",
+            currency="usd",
+            status_note="Legacy Stripe Checkout Session reconciled as paid.",
+        )
+        return CheckoutReconciliationResult(state="paid", order=order)
+    return result
 
-    if order_id is None:
-        logger.warning("No order_id found on checkout session metadata.")
-        return
 
-    order = (
-        Order.objects
-        .select_for_update()
-        .prefetch_related("items__variant")
-        .get(id=order_id)
+def handle_checkout_session_expired(session):
+    session_id = session.get("id", "")
+    attempt = (
+        CheckoutAttempt.objects.select_for_update()
+        .filter(stripe_checkout_session_id=session_id)
+        .first()
     )
-
-    mark_order_as_paid(
-        order,
-        amount_total_cents=session.get("amount_total") or 0,
-        amount_subtotal_cents=session.get("amount_subtotal"),
-        payment_intent_id=session.get("payment_intent", "") or "",
-        checkout_session_id=session.get("id", "") or "",
-        currency=session.get("currency", "usd"),
-        raw_response=session,
-        status_note="Stripe checkout session completed.",
-    )
-
-
-def handle_payment_intent_succeeded(payment_intent):
-    logger.info("handle_payment_intent_succeeded called.")
-    logger.info("Payment intent metadata: %s", payment_intent.get("metadata"))
-
-    order_id = get_order_id_from_metadata(payment_intent)
-
-    if order_id is None:
-        logger.warning("No order_id found on payment intent metadata.")
-        return
-
-    order = (
-        Order.objects
-        .select_for_update()
-        .prefetch_related("items__variant")
-        .get(id=order_id)
-    )
-
-    mark_order_as_paid(
-        order,
-        amount_total_cents=payment_intent.get("amount_received") or 0,
-        payment_intent_id=payment_intent.get("id", "") or "",
-        checkout_session_id=order.stripe_checkout_session_id or "",
-        currency=payment_intent.get("currency", "usd"),
-        raw_response=payment_intent,
-        status_note="Stripe payment intent succeeded.",
-    )
+    if attempt is not None and not Order.objects.filter(
+        checkout_attempt=attempt
+    ).exists():
+        release_attempt_reservations(
+            attempt,
+            status=CheckoutAttempt.Status.EXPIRED,
+        )

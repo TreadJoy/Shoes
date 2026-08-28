@@ -1,5 +1,5 @@
-from django.conf import settings
 from django.db import models
+from django.conf import settings
 
 class SurveyResponse(models.Model):
 
@@ -48,6 +48,4 @@ class SurveyResponse(models.Model):
 
 
     def __str__(self):
-        if self.user:
-            return f"Survey response from {self.user}"
         return f"Survey Response #{self.pk}"

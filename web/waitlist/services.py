@@ -1,4 +1,9 @@
-from .models import WaitlistSignup
+from .models import (
+    WAITLIST_SOURCE_HOMEPAGE,
+    WAITLIST_SOURCE_PAGE,
+    WAITLIST_SOURCE_UNKNOWN,
+    WaitlistSignup,
+)
 
 
 def create_waitlist_signup(*, email, first_name="", source=""):
@@ -7,6 +12,15 @@ def create_waitlist_signup(*, email, first_name="", source=""):
         email=email.strip().lower(),
         defaults={
             "first_name": first_name.strip(),
-            "source": source.strip(),
+            "source": (
+                source.strip()
+                if source.strip()
+                in {
+                    WAITLIST_SOURCE_HOMEPAGE,
+                    WAITLIST_SOURCE_PAGE,
+                    WAITLIST_SOURCE_UNKNOWN,
+                }
+                else WAITLIST_SOURCE_UNKNOWN
+            ),
         },
     )

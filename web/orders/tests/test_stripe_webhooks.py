@@ -36,7 +36,8 @@ class StripePaymentWebhookTests(TestCase):
             email="customer@example.com",
             status=Order.Status.PENDING_PAYMENT,
             subtotal=Decimal("100.00"),
-            grand_total=Decimal("100.00"),
+            shipping_total=Decimal("20.00"),
+            grand_total=Decimal("120.00"),
         )
         OrderItem.objects.create(
             order=self.order,
@@ -59,6 +60,7 @@ class StripePaymentWebhookTests(TestCase):
                 "object": {
                     "id": "cs_test_completed",
                     "payment_intent": "pi_test_completed",
+                    "payment_status": "paid",
                     "amount_subtotal": 10000,
                     "amount_total": 12000,
                     "currency": "usd",
@@ -91,7 +93,10 @@ class StripePaymentWebhookTests(TestCase):
         with patch(
             "web.orders.views.stripe.Webhook.construct_event",
             return_value=event,
-        ) as construct_event:
+        ) as construct_event, patch(
+            "web.orders.views.retrieve_stripe_checkout_session",
+            return_value=event["data"]["object"],
+        ):
             response = self.client.post(
                 reverse("orders:stripe_webhook"),
                 data=payload,
@@ -144,6 +149,8 @@ class StripePaymentWebhookTests(TestCase):
         self.assertEqual(allocation_item.variant_available_after, 8)
         self.assertTrue(stripe_event.processed)
         self.assertIsNotNone(stripe_event.processed_at)
+        self.assertIsNone(stripe_event.raw_event)
+        self.assertEqual(payment.raw_response, {})
 
     def test_duplicate_event_is_processed_only_once(self):
         event = self.checkout_completed_event()

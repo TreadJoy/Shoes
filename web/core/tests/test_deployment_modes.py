@@ -18,6 +18,10 @@ from django.conf import settings
 from django.urls import NoReverseMatch, Resolver404, resolve, reverse
 
 
+assert settings.ACCOUNT_LOGIN_METHODS == {"username"}
+assert settings.ACCOUNT_EMAIL_VERIFICATION == "optional"
+
+
 if settings.TREADJOY_MODE == "commerce":
     assert settings.IS_COMMERCE_MODE
     assert apps.is_installed("web.cart")
@@ -41,12 +45,11 @@ if settings.TREADJOY_MODE == "commerce":
         else:
             raise AssertionError(f"{removed_route_name} remains reversible.")
     assert settings.STRIPE_SECRET_KEY == "sk_test_mode_boundary"
-    assert settings.STRIPE_PUBLISHABLE_KEY == "pk_test_mode_boundary"
     assert settings.STRIPE_WEBHOOK_SECRET == "whsec_mode_boundary"
 
     import stripe
 
-    assert stripe.api_key == settings.STRIPE_SECRET_KEY
+    assert stripe.api_key is None
 else:
     assert settings.TREADJOY_MODE == "research"
     assert not settings.IS_COMMERCE_MODE
@@ -97,8 +100,9 @@ else:
             raise AssertionError(f"{route_path} resolves in research mode.")
 
     assert not hasattr(settings, "STRIPE_SECRET_KEY")
-    assert not hasattr(settings, "STRIPE_PUBLISHABLE_KEY")
     assert not hasattr(settings, "STRIPE_WEBHOOK_SECRET")
+    assert "allauth.socialaccount" not in settings.INSTALLED_APPS
+    assert "allauth.socialaccount.providers.google" not in settings.INSTALLED_APPS
     assert "web.cart.models" not in sys.modules
     assert "web.orders.models" not in sys.modules
     assert "stripe" not in sys.modules
@@ -177,6 +181,52 @@ else:
 class DeploymentModeProcessTests(SimpleTestCase):
     project_root = Path(__file__).resolve().parents[3]
 
+    def test_bare_runserver_uses_safe_local_defaults(self):
+        environment = os.environ.copy()
+        for name in (
+            "TREADJOY_ENVIRONMENT",
+            "TREADJOY_MODE",
+            "SECRET_KEY",
+            "DB_NAME",
+            "DB_USER",
+            "DB_PASSWORD",
+            "DB_HOST",
+            "DB_PORT",
+            "TREADJOY_RUNSERVER_DEFAULTS",
+        ):
+            environment[name] = ""
+        environment["STRIPE_SECRET_KEY"] = ""
+        environment["STRIPE_WEBHOOK_SECRET"] = ""
+        environment["PYTHONPATH"] = str(self.project_root)
+        result = subprocess.run(
+            [
+                sys.executable,
+                "-c",
+                "import os, sys; os.environ['DJANGO_SETTINGS_MODULE'] = 'Shoes.settings'; "
+                "sys.argv = ['manage.py', 'runserver']; "
+                "from manage import _configure_runserver_defaults; "
+                "_configure_runserver_defaults(); import django; django.setup(); "
+                "from django.conf import settings; "
+                "assert settings.TREADJOY_ENVIRONMENT == 'local'; "
+                "assert settings.TREADJOY_MODE == 'research'; "
+                "assert settings.DATABASES['default']['ENGINE'] == "
+                "'django.db.backends.sqlite3'",
+            ],
+            # Run outside the repository so an ignored developer .env file
+            # cannot affect this genuinely unconfigured startup check.
+            cwd="/tmp",
+            env=environment,
+            capture_output=True,
+            text=True,
+            timeout=30,
+            check=False,
+        )
+        self.assertEqual(
+            result.returncode,
+            0,
+            msg=f"stdout:\n{result.stdout}\nstderr:\n{result.stderr}",
+        )
+
     def environment_for(self, mode):
         environment = os.environ.copy()
         for name in list(environment):
@@ -197,7 +247,6 @@ class DeploymentModeProcessTests(SimpleTestCase):
                 "DB_HOST": "127.0.0.1",
                 "DB_PORT": "5432",
                 "STRIPE_SECRET_KEY": "",
-                "STRIPE_PUBLISHABLE_KEY": "",
                 "STRIPE_WEBHOOK_SECRET": "",
             }
         )
@@ -226,7 +275,6 @@ class DeploymentModeProcessTests(SimpleTestCase):
         environment.update(
             {
                 "STRIPE_SECRET_KEY": "sk_test_mode_boundary",
-                "STRIPE_PUBLISHABLE_KEY": "pk_test_mode_boundary",
                 "STRIPE_WEBHOOK_SECRET": "whsec_mode_boundary",
             }
         )
@@ -257,7 +305,6 @@ class DeploymentModeProcessTests(SimpleTestCase):
     def test_commerce_mode_requires_every_stripe_setting(self):
         stripe_settings = {
             "STRIPE_SECRET_KEY": "sk_test_mode_boundary",
-            "STRIPE_PUBLISHABLE_KEY": "pk_test_mode_boundary",
             "STRIPE_WEBHOOK_SECRET": "whsec_mode_boundary",
         }
 
@@ -319,7 +366,6 @@ class CISettingsProcessTests(SimpleTestCase):
                 "CI_DB_TEST_NAME": "treadjoy_ci_test",
                 "CI_STATIC_ROOT": "/tmp/treadjoy-ci-settings-static",
                 "STRIPE_SECRET_KEY": "",
-                "STRIPE_PUBLISHABLE_KEY": "",
                 "STRIPE_WEBHOOK_SECRET": "",
             }
         )

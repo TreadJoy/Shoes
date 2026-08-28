@@ -4,15 +4,28 @@ from threading import Barrier
 from unittest import skipUnless
 
 from django.db import close_old_connections, connection, connections
+from django.core.exceptions import ValidationError
 from django.test import TestCase, TransactionTestCase
 
 from web.orders.models import (
     InventoryAllocation,
     Order,
     OrderItem,
+    OrderItemComponentSnapshot,
 )
-from web.orders.services import allocate_inventory_for_paid_order
-from web.products.models import Product, ProductVariant
+from web.orders.services import (
+    allocate_inventory_for_paid_order,
+    snapshot_order_item_components,
+)
+from web.products.models import (
+    CompatibilityGroup,
+    Part,
+    PartType,
+    PartVariant,
+    Product,
+    ProductVariant,
+    ProductVariantComponent,
+)
 
 
 class InventoryTestDataMixin:
@@ -54,6 +67,72 @@ class InventoryTestDataMixin:
             line_total=self.product.price * quantity,
         )
 
+
+class OrderItemComponentSnapshotTests(TestCase):
+    def test_order_item_bom_is_snapshotted_and_immutable(self):
+        group = CompatibilityGroup.objects.create(
+            code="TJ-SNAPSHOT-GROUP",
+            name="Snapshot group",
+            internal_size_code="S090",
+            width_code="STD",
+        )
+        part_type = PartType.objects.create(code="SNAPSHOT", name="Snapshot")
+        part = Part.objects.create(
+            part_type=part_type,
+            code="SNAPSHOT-PART",
+            name="Snapshot part",
+        )
+        part_variant = PartVariant.objects.create(
+            part=part,
+            compatibility_group=group,
+            sku="TJ-SNAPSHOT-PART",
+        )
+        product = Product.objects.create(
+            name="Snapshot shoe",
+            slug="snapshot-shoe",
+            price=Decimal("100.00"),
+        )
+        variant = ProductVariant.objects.create(
+            product=product,
+            compatibility_group=group,
+            sku="TJ-SNAPSHOT-SHOE",
+            size="9",
+            color="Black",
+            stock_quantity=1,
+        )
+        ProductVariantComponent.objects.create(
+            product_variant=variant,
+            part_type=part_type,
+            part_variant=part_variant,
+            quantity=2,
+        )
+        order = Order.objects.create(
+            full_name="Snapshot customer",
+            status=Order.Status.PENDING_PAYMENT,
+            subtotal=Decimal("100.00"),
+            grand_total=Decimal("100.00"),
+        )
+        item = OrderItem.objects.create(
+            order=order,
+            product=product,
+            variant=variant,
+            product_name=product.name,
+            sku=variant.sku,
+            unit_price=Decimal("100.00"),
+            quantity=1,
+            line_total=Decimal("100.00"),
+        )
+
+        self.assertEqual(snapshot_order_item_components(item), 1)
+        snapshot = OrderItemComponentSnapshot.objects.get(order_item=item)
+        self.assertEqual(snapshot.part_type_code, "SNAPSHOT")
+        self.assertEqual(snapshot.part_code, "SNAPSHOT-PART")
+        self.assertEqual(snapshot.part_variant_sku, "TJ-SNAPSHOT-PART")
+        self.assertEqual(snapshot.quantity, 2)
+        with self.assertRaises(ValidationError):
+            snapshot.save()
+        with self.assertRaises(ValidationError):
+            snapshot.delete()
 
 class InventoryAllocationTests(InventoryTestDataMixin, TestCase):
     def test_insufficient_variant_rolls_back_all_stock_changes(self):

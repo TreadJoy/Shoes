@@ -67,6 +67,28 @@ class Product(models.Model):
         auto_now=True
     )
 
+    class Meta:
+        constraints = [
+            models.CheckConstraint(
+                check=models.Q(price__gte=0),
+                name="product_price_nonnegative",
+            ),
+            models.CheckConstraint(
+                check=(
+                    models.Q(sale_price__isnull=True)
+                    | models.Q(sale_price__gte=0)
+                ),
+                name="product_sale_price_nonnegative",
+            ),
+            models.CheckConstraint(
+                check=(
+                    models.Q(sale_price__isnull=True)
+                    | models.Q(sale_price__lte=models.F("price"))
+                ),
+                name="product_sale_price_not_above_price",
+            ),
+        ]
+
     def current_price(self):
         if self.sale_price is not None:
             return self.sale_price
@@ -80,9 +102,6 @@ class Product(models.Model):
             total=models.Sum("stock_quantity")
         )
         return result["total"] or 0
-
-    def is_in_stock(self):
-        return self.total_stock() > 0
 
     def __str__(self):
         return self.name
@@ -414,6 +433,21 @@ class ProductVariant(models.Model):
         blank=True,
         null=True,
     )
+    # Nullable during the expand/dual-read release. New and backfilled rows
+    # use this as the authoritative launch selling price; the legacy override
+    # fallback remains only for rows created before the backfill completes.
+    selling_price = models.DecimalField(
+        max_digits=8,
+        decimal_places=2,
+        blank=True,
+        null=True,
+    )
+    compare_at_price = models.DecimalField(
+        max_digits=8,
+        decimal_places=2,
+        blank=True,
+        null=True,
+    )
     is_active = models.BooleanField(
         default=True
     )
@@ -441,14 +475,59 @@ class ProductVariant(models.Model):
                 ),
                 name="variant_price_override_nonnegative",
             ),
+            models.CheckConstraint(
+                check=(
+                    models.Q(selling_price__gte=0)
+                    | models.Q(selling_price__isnull=True)
+                ),
+                name="variant_selling_price_nonnegative",
+            ),
+            models.CheckConstraint(
+                check=(
+                    models.Q(compare_at_price__gte=0)
+                    | models.Q(compare_at_price__isnull=True)
+                ),
+                name="variant_compare_at_price_nonnegative",
+            ),
+            models.CheckConstraint(
+                check=(
+                    models.Q(selling_price__isnull=True)
+                    | models.Q(compare_at_price__isnull=True)
+                    | models.Q(compare_at_price__gt=models.F("selling_price"))
+                ),
+                name="variant_compare_at_price_above_selling_price",
+            ),
         ]
         ordering = ["product", "color", "size"]
 
     def current_price(self):
+        if self.selling_price is not None:
+            return self.selling_price
+
         if self.price_override is not None:
             return self.price_override
 
         return self.product.current_price()
+
+    def compare_price(self):
+        if self.compare_at_price is not None:
+            return self.compare_at_price
+        effective_price = self.current_price()
+        return self.product.price if self.product.price > effective_price else None
+
+    def save(self, *args, **kwargs):
+        if self.selling_price is None and self.product_id:
+            product = getattr(self, "product", None)
+            if product is None:
+                product = Product.objects.get(pk=self.product_id)
+            self.selling_price = (
+                self.price_override
+                if self.price_override is not None
+                else product.current_price()
+            )
+            if self.compare_at_price is None and product.price > self.selling_price:
+                self.compare_at_price = product.price
+        return super().save(*args, **kwargs)
 
     def __str__(self):
         return (

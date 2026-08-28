@@ -349,3 +349,247 @@
 - Impact: no repository file changed during the failed attempt.
 - Resolution: inspected the current table and applied the license inventory,
   roadmap, and failure-log edits with exact, scoped anchors.
+
+## 2026-08-27 — Cleanup audit checks initially omitted required settings context
+
+- Attempted the first Django cleanup-audit check without explicitly setting
+  `TREADJOY_ENVIRONMENT`, and attempted the first isolated SQLite harness
+  without `DJANGO_SETTINGS_MODULE`.
+- Result: both processes stopped during settings initialization before running
+  an application check or test.
+- Impact: no repository, database, provider, or application state changed.
+- Resolution: reran with the explicit local environment/mode and with
+  `DJANGO_SETTINGS_MODULE=Shoes.settings`; the checks and isolated suites ran.
+
+## 2026-08-27 — Cleanup audit research harness inherited commerce Stripe values
+
+- Attempted the isolated research suite while the local `.env` still supplied
+  commerce Stripe variables.
+- Result: research settings failed closed before the suite, as designed.
+- Impact: no tests, provider calls, database writes, or repository changes
+  occurred in that attempt.
+- Resolution: explicitly overrode all three known Stripe variables with empty
+  process values; the installed-app research suite then passed.
+
+## 2026-08-27 — Cleanup audit local PostgreSQL suite lacked database-creation privilege
+
+- Attempted to run the cleanup baseline through Django's normal PostgreSQL test
+  database creation.
+- Result: the restricted local role cannot create the test database.
+- Impact: no database or repository state changed; the isolated SQLite suites
+  do not prove PostgreSQL row-lock behavior.
+- Resolution: retained required GitHub PostgreSQL CI and its explicit
+  concurrency classes as the durable locking authority; do not grant the local
+  runtime role `CREATEDB` to bypass the restriction.
+
+## 2026-08-28 — Phase 0 aggregate preflight was blocked by the default sandbox
+
+- Attempted the read-only cleanup preflight against PostgreSQL on local
+  loopback from the default workspace sandbox.
+- Result: the sandbox denied the connection before any query reached the
+  database.
+- Impact: no database or repository state changed and no record value was
+  printed.
+- Resolution: reran the same aggregate-only ORM command through the approved
+  local process boundary. It returned counts only and made no writes.
+
+## 2026-08-28 — Phase 0 README replacement combined incompatible patch operations
+
+- Attempted to replace `README.md` with one patch containing both delete and
+  add operations for the same path.
+- Result: patch validation rejected the complete operation before writing.
+- Impact: `README.md` and every other repository file remained unchanged by
+  that attempt.
+- Resolution: applied the reviewed replacement as separate delete and add
+  patches, then included the file in the documentation validation pass.
+
+## 2026-08-28 — Phase 0 disposable collectstatic harness omitted the settings module
+
+- Attempted isolated static collection after setting a disposable
+  `STATIC_ROOT`, but the direct Python harness had not yet defined
+  `DJANGO_SETTINGS_MODULE`.
+- Result: Django stopped before setup or static collection.
+- Impact: no static file, repository path, or application data changed.
+- Resolution: reran with `DJANGO_SETTINGS_MODULE=Shoes.settings`; 134 files were
+  collected in a disposable directory that was removed on process exit.
+
+## 2026-08-28 — Phase 0 dependency audit assumed the project venv contained dev tools
+
+- Attempted both lock audits through `.venv/bin/pip-audit`.
+- Result: the executable was absent because the current project virtual
+  environment contains runtime packages rather than the complete development
+  lock.
+- Impact: no package, lock file, repository file, or environment changed.
+- Resolution: used the existing isolated CPython 3.12 audit environments
+  created by the dependency/settings work instead of mutating the project
+  virtual environment.
+
+## 2026-08-28 — Phase 0 isolated dependency audit was network-blocked
+
+- Attempted runtime and development lock audits from the default sandbox.
+- Result: each audit's disposable installer could not upgrade its packaging
+  tools because public package metadata was unreachable.
+- Impact: no dependency, lock, repository, or application data changed.
+- Resolution: reran both exact hash-locked audits through the approved public
+  metadata boundary; both reported no known vulnerabilities.
+
+## 2026-08-28 — Phase 1 runtime lock compile used an unwritable cache
+
+- Attempted the first runtime `pip-compile` run with a cache path that was not
+  writable by the process.
+- Result: compilation stopped before changing the lock file.
+- Impact: no dependency, repository, or application state changed.
+- Resolution: reran with a disposable writable cache and verified the generated
+  runtime lock.
+
+## 2026-08-28 — Phase 1 development lock compile was network-blocked in the sandbox
+
+- Attempted to regenerate `requirements-dev.txt` from the default sandbox.
+- Result: PyPI metadata resolution failed with a network name-resolution error
+  before the lock file was written.
+- Impact: no dependency, repository, or application state changed in that
+  attempt.
+- Resolution: reran through the approved public metadata boundary, installed
+  the resulting hash-locked lock in a disposable CPython 3.12 environment,
+  and regenerated the license inventory.
+
+## 2026-08-28 — Phase 1 release-content check could not reach local PostgreSQL
+
+- Attempted the commerce release-content command after the template and auth
+  cleanup.
+- Result: the default sandbox denied the local PostgreSQL connection before the
+  command could inspect catalog rows.
+- Impact: no database, provider, repository, or customer state changed.
+- Resolution: retained the prior database-backed result (the two known
+  homepage-media and pending-social-link blockers) and relied on both-mode
+  isolated suites plus disposable static collection for this phase's local
+  validation.
+
+## 2026-08-28 — Phase 1 static collection harness needed two corrections
+
+- First attempted to override `STATIC_ROOT` through an environment variable in
+  local mode, where settings intentionally do not read that variable; the
+  second attempt called the management command before `django.setup()`.
+- Result: both harnesses stopped before collecting files.
+- Impact: no repository or application state changed.
+- Resolution: set `settings.STATIC_ROOT` in a disposable, initialized Django
+  process; 134 files were then collected successfully and the temporary
+  directory was removed.
+
+## 2026-08-28 — Phase 2 cart-merge test initially used a non-reducing fixture
+
+- Attempted to verify an availability-reduction notice with two account units,
+  one guest unit, and three units of stock.
+- Result: the merge correctly accepted all three units, so no reduction notice
+  was emitted and the assertion failed.
+- Impact: no repository or application data persisted beyond the isolated test
+  database.
+- Resolution: changed the fixture to two units of stock and asserted the
+  visible cap and resulting quantity of two.
+
+## 2026-08-28 — Phase 2 broad research discovery included commerce-only migration tests
+
+- Attempted the full unconstrained test discovery command in research mode.
+- Result: three existing quarantine migration tests referenced cart migration
+  nodes that are intentionally absent when commerce apps are not installed.
+- Impact: no repository or application data changed; the mode boundary itself
+  remained intact.
+- Resolution: reran the research suite using its installed-app labels
+  (`web.core`, `web.products`, `web.survey`, `web.waitlist`, and `web.accounts`),
+  which passed 86 tests with 6 intentional skips. Commerce runs retain the
+  cart/order migration tests.
+
+## 2026-08-28 — Phase 3 formula constraints were stricter than legacy order rows
+
+- Attempted to add database checks requiring `grand_total` to equal the
+  decomposed subtotal, shipping, tax, and discount fields and each order-line
+  total to equal unit price times quantity.
+- Result: existing fixtures and legacy pending/paid records contain a total
+  snapshot without a decomposed subtotal, so payment/webhook tests failed at
+  the database boundary.
+- Impact: no production or persistent customer data changed; the isolated
+  migration database was discarded.
+- Resolution: retained safe nonnegative and discount bounds, removed the
+  formula checks before they could be applied, and recorded a verified
+  legacy-total backfill as a prerequisite for a future constraint migration.
+
+## 2026-08-28 — Phase 3 catalog query probe initially reused per-SKU product instances
+
+- Attempted to use prefetched preorder batches while each prefetched variant
+  still held a separate `product` instance.
+- Result: the probe remained at 18 queries because availability lookups could
+  not see the parent product's prefetch cache.
+- Impact: no repository or application data changed.
+- Resolution: reattached the parent product instance to prefetched variants;
+  the five-product/three-variant probe now completes in 3 queries and remains
+  constant as variants increase.
+
+## 2026-08-28 — Phase 3 release-content command was run without migrated fixtures
+
+- Attempted to run `check_release_content` against an in-memory SQLite database
+  outside the test runner.
+- Result: the command correctly stopped because the disposable database had no
+  `products_product` table.
+- Impact: no repository, provider, or application data changed.
+- Resolution: treated the earlier fixture-backed release-content checks as the
+  valid local evidence; the standalone invocation was not a product failure.
+
+## 2026-08-28 — Bare runserver initially conflicted with the local .env profile
+
+- The first fallback forced research mode while the ignored local `.env` still
+  supplied Stripe values, so settings correctly rejected the mixed profile.
+- A second direct run reached Django's migration check but the sandbox denied
+  binding a local listening socket.
+- Resolution: the fallback now honors a configured `.env` mode, clears Stripe
+  only when research is the unconfigured default, and selects SQLite for a bare
+  local runserver when no database variables are explicitly supplied. Explicit
+  PostgreSQL configuration remains unchanged; socket binding still requires a
+  normal local environment outside this sandbox.
+
+## 2026-08-28 — Phase 4 checkout tests exposed legacy assumptions
+
+- The first checkout-attempt integration retained visible tests that expected a
+  locally persisted full shipping address and automatic success-page refresh.
+- Result: those assertions failed after the Stripe-hosted address and manual
+  status-check behavior were introduced.
+- Impact: no persistent production data changed; the isolated test database was
+  discarded.
+- Resolution: updated the tests and flow to defer the address to Stripe and to
+  expose a bounded manual status check, while retaining a compatibility path for
+  legacy webhook orders during the expand/contract period.
+
+## 2026-08-28 — Phase 4 migration generation initially lacked explicit mode configuration
+
+- Attempted `manage.py makemigrations` without the explicit environment and
+  deployment mode required for non-runserver commands.
+- Result: settings failed closed on missing `TREADJOY_ENVIRONMENT` before any
+  migration was generated.
+- Impact: no repository, database, provider, or customer data changed.
+- Resolution: reran with the documented local commerce profile. Django
+  generated migrations `0020` and `0021`; its migration-history probe could
+  not reach sandboxed local PostgreSQL, so migration execution was verified in
+  isolated SQLite and remains subject to PostgreSQL CI/deployment acceptance.
+
+## 2026-08-28 — Active-attempt uniqueness was first inserted into the wrong model block
+
+- A context-short model patch initially placed the conditional active-checkout
+  uniqueness constraint in `Order.Meta` instead of `CheckoutAttempt.Meta`.
+- Result: immediate reference inspection found the misplaced `cart` constraint
+  before Django checks, migrations, or tests were run against it.
+- Impact: the invalid intermediate edit was never migrated or applied to data.
+- Resolution: moved the constraint to `CheckoutAttempt.Meta`, added an
+  aggregate-only migration that quarantines older duplicate active attempts,
+  and reran migration-drift and application tests successfully.
+
+## 2026-08-28 — Phase 4 completion exposed two more pre-attempt test assumptions
+
+- The first complete commerce run still had a preorder test that expected an
+  `Order` before Stripe reconciliation and a deployment probe that expected
+  the deprecated process-global `stripe.api_key` assignment.
+- Result: one test errored and one subprocess assertion failed; all other tests
+  completed against the isolated database.
+- Impact: no persistent database or provider state changed.
+- Resolution: updated the preorder test to verify the immutable attempt quote,
+  then reconcile the retrieved paid Session into an order, and changed the mode
+  probe to require no global Stripe key. The complete SQLite commerce suite
+  subsequently passed 178 tests with 10 intentional skips.

@@ -81,7 +81,7 @@ class SurveyFlowTests(TestCase):
         self.assertEqual(SurveyResponse.objects.count(), 1)
         survey = SurveyResponse.objects.get()
         self.assertIsNone(survey.user)
-        self.assertTrue(survey.session_key)
+        self.assertEqual(survey.session_key, "")
         self.assertEqual(survey.style_preference, "athletic")
         self.assertEqual(survey.comfort_importance, "very_important")
         self.assertEqual(survey.price_range, "100_150")
@@ -92,15 +92,17 @@ class SurveyFlowTests(TestCase):
         )
         self.assertNotIn("survey_draft", self.client.session)
 
-    def test_authenticated_completion_associates_response_with_user(self):
-        user = get_user_model().objects.create_user(
-            username="survey-user",
-            email="survey@example.com",
-            password="CorrectHorseBattery9!",
+    def test_authenticated_completion_remains_anonymous(self):
+        self.client.force_login(
+            get_user_model().objects.create_user(
+                username="survey-user",
+                email="survey@example.com",
+                password="CorrectHorseBattery9!",
+            )
         )
-        self.client.force_login(user)
 
         self.complete_survey()
 
-        self.assertEqual(SurveyResponse.objects.get().user, user)
-
+        survey = SurveyResponse.objects.get()
+        self.assertIsNone(survey.user)
+        self.assertEqual(survey.session_key, "")

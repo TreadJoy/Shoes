@@ -15,6 +15,30 @@ class Cart(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
+    class Meta:
+        constraints = [
+            models.CheckConstraint(
+                check=(
+                    models.Q(user__isnull=False, session_key__isnull=True)
+                    | (
+                        models.Q(user__isnull=True)
+                        & models.Q(session_key__isnull=False)
+                        & ~models.Q(session_key="")
+                    )
+                ),
+                name="cart_exactly_one_principal",
+            ),
+            models.UniqueConstraint(
+                fields=["session_key"],
+                condition=(
+                    models.Q(user__isnull=True)
+                    & models.Q(session_key__isnull=False)
+                    & ~models.Q(session_key="")
+                ),
+                name="unique_guest_cart_session",
+            ),
+        ]
+
     def total_price(self):
         return sum(
             item.subtotal()
@@ -80,18 +104,6 @@ class CartItem(models.Model):
 
     def subtotal(self):
         return self.line_total()
-
-    def product_name(self):
-        return self.variant.product.name
-
-    def sku(self):
-        return self.variant.sku
-
-    def size(self):
-        return self.variant.size
-
-    def color(self):
-        return self.variant.color
 
     def __str__(self):
         return f"{self.quantity} x {self.variant.product.name}"

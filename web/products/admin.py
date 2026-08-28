@@ -117,7 +117,6 @@ class PartVariantInline(admin.TabularInline):
     fields = (
         "sku",
         "compatibility_group",
-        "stock_quantity",
         "is_active",
     )
     autocomplete_fields = (
@@ -165,7 +164,6 @@ class PartVariantAdmin(admin.ModelAdmin):
         "part",
         "part_type_display",
         "compatibility_group",
-        "stock_quantity",
         "is_active",
         "updated_at",
     )
@@ -206,7 +204,8 @@ class ProductVariantInLine(admin.TabularInline):
         "compatibility_group",
         "color",
         "stock_quantity",
-        "price_override",
+        "selling_price",
+        "compare_at_price",
         "is_active",
     )
 
@@ -292,7 +291,8 @@ class ProductVariantAdmin(admin.ModelAdmin):
         "compatibility_group",
         "color",
         "stock_quantity",
-        "price_override",
+        "selling_price",
+        "compare_at_price",
         "is_active",
         "updated_at",
     )
