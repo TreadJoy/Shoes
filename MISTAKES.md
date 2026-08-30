@@ -773,3 +773,22 @@
 - Resolution: reran both hash-locked manifests through the approved read-only
   network boundary. Both reported no known vulnerabilities, and the unchanged
   license inventory was reverified.
+
+## 2026-08-30 — Runserver diagnosis used the misspelled command and system Python
+
+- Attempted the exact `pyhthon manage.py runserver` command; the shell correctly
+  reported that `pyhthon` was not found.
+- Retried with system `python`; it loaded Django 6.0 instead of the project's
+  locked Django 5.2 line and failed because the system environment had neither
+  `psycopg` nor `psycopg2`.
+- Retried with `.venv/bin/python`; the project dependencies were correct, but the
+  ignored local `.env` selected a PostgreSQL commerce profile and no local
+  PostgreSQL server was reachable at `127.0.0.1:5432`.
+- Impact: settings initialization and migration inspection stopped before any
+  commerce query or mutation. The isolated SQLite preview database was the only
+  local artifact initialized, and no configured PostgreSQL data was changed.
+- Resolution: initialized the documented local research/SQLite preview with
+  explicit environment variables and migrations. The project virtual
+  environment then passed Django checks and started successfully on
+  `127.0.0.1:8000` in a normal terminal; the temporary server was stopped after
+  verification.
