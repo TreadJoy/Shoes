@@ -126,13 +126,13 @@ Do not create final-sale categories or policy exceptions without explicit approv
 
 - **Backend:** Django 5.2 project in `Shoes/` with domain apps under `web/`.
 - **Rendering:** server-rendered Django templates. There is no public API or SPA architecture.
-- **Frontend:** semantic HTML, centralized CSS/design tokens, and small vanilla JavaScript enhancements.
+- **Frontend:** semantic HTML, centralized CSS/design tokens, and three small referenced vanilla JavaScript enhancements. Phase 6 removed only browser-verified obsolete CSS and established the manual matrix in `docs/visual-regression.md`; this is not a production performance or accessibility certification.
 - **Database:** PostgreSQL is the authoritative transactional store. Correctness relies on transactions and row locking in high-risk workflows.
 - **Authentication:** Django authentication plus django-allauth account flows. Google/social authentication is removed for now; username login and optional email verification remain, with production hardening still required before commerce launch.
 - **Catalog:** `Product`, finished `ProductVariant` (expanded selling/compare-at price fields), compatibility groups, parts, part variants, and product BOM/component relationships. Active catalog pricing is read from variants with a one-release legacy fallback during migration.
 - **Cart:** database-backed carts identified by exactly one authenticated user or nonblank guest session. Principal constraints, transactional mutations, and sign-in merge with availability notices are implemented in `web/cart/services.py`.
 - **Checkout/payments:** hosted Stripe Checkout with signed webhooks, server-side attempts and immutable quote/BOM facts, one-active-attempt-per-cart idempotency, 30-minute finished-SKU/preorder reservations, Stripe-collected shipping addresses, and bounded provider audit fields. One retrieved-Session reconciler creates paid/review orders only after exact server-side verification. PostgreSQL/provider/operations acceptance remains a commerce launch gate.
-- **Orders:** durable orders are created only for reconciled paid payments or financially meaningful review exceptions. They retain line/preorder/BOM snapshots, payment/refund records, status events, shipments, and transactional inventory allocation; the broader Phase 5 historical-address/state-machine hardening is still pending.
+- **Orders:** durable orders are created only for reconciled paid payments or financially meaningful review exceptions. They retain immutable currency, shipping/contact, line/preorder/BOM, payment/refund, status-event, shipment, and inventory-allocation facts. A row-locking transition service owns fulfillment/refund state changes; shipment timestamps drive shipped/delivered, full confirmed refunds are terminal, and customer views render only separately approved customer-safe event messages. Legacy address and event-note fields remain for one compatibility release before backup-gated contraction.
 - **Email:** console backend in development; no production transactional provider is configured.
 - **Static/media:** local development uses project static files and local media. Public-environment settings use manifest static storage and an R2-backed public-media configuration, but no live R2 bucket, custom domain, CDN path, or origin static service has been provisioned or verified.
 - **Operations:** PostgreSQL application CI, dependency auditing, full-history secret scanning, and a fail-closed production-settings contract are implemented. No production deployment definition, health/readiness endpoints, monitoring, backup automation, restore drill, or rollback runbook exists yet.
@@ -162,8 +162,9 @@ explicit configuration described above.
 - `web/accounts/`: account-related views/forms layered around django-allauth.
 - `web/survey/` and `web/waitlist/`: anonymous survey responses and normalized, source-controlled waitlist relationship flows.
 - `templates/`: shared and app-namespaced Django templates; shared chrome belongs in `templates/base.html` and `templates/partials/`.
-- `static/`: CSS, JavaScript, and committed public assets.
+- `static/`: five currently referenced CSS/JavaScript source files. No public image is currently committed; local development media stays ignored.
 - `media/`: local development uploads. Do not commit customer uploads or unapproved development imagery.
+- `docs/visual-regression.md`: manual two-mode, mobile/desktop presentation-review matrix and evidence-handling rules.
 - `.github/workflows/`: separate PostgreSQL application CI, dependency-audit, and full-history secret-scanning workflows.
 - `PROJECT_PLAN.md`: evidence-based current-state assessment and dependency-ordered implementation roadmap.
 

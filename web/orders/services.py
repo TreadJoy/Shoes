@@ -35,6 +35,7 @@ from .models import (
     Refund,
     ShippingAddress,
 )
+from .transitions import record_initial_status, transition_order
 
 
 BUSINESS_TIME_ZONE = ZoneInfo("America/Chicago")
@@ -648,6 +649,19 @@ def _create_order_from_attempt(
         shipping_address=address,
         full_name=(shipping_values or {}).get("full_name", ""),
         email=(shipping_values or {}).get("email", attempt.email),
+        currency=attempt.currency.lower(),
+        shipping_full_name=(shipping_values or {}).get("full_name", ""),
+        shipping_email=(shipping_values or {}).get("email", attempt.email),
+        shipping_address_line_1=(shipping_values or {}).get(
+            "address_line_1", ""
+        ),
+        shipping_address_line_2=(shipping_values or {}).get(
+            "address_line_2", ""
+        ),
+        shipping_city=(shipping_values or {}).get("city", ""),
+        shipping_state=(shipping_values or {}).get("state", ""),
+        shipping_postal_code=(shipping_values or {}).get("postal_code", ""),
+        shipping_country=(shipping_values or {}).get("country", ""),
         status=status,
         fulfillment_type=first_line.fulfillment_type,
         preorder_batch=preorder_batch,
@@ -661,11 +675,21 @@ def _create_order_from_attempt(
         stripe_checkout_session_id=session.get("id") or "",
         stripe_payment_intent_id=payment_intent_id,
     )
-    OrderStatusEvent.objects.create(
-        order=order,
-        from_status="",
-        to_status=status,
-        note=status_note,
+    record_initial_status(
+        order,
+        source=OrderStatusEvent.Source.STRIPE,
+        reason=(
+            "checkout_payment_reconciled"
+            if status == Order.Status.PAID
+            else "checkout_payment_review_required"
+        ),
+        external_reference=session.get("id") or "",
+        internal_detail=status_note,
+        customer_message=(
+            "Payment confirmed."
+            if status == Order.Status.PAID
+            else "Your payment requires review before fulfillment."
+        ),
     )
     for quote_line in quote_lines:
         order_item = OrderItem.objects.create(
@@ -730,14 +754,18 @@ def _reconciliation_mismatch(
     else:
         order = existing_order
         if order.status == Order.Status.PAID:
-            previous_status = order.status
-            order.status = Order.Status.REVIEW_REQUIRED
-            order.save(update_fields=["status", "updated_at"])
-            OrderStatusEvent.objects.create(
-                order=order,
-                from_status=previous_status,
-                to_status=Order.Status.REVIEW_REQUIRED,
-                note=f"Stripe reconciliation requires staff review ({reason}).",
+            order, _ = transition_order(
+                order,
+                Order.Status.REVIEW_REQUIRED,
+                source=OrderStatusEvent.Source.STRIPE,
+                reason="stripe_reconciliation_mismatch",
+                external_reference=session.get("id") or "",
+                internal_detail=(
+                    f"Stripe reconciliation requires staff review ({reason})."
+                ),
+                customer_message=(
+                    "Your payment requires review before fulfillment."
+                ),
             )
     release_attempt_reservations(
         attempt,
@@ -906,14 +934,19 @@ def reconcile_retrieved_checkout_session(session):
     )
     allocation = allocate_inventory_for_paid_order(order)
     if allocation.status != InventoryAllocation.Status.ALLOCATED:
-        previous_status = order.status
-        order.status = Order.Status.REVIEW_REQUIRED
-        order.save(update_fields=["status", "updated_at"])
-        OrderStatusEvent.objects.create(
-            order=order,
-            from_status=previous_status,
-            to_status=Order.Status.REVIEW_REQUIRED,
-            note="Paid order requires staff review because inventory could not be committed.",
+        order, _ = transition_order(
+            order,
+            Order.Status.REVIEW_REQUIRED,
+            source=OrderStatusEvent.Source.SYSTEM,
+            reason="inventory_commit_failed",
+            external_reference=str(attempt.id),
+            internal_detail=(
+                "Paid order requires staff review because inventory could not "
+                "be committed."
+            ),
+            customer_message=(
+                "Your payment requires review before fulfillment."
+            ),
         )
         commit_attempt_reservations(attempt, review_required=True)
         CheckoutAttempt.objects.filter(pk=attempt.pk).update(
@@ -955,21 +988,6 @@ def _stripe_created_at(refund_data):
     return datetime.fromtimestamp(
         created_timestamp,
         tz=datetime_timezone.utc,
-    )
-
-
-def _change_order_status(order, new_status, note):
-    if order.status == new_status:
-        return
-
-    previous_status = order.status
-    order.status = new_status
-    order.save(update_fields=["status", "updated_at"])
-    OrderStatusEvent.objects.create(
-        order=order,
-        from_status=previous_status,
-        to_status=new_status,
-        note=note,
     )
 
 
@@ -1017,7 +1035,11 @@ def synchronize_refund(refund_data, event_type=None):
             stripe_refund_id=refund_data["id"],
             **refund_defaults,
         )
-    elif event_type != "refund.created":
+    elif (
+        event_type != "refund.created"
+        and refund.status
+        not in {Refund.Status.SUCCEEDED, Refund.Status.FAILED, Refund.Status.CANCELED}
+    ):
         for field, value in refund_defaults.items():
             setattr(refund, field, value)
         refund.save(update_fields=[*refund_defaults, "updated_at"])
@@ -1026,9 +1048,6 @@ def synchronize_refund(refund_data, event_type=None):
         .filter(order=payment.order)
         .first()
     )
-
-    if allocation is None or allocation.status == InventoryAllocation.Status.ALLOCATED:
-        return refund
 
     active_statuses = [
         Refund.Status.PENDING,
@@ -1050,28 +1069,41 @@ def synchronize_refund(refund_data, event_type=None):
     ]
 
     if full_refund_succeeded:
-        initiated_at = active_refunds.aggregate(
-            initiated_at=Min("stripe_created_at")
-        )["initiated_at"]
-        allocation.status = InventoryAllocation.Status.REFUNDED
-        allocation.refund_initiated_at = initiated_at
-        allocation.resolved_at = timezone.now()
-        allocation.save(
-            update_fields=[
-                "status",
-                "refund_initiated_at",
-                "resolved_at",
-                "updated_at",
-            ]
-        )
-        _change_order_status(
+        if (
+            allocation is not None
+            and allocation.status != InventoryAllocation.Status.ALLOCATED
+        ):
+            initiated_at = active_refunds.aggregate(
+                initiated_at=Min("stripe_created_at")
+            )["initiated_at"]
+            allocation.status = InventoryAllocation.Status.REFUNDED
+            allocation.refund_initiated_at = initiated_at
+            allocation.resolved_at = timezone.now()
+            allocation.save(
+                update_fields=[
+                    "status",
+                    "refund_initiated_at",
+                    "resolved_at",
+                    "updated_at",
+                ]
+            )
+        transition_order(
             payment.order,
             Order.Status.REFUNDED,
-            "Full Stripe refund succeeded for an inventory shortfall.",
+            source=OrderStatusEvent.Source.REFUND,
+            reason="full_refund_confirmed",
+            external_reference=refund.stripe_refund_id,
+            internal_detail="Cumulative confirmed Stripe refunds cover the payment.",
+            customer_message="Your payment was fully refunded.",
         )
         return refund
 
-    if full_refund_initiated and not incoming_refund_failed:
+    if (
+        allocation is not None
+        and allocation.status != InventoryAllocation.Status.ALLOCATED
+        and full_refund_initiated
+        and not incoming_refund_failed
+    ):
         initiated_at = active_refunds.aggregate(
             initiated_at=Min("stripe_created_at")
         )["initiated_at"]
@@ -1087,13 +1119,9 @@ def synchronize_refund(refund_data, event_type=None):
             ]
         )
 
-        if payment.order.status == Order.Status.REFUNDED:
-            _change_order_status(
-                payment.order,
-                Order.Status.PAID,
-                "Stripe refund is no longer confirmed as succeeded.",
-            )
+        return refund
 
+    if allocation is None or allocation.status == InventoryAllocation.Status.ALLOCATED:
         return refund
 
     refund_workflow_reopened = (
@@ -1125,12 +1153,5 @@ def synchronize_refund(refund_data, event_type=None):
         ])
 
     allocation.save(update_fields=update_fields)
-
-    if payment.order.status == Order.Status.REFUNDED:
-        _change_order_status(
-            payment.order,
-            Order.Status.PAID,
-            "Stripe refund failed or was canceled; inventory review reopened.",
-        )
 
     return refund

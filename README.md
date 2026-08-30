@@ -26,6 +26,8 @@ assumptions. In particular:
   limitations.
 - `docs/production-configuration.md`, `docs/ci.md`, and
   `docs/dependencies.md` are the detailed operating references.
+- `docs/visual-regression.md` defines the manual commerce/research and
+  mobile/desktop presentation-review matrix.
 
 Do not treat a roadmap target or configured provider backend as implemented
 live infrastructure.
@@ -44,6 +46,9 @@ live infrastructure.
 - Stripe-hosted Checkout is the payment boundary; TreadJoy must never collect
   or store raw card data. Checkout attempts quote current variants and create
   expiring server-side reservation records before redirecting to Stripe.
+- Reconciled orders snapshot currency and shipping/contact facts independently
+  of mutable accounts and address rows. One row-locking transition service
+  owns fulfillment/refund status changes and append-only history.
 - Public settings use manifest static files and configure R2-backed public
   media. These settings have automated coverage, but no live resources have
   been provisioned.
@@ -141,6 +146,9 @@ env TREADJOY_ENVIRONMENT=local TREADJOY_MODE=commerce \
 env TREADJOY_ENVIRONMENT=local TREADJOY_MODE=research \
   STRIPE_SECRET_KEY= STRIPE_WEBHOOK_SECRET= \
   .venv/bin/python manage.py check
+env TREADJOY_ENVIRONMENT=local TREADJOY_MODE=research \
+  TREADJOY_RUNSERVER_DEFAULTS=1 STRIPE_SECRET_KEY= STRIPE_WEBHOOK_SECRET= \
+  .venv/bin/python manage.py test web.core web.products web.survey web.waitlist web.accounts
 .venv/bin/python -m compileall -q Shoes web
 .venv/bin/python -m pip check
 ```
@@ -155,6 +163,13 @@ make Django's default test runner convenient.
 Before any public release, run `manage.py check_release_content` in the exact
 deployment-mode environment. A nonzero result is a release blocker; see
 `docs/release-content-checklist.md`.
+
+For presentation changes, follow `docs/visual-regression.md`. Use only
+synthetic data in a disposable local database, capture both deployment modes
+at desktop and `390x844`, and inspect viewport images rather than relying on
+route status alone. The Phase 6 images are intentionally not committed because
+they include development placeholders. Manual screenshots do not replace
+accessibility testing or production-like Core Web Vitals traces.
 
 ## Commerce Stripe Webhook
 
@@ -189,6 +204,23 @@ Django admin allocation queue for human review. Initiate a full refund in
 Stripe Dashboard, notify the customer outside the application, and record that
 notification with the queue action by its displayed deadline. Refund webhooks
 update the local audit record.
+
+## Order Operations
+
+Ordinary admin forms treat order totals, immutable snapshots, Stripe IDs,
+payments/refunds, inventory allocations, and status history as read-only and
+disable deletion of material commerce records. Staff may move an eligible paid
+order to processing through the guarded action. Record carrier tender and
+delivery on a Shipment; those timestamps are the only ordinary staff path to
+shipped and delivered. Cancellation and refund decisions remain human-reviewed
+workflows—do not directly edit status fields.
+
+Migrations `0022`–`0024` are expand/backfill/constraint migrations. Before a
+later contract migration removes the legacy address relationship or event
+`note`, verify aggregate backfill completeness on PostgreSQL, take and test a
+restorable backup, deploy the compatibility reads for one release, and observe
+production. Roll back application reads rather than reversing the historical
+backfill.
 
 ## Preorder Batch Operations
 

@@ -1,6 +1,4 @@
-from django import forms
 from django.contrib import admin
-from django.contrib import messages
 from django.db.models import Q
 from django.utils import timezone
 
@@ -21,6 +19,7 @@ from .models import (
     ShippingAddress,
     StripeEvent
 )
+from .transitions import OrderTransitionError, transition_order
 
 
 FULFILLMENT_BLOCKING_STATUSES = [
@@ -31,38 +30,6 @@ REVIEW_TRACKED_STATUSES = [
     *FULFILLMENT_BLOCKING_STATUSES,
     InventoryAllocation.Status.REFUNDED,
 ]
-
-
-class OrderAdminForm(forms.ModelForm):
-    class Meta:
-        model = Order
-        fields = "__all__"
-
-    def clean_status(self):
-        status = self.cleaned_data["status"]
-
-        if not self.instance.pk:
-            return status
-
-        fulfillment_statuses = [
-            Order.Status.PROCESSING,
-            Order.Status.SHIPPED,
-            Order.Status.DELIVERED,
-        ]
-        allocation_is_blocked = InventoryAllocation.objects.filter(
-            order=self.instance,
-            status__in=FULFILLMENT_BLOCKING_STATUSES,
-        ).exists()
-
-        if (
-            self.instance.status == Order.Status.REVIEW_REQUIRED
-            and status in fulfillment_statuses
-        ) or (allocation_is_blocked and status in fulfillment_statuses):
-            raise forms.ValidationError(
-                "Resolve the inventory review before fulfilling this order."
-            )
-
-        return status
 
 class ShipmentInline(admin.TabularInline):
     model = Shipment
@@ -76,6 +43,7 @@ class ShipmentInline(admin.TabularInline):
         "delivered_at",
         "notes",
     )
+    can_delete = False
 
 class OrderItemInline(admin.TabularInline):
     model = OrderItem
@@ -112,12 +80,19 @@ class OrderItemInline(admin.TabularInline):
         "line_total",
     )
 
+    can_delete = False
+
+    def has_add_permission(self, request, obj=None):
+        return False
+
+@admin.register(OrderStatusEvent)
 class OrderStatusEventAdmin(admin.ModelAdmin):
     list_display = (
         "order",
         "from_status",
         "to_status",
-        "note",
+        "source",
+        "reason",
         "created_at",
     )
     list_filter = (
@@ -129,38 +104,66 @@ class OrderStatusEventAdmin(admin.ModelAdmin):
         "order__id",
         "from_status",
         "to_status",
-        "note",
+        "source",
+        "reason",
+        "external_reference",
+        "internal_detail",
+        "customer_message",
     )
 
     readonly_fields = (
         "order",
+        "actor",
         "from_status",
         "to_status",
+        "source",
+        "reason",
+        "external_reference",
+        "internal_detail",
+        "customer_message",
         "note",
         "created_at",
     )
+
+    def has_add_permission(self, request):
+        return False
+
+    def has_delete_permission(self, request, obj=None):
+        return False
 
 
 class OrderStatusEventInline(admin.TabularInline):
     model = OrderStatusEvent
     extra = 0
     readonly_fields = (
+        "actor",
         "from_status",
         "to_status",
-        "note",
+        "source",
+        "reason",
+        "external_reference",
+        "internal_detail",
+        "customer_message",
         "created_at",
     )
     fields = (
+        "actor",
         "from_status",
         "to_status",
-        "note",
+        "source",
+        "reason",
+        "external_reference",
+        "internal_detail",
+        "customer_message",
         "created_at",
     )
     can_delete = False
 
+    def has_add_permission(self, request, obj=None):
+        return False
+
 @admin.register(Order)
 class OrderAdmin(admin.ModelAdmin):
-    form = OrderAdminForm
     list_display = (
         "id",
         "email",
@@ -189,89 +192,32 @@ class OrderAdmin(admin.ModelAdmin):
         "email",
         "full_name",
     )
-    readonly_fields = (
-        "created_at",
-        "updated_at",
-        "fulfillment_type",
-        "preorder_batch",
-        "estimated_tender_start",
-        "estimated_tender_end",
-    )
-    actions = (
-        "mark_as_shipped",
-        "mark_as_delivered",
-        "mark_as_canceled",
-    )
+    readonly_fields = [field.name for field in Order._meta.fields]
+    actions = ("mark_as_processing",)
     inlines = [
         OrderItemInline,
         OrderStatusEventInline,
         ShipmentInline,
     ]
-    def save_model(self, request, obj, form, change):
-        previous_status = None
-
-        if change:
-            previous_status = (
-                Order.objects
-                .only("status")
-                .get(pk=obj.pk)
-                .status
-            )
-
-        super().save_model(request, obj, form, change)
-
-        if(
-            change
-            and "status" in form.changed_data
-            and previous_status != obj.status
-        ):
-            OrderStatusEvent.objects.create(
-                order=obj,
-                from_status=previous_status,
-                to_status=obj.status,
-                note=f"Order status changed manually in admin by {request.user}.",
-            )
-
-    def update_status_for_queryset(self, request, queryset, new_status, note):
+    @admin.action(description="Mark selected paid orders as processing")
+    def mark_as_processing(self, request, queryset):
         updated_count = 0
         blocked_count = 0
-
         for order in queryset:
-            previous_status = order.status
-
-            if (
-                new_status in [
+            try:
+                _, changed = transition_order(
+                    order,
                     Order.Status.PROCESSING,
-                    Order.Status.SHIPPED,
-                    Order.Status.DELIVERED,
-                ]
-                and InventoryAllocation.objects.filter(
-                    order=order,
-                    status__in=FULFILLMENT_BLOCKING_STATUSES,
-                ).exists()
-            ):
+                    source=OrderStatusEvent.Source.ADMIN,
+                    reason="staff_started_processing",
+                    actor=request.user,
+                    internal_detail="Staff began fulfillment processing.",
+                    customer_message="Your order is being prepared for shipment.",
+                )
+            except OrderTransitionError:
                 blocked_count += 1
                 continue
-
-            if previous_status == new_status:
-                continue
-
-            order.status = new_status
-            order.save(
-                update_fields=[
-                    "status",
-                    "updated_at",
-                ]
-            )
-
-            OrderStatusEvent.objects.create(
-                order=order,
-                from_status=previous_status,
-                to_status=new_status,
-                note=f"{note} by {request.user}.",
-            )
-
-            updated_count += 1
+            updated_count += int(changed)
 
         self.message_user(
             request,
@@ -281,11 +227,8 @@ class OrderAdmin(admin.ModelAdmin):
         if blocked_count:
             self.message_user(
                 request,
-                (
-                    f"{blocked_count} order(s) skipped because inventory "
-                    "review is still open."
-                ),
-                level=messages.WARNING,
+                f"{blocked_count} order(s) skipped because the transition is not allowed.",
+                level="warning",
             )
 
     @admin.display(description="Inventory status")
@@ -302,30 +245,11 @@ class OrderAdmin(admin.ModelAdmin):
         except InventoryAllocation.DoesNotExist:
             return None
 
-    @admin.action(description="Mark selected orders as shipped.")
-    def mark_as_shipped(self, request, queryset):
-        self.update_status_for_queryset(
-            request=request,
-            queryset=queryset,
-            new_status=Order.Status.SHIPPED,
-            note="Marked as shipped.",
-        )
-    @admin.action(description="Mark selected orders as delivered.")
-    def mark_as_delivered(self, request, queryset):
-        self.update_status_for_queryset(
-            request=request,
-            queryset=queryset,
-            new_status=Order.Status.DELIVERED,
-            note="Marked as delivered.",
-        )
-    @admin.action(description="Mark selected orders as canceled.")
-    def mark_as_canceled(self, request, queryset):
-        self.update_status_for_queryset(
-            request=request,
-            queryset=queryset,
-            new_status=Order.Status.CANCELED,
-            note="Marked as canceled.",
-        )
+    def has_add_permission(self, request):
+        return False
+
+    def has_delete_permission(self, request, obj=None):
+        return False
 
 @admin.register(OrderItem)
 class OrderItemAdmin(admin.ModelAdmin):
@@ -350,6 +274,13 @@ class OrderItemAdmin(admin.ModelAdmin):
         "product_name",
         "sku",
     )
+    readonly_fields = [field.name for field in OrderItem._meta.fields]
+
+    def has_add_permission(self, request):
+        return False
+
+    def has_delete_permission(self, request, obj=None):
+        return False
 
 
 @admin.register(OrderItemComponentSnapshot)
@@ -405,6 +336,13 @@ class ShippingAddressAdmin(admin.ModelAdmin):
         "state",
         "postal_code",
     )
+    readonly_fields = [field.name for field in ShippingAddress._meta.fields]
+
+    def has_add_permission(self, request):
+        return False
+
+    def has_delete_permission(self, request, obj=None):
+        return False
 
 @admin.register(Shipment)
 class ShipmentAdmin(admin.ModelAdmin):
@@ -435,6 +373,9 @@ class ShipmentAdmin(admin.ModelAdmin):
         "updated_at",
     )
 
+    def has_delete_permission(self, request, obj=None):
+        return False
+
 @admin.register(Payment)
 class PaymentAdmin(admin.ModelAdmin):
     exclude = ("raw_response",)
@@ -457,11 +398,13 @@ class PaymentAdmin(admin.ModelAdmin):
         "stripe_payment_intent_id",
         "stripe_checkout_session_id",
     )
-    readonly_fields = (
-        "created_at",
-        "updated_at",
-        "raw_response",
-    )
+    readonly_fields = [field.name for field in Payment._meta.fields]
+
+    def has_add_permission(self, request):
+        return False
+
+    def has_delete_permission(self, request, obj=None):
+        return False
 
 
 @admin.register(CheckoutAttempt)
@@ -580,6 +523,12 @@ class StripeEventAdmin(admin.ModelAdmin):
         "processed_at",
     )
 
+    def has_add_permission(self, request):
+        return False
+
+    def has_delete_permission(self, request, obj=None):
+        return False
+
 
 class InventoryAllocationItemInline(admin.TabularInline):
     model = InventoryAllocationItem
@@ -663,17 +612,7 @@ class InventoryAllocationAdmin(admin.ModelAdmin):
         "order",
         "customer_notified_by",
     )
-    readonly_fields = (
-        "order",
-        "status",
-        "review_due_at",
-        "refund_initiated_at",
-        "customer_notified_at",
-        "customer_notified_by",
-        "resolved_at",
-        "created_at",
-        "updated_at",
-    )
+    readonly_fields = [field.name for field in InventoryAllocation._meta.fields]
     actions = ("mark_customer_notified",)
     inlines = (InventoryAllocationItemInline,)
 

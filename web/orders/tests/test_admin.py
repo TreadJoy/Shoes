@@ -1,13 +1,14 @@
 from datetime import timedelta
 from decimal import Decimal
 
+from django.contrib import admin
 from django.contrib.auth import get_user_model
 from django.core.exceptions import ValidationError
 from django.test import TestCase
 from django.urls import reverse
 from django.utils import timezone
 
-from web.orders.admin import OrderAdminForm
+from web.orders.admin import OrderAdmin
 from web.orders.models import (
     InventoryAllocation,
     InventoryAllocationItem,
@@ -30,6 +31,7 @@ class InventoryReviewAdminTests(TestCase):
             full_name="Inventory Review Customer",
             email="review-customer@example.com",
             status=Order.Status.PAID,
+            subtotal=Decimal("100.00"),
             grand_total=Decimal("100.00"),
         )
         self.allocation = InventoryAllocation.objects.create(
@@ -134,32 +136,25 @@ class InventoryReviewAdminTests(TestCase):
         self.assertIsNotNone(self.allocation.customer_notified_at)
         self.assertFalse(self.allocation.is_overdue)
 
-    def test_order_admin_form_blocks_processing_during_review(self):
-        form = OrderAdminForm(
-            instance=self.order,
-            data={
-                "full_name": self.order.full_name,
-                "email": self.order.email,
-                "status": Order.Status.PROCESSING,
-                "subtotal": "0.00",
-                "shipping_total": "0.00",
-                "tax_total": "0.00",
-                "discount_total": "0.00",
-                "grand_total": "100.00",
-                "stripe_checkout_session_id": "",
-                "stripe_payment_intent_id": "",
-                "stripe_tax_calculation_id": "",
-            },
+    def test_order_admin_makes_material_fields_read_only(self):
+        model_admin = OrderAdmin(Order, admin.site)
+
+        self.assertIn("status", model_admin.get_readonly_fields(None, self.order))
+        self.assertIn("grand_total", model_admin.get_readonly_fields(None, self.order))
+        self.assertIn(
+            "stripe_payment_intent_id",
+            model_admin.get_readonly_fields(None, self.order),
         )
+        self.assertFalse(model_admin.has_delete_permission(None, self.order))
+        self.assertNotIn("mark_as_shipped", model_admin.actions)
+        self.assertNotIn("mark_as_delivered", model_admin.actions)
+        self.assertNotIn("mark_as_canceled", model_admin.actions)
 
-        self.assertFalse(form.is_valid())
-        self.assertIn("Resolve the inventory review", form.errors["status"][0])
-
-    def test_order_admin_action_blocks_shipping_during_review(self):
+    def test_order_admin_processing_action_uses_transition_guard(self):
         response = self.client.post(
             reverse("admin:orders_order_changelist"),
             {
-                "action": "mark_as_shipped",
+                "action": "mark_as_processing",
                 "_selected_action": [str(self.order.pk)],
             },
             follow=True,
@@ -168,7 +163,7 @@ class InventoryReviewAdminTests(TestCase):
         self.assertEqual(response.status_code, 200)
         self.order.refresh_from_db()
         self.assertEqual(self.order.status, Order.Status.PAID)
-        self.assertContains(response, "inventory review is still open")
+        self.assertContains(response, "transition is not allowed")
 
     def test_shipment_timestamps_are_blocked_during_review(self):
         with self.assertRaises(ValidationError):

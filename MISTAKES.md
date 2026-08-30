@@ -652,3 +652,124 @@
   and absence of other connections, reset only its `public` schema, and reran
   migrations through Django's test runner. The complete PostgreSQL commerce
   suite then passed 183 tests with 6 intentional skips.
+
+## 2026-08-30 — Phase 5 checks initially used incomplete and invalid local profiles
+
+- First attempted `manage.py check` without the explicit environment required
+  for non-runserver management commands, then retried with the invalid
+  environment name `development` instead of the documented `local` value.
+- Result: both commands failed closed while loading settings, before Django
+  opened a database or ran a check.
+- Impact: no repository, database, provider, or customer data changed.
+- Resolution: used the documented `TREADJOY_ENVIRONMENT=local` profile and the
+  project virtual-environment interpreter for subsequent verification.
+
+## 2026-08-30 — Phase 5 validation briefly used the system Python interpreter
+
+- Attempted the explicit local-commerce Django check with `python` rather than
+  `.venv/bin/python`.
+- Result: the system environment lacked the locked PostgreSQL driver and failed
+  while Django initialized its database backend.
+- Impact: settings initialization stopped before any query or migration; no
+  data or repository state changed.
+- Resolution: reran through the Python 3.12 project environment. Both-mode
+  checks and migration-drift detection then passed, with the known sandboxed
+  local-PostgreSQL history warning remaining a CI/deployment gate.
+
+## 2026-08-30 — Broad research test discovery imported commerce-only migration tests
+
+- Attempted `manage.py test web` in research mode after Phase 5.
+- Result: Django correctly omitted the commerce apps and their migration graph,
+  but broad filesystem discovery imported three cart migration test classes
+  whose explicit migration targets cannot exist in research mode. Ninety-six
+  other tests completed; the three imported migration tests errored before
+  their setup.
+- Impact: the isolated research test database was discarded and no persistent
+  data changed. The research application check itself passed.
+- Resolution: reran the installed research application labels used by CI
+  (`web.core`, `web.products`, `web.survey`, `web.waitlist`, and
+  `web.accounts`). All 93 tests passed with 6 intentional skips. The commerce
+  migration tests remain confined to the commerce job rather than weakening
+  the research boundary.
+
+## 2026-08-30 — Preserved PostgreSQL test data lost a data-migration seed
+
+- Attempted the complete commerce suite with `--keepdb` against the existing
+  dedicated PostgreSQL test database after applying the Phase 5 migrations.
+- Result: 193 of 194 tests passed, including the concurrency classes. One
+  unrelated homepage assertion found zero modular part types because an older
+  preserved test run had flushed rows originally created by a data migration;
+  Django correctly considered that migration applied and did not reseed them.
+  The isolated homepage rerun reproduced the stale-data condition.
+- A clean no-`--keepdb` retry then failed before testing because the
+  least-privilege application role correctly has `NOCREATEDB` and cannot
+  recreate the test database itself.
+- Impact: only the role-owned `test_treadjoy` database was involved. The
+  authoritative development database, provider state, and repository data were
+  not changed, and the database role was not granted broader privileges.
+- Resolution: ran all 35 focused Phase 5 order/refund/shipment/admin tests plus
+  the established finished-SKU, preorder, and Checkout concurrency classes on
+  PostgreSQL; all passed. A clean full-suite database bootstrap remains a CI
+  acceptance gate rather than weakening role permissions or adding runtime
+  reseeding code to hide a test-database artifact.
+
+## 2026-08-30 — Phase 5 disposable static harness omitted `CI_STATIC_ROOT`
+
+- Attempted `collectstatic` with a unique temporary public `STATIC_ROOT` but
+  omitted the separate absolute `CI_STATIC_ROOT` required by
+  `Shoes.ci_settings`.
+- Result: settings failed closed before Django loaded the command or copied a
+  file.
+- Impact: the temporary directory remained empty; repository and persistent
+  application data were unchanged.
+- Resolution: supplied both variables with the same disposable directory. The
+  rerun copied the expected 134 static files successfully.
+
+## 2026-08-30 — Phase 5 dependency audit was initially network-blocked
+
+- Attempted the read-only locked-runtime `pip-audit` query inside the default
+  network sandbox.
+- Result: DNS resolution for the public vulnerability index failed; no package
+  was installed, upgraded, or removed.
+- Impact: dependencies, lock files, and application data were unchanged.
+- Resolution: reran the same read-only audit through the approved network
+  boundary. It reported no known vulnerabilities.
+
+## 2026-08-30 — Phase 6 test discovery used two invalid scopes before the documented suites
+
+- First attempted a focused test label named `web.products.tests.test_views`,
+  which does not exist; 47 other selected tests ran and the command ended with
+  one import error. The corrected `test_catalog` selection passed 58 tests with
+  7 intentional skips.
+- A later bare research-mode `manage.py test` discovered commerce-only cart
+  migration tests from the filesystem. The correctly excluded commerce
+  migration graph made those three classes error while 97 other tests ran.
+- Impact: both attempts used disposable SQLite test databases; no persistent
+  record, provider state, or repository file changed.
+- Resolution: used the installed research app labels documented in README and
+  CI. The final suites passed 195 commerce tests with 10 skips and 94 research
+  tests with 6 skips.
+
+## 2026-08-30 — Phase 6 diagnostics initially used unsuitable local defaults
+
+- The first catalog query probe used Django's default `testserver` host and
+  correctly received `DisallowedHost`, so its 400 response and zero-query count
+  were discarded. The rerun supplied the allowed local host and rendered in 3
+  queries.
+- Initial local server binding and loopback timing requests were blocked by the
+  default sandbox, and `curl` was unavailable. The read-only server and five
+  `urllib` requests were rerun through the approved local boundary.
+- A first browser pass also retained no-reload CSS state, and full-page image
+  stitching repeated sticky/footer regions. Fresh server ports and authoritative
+  viewport captures were used for the final review.
+- Impact: all data was unmistakably synthetic in an ignored, disposable SQLite
+  database; no customer, provider, production, or shared database was accessed.
+
+## 2026-08-30 — Phase 6 dependency audit required the approved network boundary
+
+- The first `pip-audit` run failed inside the default sandbox while its
+  temporary environment tried to update pip; no installed or locked dependency
+  changed.
+- Resolution: reran both hash-locked manifests through the approved read-only
+  network boundary. Both reported no known vulnerabilities, and the unchanged
+  license inventory was reverified.

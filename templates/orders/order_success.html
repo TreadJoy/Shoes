@@ -42,7 +42,7 @@
 
         <p>
             <strong>Email:</strong>
-            {{ order.email }}
+            {% firstof order.shipping_email order.email %}
         </p>
 
         <p>

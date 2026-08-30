@@ -70,3 +70,24 @@ class AccountFlowTests(TestCase):
         self.assertTrue(
             response["Location"].startswith(reverse("account_login"))
         )
+
+    def test_authenticated_footer_uses_csrf_protected_post_logout(self):
+        user = get_user_model().objects.create_user(
+            username="footer-customer",
+            password=self.password,
+        )
+        self.client.force_login(user)
+
+        response = self.client.get(reverse("accounts:profile"))
+
+        self.assertContains(
+            response,
+            f'<form method="post" action="{reverse("account_logout")}">',
+            html=False,
+        )
+        self.assertContains(response, "csrfmiddlewaretoken")
+        self.assertNotContains(
+            response,
+            f'<a href="{reverse("account_logout")}">Sign Out</a>',
+            html=False,
+        )

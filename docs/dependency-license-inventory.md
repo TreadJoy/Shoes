@@ -1,6 +1,6 @@
 # Dependency License Inventory
 
-Updated on 2026-08-28 after clean CPython 3.12 hash-enforced installations using `pip-licenses==5.5.5 --with-system --format=markdown --with-urls`. The inventory is factual package metadata, not a legal conclusion. No added package reported an unknown or custom license. `psycopg` and `psycopg-binary` report `LGPL-3.0-only`; owner review remains required before A0.3 is accepted.
+Reverified unchanged on 2026-08-30 after clean CPython 3.12 hash-enforced installations using `pip-licenses==5.5.5 --with-system --format=markdown --with-urls`; Phase 6 made no dependency change. The inventory is factual package metadata, not a legal conclusion. No added package reported an unknown or custom license. `psycopg` and `psycopg-binary` report `LGPL-3.0-only`; owner review remains required before A0.3 is accepted.
 
 ## Runtime Lock
 

@@ -92,8 +92,8 @@
                 {{ event.from_status|default:"new" }}
                 →
                 {{ event.to_status }}
-                {% if event.note %}
-                    — {{ event.note }}
+                {% if event.customer_message %}
+                    — {{ event.customer_message }}
                 {% endif %}
             </li>
         {% endfor %}

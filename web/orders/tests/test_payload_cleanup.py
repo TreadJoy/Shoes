@@ -14,6 +14,7 @@ class LegacyStripePayloadCleanupTests(TestCase):
         order = Order.objects.create(
             full_name="Payload Audit",
             email="audit@example.com",
+            subtotal=Decimal("10.00"),
             grand_total=Decimal("10.00"),
         )
         self.payment = Payment.objects.create(

@@ -311,6 +311,10 @@ class CheckoutFlowTests(TestCase):
         self.assertEqual(result.state, "review_required")
         self.assertEqual(order.status, Order.Status.REVIEW_REQUIRED)
         self.assertEqual(order.shipping_address.state, "WI")
+        self.assertEqual(order.currency, "usd")
+        self.assertEqual(order.shipping_state, "WI")
+        self.assertEqual(order.shipping_city, "Chicago")
+        self.assertEqual(order.shipping_email, "customer@example.com")
         self.assertEqual(self.variant.stock_quantity, 10)
 
     def test_replayed_session_cannot_change_the_payment_intent(self):
@@ -642,6 +646,7 @@ class OrderAccessAndPresentationTests(TestCase):
         guest_order = Order.objects.create(
             full_name="Guest",
             email="guest@example.com",
+            subtotal=Decimal("25.00"),
             grand_total=Decimal("25.00"),
         )
 

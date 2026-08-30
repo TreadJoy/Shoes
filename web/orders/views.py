@@ -38,6 +38,7 @@ from .services import (
     retrieve_checkout_session,
     synchronize_refund,
 )
+from .transitions import transition_order
 
 logger = logging.getLogger(__name__)
 
@@ -54,15 +55,6 @@ def create_stripe_checkout_session(*, idempotency_key, **params):
 def retrieve_stripe_checkout_session(session_id):
     """Retrieve authoritative Checkout state from Stripe for reconciliation."""
     return retrieve_checkout_session(session_id)
-
-def create_order_status_event(order, from_status, to_status, note=""):
-
-    OrderStatusEvent.objects.create(
-        order=order,
-        from_status=from_status or "",
-        to_status=to_status,
-        note=note,
-    )
 
 @transaction.atomic
 def mark_order_as_paid(
@@ -101,30 +93,26 @@ def mark_order_as_paid(
     ):
         raise ValueError("Legacy payment does not match the order quote.")
 
-    previous_status = order.status
-
-    order.status = Order.Status.PAID
-
-    update_fields = [
-        "status",
-        "updated_at",
-    ]
-
     if checkout_session_id:
         order.stripe_checkout_session_id = checkout_session_id
-        update_fields.append("stripe_checkout_session_id")
 
     if payment_intent_id:
         order.stripe_payment_intent_id = payment_intent_id
-        update_fields.append("stripe_payment_intent_id")
-
-    order.save(update_fields=update_fields)
-
-    create_order_status_event(
-        order=order,
-        from_status=previous_status,
-        to_status=Order.Status.PAID,
-        note=status_note,
+    order.save(
+        update_fields=[
+            "stripe_checkout_session_id",
+            "stripe_payment_intent_id",
+            "updated_at",
+        ]
+    )
+    order, _ = transition_order(
+        order,
+        Order.Status.PAID,
+        source=OrderStatusEvent.Source.STRIPE,
+        reason="legacy_payment_reconciled",
+        external_reference=checkout_session_id or payment_intent_id,
+        internal_detail=status_note,
+        customer_message="Payment confirmed.",
     )
 
     Payment.objects.update_or_create(

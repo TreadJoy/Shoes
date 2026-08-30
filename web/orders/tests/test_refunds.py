@@ -23,6 +23,7 @@ class StripeRefundWebhookTests(TestCase):
             full_name="Refund Test Customer",
             email="customer@example.com",
             status=Order.Status.PAID,
+            subtotal=Decimal("100.00"),
             grand_total=Decimal("100.00"),
         )
         self.payment = Payment.objects.create(
@@ -216,6 +217,45 @@ class StripeRefundWebhookTests(TestCase):
             ).count(),
             1,
         )
+
+    def test_full_refund_updates_normal_allocated_order_without_releasing_stock(self):
+        self.allocation.status = InventoryAllocation.Status.ALLOCATED
+        self.allocation.save(update_fields=["status"])
+
+        response = self.post_signed_event(
+            self.refund_event(
+                event_id="evt_normal_full_refund",
+                status=Refund.Status.SUCCEEDED,
+            )
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.order.refresh_from_db()
+        self.allocation.refresh_from_db()
+        self.assertEqual(self.order.status, Order.Status.REFUNDED)
+        self.assertEqual(
+            self.allocation.status,
+            InventoryAllocation.Status.ALLOCATED,
+        )
+
+    def test_terminal_refund_and_order_do_not_regress_on_late_failure(self):
+        succeeded = self.refund_event(
+            event_id="evt_refund_succeeded_first",
+            status=Refund.Status.SUCCEEDED,
+        )
+        failed = self.refund_event(
+            event_id="evt_refund_failed_late",
+            event_type="refund.failed",
+            status=Refund.Status.FAILED,
+        )
+
+        self.assertEqual(self.post_signed_event(succeeded).status_code, 200)
+        self.assertEqual(self.post_signed_event(failed).status_code, 200)
+
+        refund = Refund.objects.get(stripe_refund_id="re_test")
+        self.order.refresh_from_db()
+        self.assertEqual(refund.status, Refund.Status.SUCCEEDED)
+        self.assertEqual(self.order.status, Order.Status.REFUNDED)
 
     def test_failed_or_canceled_refund_reopens_review_with_new_deadline(self):
         for terminal_status in [Refund.Status.FAILED, Refund.Status.CANCELED]:

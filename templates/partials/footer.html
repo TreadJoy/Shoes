@@ -39,7 +39,10 @@
                 {% if is_commerce_mode %}
                     <a href="{% url 'orders:order_list' %}">Orders</a>
                 {% endif %}
-                <a href="{% url 'account_logout' %}">Sign Out</a>
+                <form method="post" action="{% url 'account_logout' %}">
+                    {% csrf_token %}
+                    <button type="submit">Sign Out</button>
+                </form>
             {% else %}
                 <a href="{% url 'account_login' %}">Sign In</a>
                 <a href="{% url 'account_signup' %}">Sign Up</a>

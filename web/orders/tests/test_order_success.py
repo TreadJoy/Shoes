@@ -12,6 +12,7 @@ class OrderSuccessStatusTests(TestCase):
             full_name="Success Page Customer",
             email="customer@example.com",
             status=Order.Status.PAID,
+            subtotal=Decimal("100.00"),
             grand_total=Decimal("100.00"),
         )
         Payment.objects.create(

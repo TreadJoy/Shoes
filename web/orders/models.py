@@ -79,6 +79,15 @@ class Order(models.Model):
     email = models.EmailField(
         blank=True
     )
+    currency = models.CharField(max_length=3, default="usd")
+    shipping_full_name = models.CharField(max_length=100, blank=True)
+    shipping_email = models.EmailField(blank=True)
+    shipping_address_line_1 = models.CharField(max_length=255, blank=True)
+    shipping_address_line_2 = models.CharField(max_length=255, blank=True)
+    shipping_city = models.CharField(max_length=100, blank=True)
+    shipping_state = models.CharField(max_length=100, blank=True)
+    shipping_postal_code = models.CharField(max_length=20, blank=True)
+    shipping_country = models.CharField(max_length=100, blank=True)
     status = models.CharField(
         max_length=30,
         choices=Status.choices,
@@ -180,6 +189,17 @@ class Order(models.Model):
                     )
                 ),
                 name="order_discount_within_pretax_total",
+            ),
+            models.CheckConstraint(
+                condition=models.Q(
+                    grand_total=(
+                        models.F("subtotal")
+                        + models.F("shipping_total")
+                        + models.F("tax_total")
+                        - models.F("discount_total")
+                    )
+                ),
+                name="order_grand_total_matches_components",
             ),
         ]
 
@@ -417,72 +437,32 @@ class Shipment(models.Model):
 
     def mark_order_shipped(self, order=None):
         order = order or self.order
-
-        if order.status in [
-            Order.Status.SHIPPED,
-            Order.Status.DELIVERED,
-        ]:
+        if order.status == Order.Status.DELIVERED:
             return
+        from .transitions import transition_order
 
-        if order.status not in [
-            Order.Status.PAID,
-            Order.Status.PROCESSING,
-        ]:
-            raise ValidationError(
-                {
-                    "shipped_at": (
-                        "Only paid or processing orders can be marked shipped."
-                    )
-                }
-            )
-
-        previous_status = order.status
-
-        order.status = Order.Status.SHIPPED
-        order.save(
-            update_fields=[
-                "status",
-                "updated_at",
-            ]
-        )
-
-        OrderStatusEvent.objects.create(
-            order=order,
-            from_status=previous_status,
-            to_status=Order.Status.SHIPPED,
-            note=f"Order marked shipped from shipment #{self.id}.",
+        transition_order(
+            order,
+            Order.Status.SHIPPED,
+            source=OrderStatusEvent.Source.SHIPMENT,
+            reason="carrier_tender_recorded",
+            external_reference=f"shipment:{self.pk}",
+            internal_detail=f"Shipment #{self.pk} received its shipped timestamp.",
+            customer_message="Your order has shipped.",
         )
 
     def mark_order_delivered(self, order=None):
         order = order or self.order
+        from .transitions import transition_order
 
-        if order.status == Order.Status.DELIVERED:
-            return
-
-        if order.status != Order.Status.SHIPPED:
-            raise ValidationError(
-                {
-                    "delivered_at": (
-                        "An order must be shipped before it can be marked delivered."
-                    )
-                }
-            )
-
-        previous_status = order.status
-
-        order.status = Order.Status.DELIVERED
-        order.save(
-            update_fields=[
-                "status",
-                "updated_at",
-            ]
-        )
-
-        OrderStatusEvent.objects.create(
-            order=order,
-            from_status=previous_status,
-            to_status=Order.Status.DELIVERED,
-            note=f"Order marked delivered from shipment #{self.id}.",
+        transition_order(
+            order,
+            Order.Status.DELIVERED,
+            source=OrderStatusEvent.Source.SHIPMENT,
+            reason="carrier_delivery_recorded",
+            external_reference=f"shipment:{self.pk}",
+            internal_detail=f"Shipment #{self.pk} received its delivered timestamp.",
+            customer_message="Your order was delivered.",
         )
 
     def __str__(self):
@@ -589,6 +569,12 @@ class OrderItem(models.Model):
                     & models.Q(quantity__gte=1)
                 ),
                 name="order_item_amounts_nonnegative",
+            ),
+            models.CheckConstraint(
+                condition=models.Q(
+                    line_total=models.F("unit_price") * models.F("quantity")
+                ),
+                name="order_item_line_total_matches_quantity",
             ),
         ]
 
@@ -1092,11 +1078,36 @@ class StripeEvent(models.Model):
     def __str__(self):
         return f"Stripe Event {self.event_type} - {self.stripe_event_id}"
 
+class AppendOnlyStatusEventQuerySet(models.QuerySet):
+    def update(self, **kwargs):
+        raise ValidationError("Order status history is append-only.")
+
+    def delete(self):
+        raise ValidationError("Order status history is append-only.")
+
+
 class OrderStatusEvent(models.Model):
+    class Source(models.TextChoices):
+        SYSTEM = "system", "System"
+        STRIPE = "stripe", "Stripe"
+        SHIPMENT = "shipment", "Shipment"
+        REFUND = "refund", "Refund"
+        ADMIN = "admin", "Admin"
+        MIGRATION = "migration", "Migration"
+        LEGACY = "legacy", "Legacy"
+
     order = models.ForeignKey(
         Order,
-        on_delete=models.CASCADE,
+        on_delete=models.PROTECT,
         related_name="status_events"
+    )
+
+    actor = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        blank=True,
+        null=True,
+        related_name="order_status_events",
     )
 
     from_status = models.CharField(
@@ -1112,12 +1123,36 @@ class OrderStatusEvent(models.Model):
         blank=True,
     )
 
+    source = models.CharField(
+        max_length=20,
+        choices=Source.choices,
+        default=Source.SYSTEM,
+    )
+
+    reason = models.CharField(max_length=100)
+
+    external_reference = models.CharField(max_length=255, blank=True)
+
+    internal_detail = models.TextField(blank=True)
+
+    customer_message = models.TextField(blank=True)
+
     created_at = models.DateTimeField(
         auto_now_add=True,
     )
 
     class Meta:
         ordering = ["-created_at"]
+
+    objects = AppendOnlyStatusEventQuerySet.as_manager()
+
+    def save(self, *args, **kwargs):
+        if self.pk:
+            raise ValidationError("Order status history is append-only.")
+        return super().save(*args, **kwargs)
+
+    def delete(self, *args, **kwargs):
+        raise ValidationError("Order status history is append-only.")
 
     def __str__(self):
         return (

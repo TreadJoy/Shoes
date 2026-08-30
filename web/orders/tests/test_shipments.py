@@ -44,7 +44,9 @@ class ShipmentLifecycleTests(TestCase):
         self.assertEqual(order.status, Order.Status.SHIPPED)
         self.assertEqual(event.from_status, Order.Status.PAID)
         self.assertEqual(event.to_status, Order.Status.SHIPPED)
-        self.assertIn(f"shipment #{shipment.pk}", event.note)
+        self.assertEqual(event.source, OrderStatusEvent.Source.SHIPMENT)
+        self.assertEqual(event.reason, "carrier_tender_recorded")
+        self.assertIn(f"Shipment #{shipment.pk}", event.internal_detail)
 
         shipment.notes = "Tracking confirmed."
         shipment.save()

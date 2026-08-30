@@ -71,6 +71,7 @@ class PreorderAllocationDataMixin:
             preorder_batch=batch,
             estimated_tender_start=batch.estimated_tender_start,
             estimated_tender_end=batch.estimated_tender_end,
+            subtotal=product.price * quantity,
             grand_total=product.price * quantity,
         )
         OrderItem.objects.create(
