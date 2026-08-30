@@ -6,6 +6,15 @@ import sys
 from decouple import config
 
 
+_DATABASE_SETTING_NAMES = (
+    "DB_NAME",
+    "DB_USER",
+    "DB_PASSWORD",
+    "DB_HOST",
+    "DB_PORT",
+)
+
+
 def _configure_runserver_defaults():
     """Make a bare local runserver useful without weakening deployment checks."""
     if len(sys.argv) < 2 or sys.argv[1] != "runserver":
@@ -22,10 +31,11 @@ def _configure_runserver_defaults():
         os.environ["STRIPE_WEBHOOK_SECRET"] = ""
     if not config("SECRET_KEY", default="").strip():
         os.environ["SECRET_KEY"] = "django-insecure-local-runserver-only-change-me"
-    if not any(
-        os.environ.get(name, "").strip()
-        for name in ("DB_NAME", "DB_USER", "DB_PASSWORD", "DB_HOST", "DB_PORT")
-    ):
+    # ``config`` preserves process-environment precedence while also reading
+    # the ignored local .env file. If any database setting is present, let the
+    # normal PostgreSQL configuration validate the complete profile instead
+    # of silently replacing it with SQLite.
+    if not any(config(name, default="").strip() for name in _DATABASE_SETTING_NAMES):
         os.environ["TREADJOY_RUNSERVER_DEFAULTS"] = "1"
 
 

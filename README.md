@@ -69,12 +69,31 @@ locally, and never commit it. Use a local PostgreSQL database and a role with
 only the privileges needed by the application. Do not point research at the
 commerce database for convenience.
 
-For a quick, zero-configuration preview, `python manage.py runserver` starts
-the safe research deployment with a local SQLite database. This fallback is
-limited to that command and local development; it does not change the strict
-configuration requirements for migrations, tests, CI, or public deployments.
-Set the database variables explicitly when you want a local runserver to use
-PostgreSQL instead.
+The bare `.venv/bin/python manage.py runserver` convenience supplies only
+missing local defaults. With no configured mode or database profile, it uses
+the safe research deployment and local SQLite; an explicitly configured mode
+is preserved. A database profile—including one supplied by `.env`—uses
+PostgreSQL and fails closed if the profile is incomplete. The command never
+applies migrations automatically.
+
+To initialize the isolated SQLite preview without changing `.env`, run the
+explicit migration once, then start the same profile:
+
+```sh
+env TREADJOY_ENVIRONMENT=local TREADJOY_MODE=research \
+  SECRET_KEY=django-insecure-local-preview-only \
+  TREADJOY_RUNSERVER_DEFAULTS=1 \
+  STRIPE_SECRET_KEY= STRIPE_WEBHOOK_SECRET= \
+  .venv/bin/python manage.py migrate
+env TREADJOY_ENVIRONMENT=local TREADJOY_MODE=research \
+  SECRET_KEY=django-insecure-local-preview-only \
+  TREADJOY_RUNSERVER_DEFAULTS=1 \
+  STRIPE_SECRET_KEY= STRIPE_WEBHOOK_SECRET= \
+  .venv/bin/python manage.py runserver
+```
+
+For the configured PostgreSQL profile, apply migrations explicitly before
+starting the server.
 
 Apply migrations and start a selected local mode:
 

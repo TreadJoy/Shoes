@@ -593,3 +593,62 @@
   then reconcile the retrieved paid Session into an order, and changed the mode
   probe to require no global Stripe key. The complete SQLite commerce suite
   subsequently passed 178 tests with 10 intentional skips.
+
+## 2026-08-29 — Bare runserver selected an empty SQLite database beside a configured .env
+
+- Attempted the documented local `runserver` path while the ignored `.env`
+  contained a complete PostgreSQL profile.
+- Result: the startup helper checked only process-environment database values,
+  selected the zero-byte ignored `db.sqlite3`, reported 76 unapplied migrations,
+  and the homepage failed because `products_parttype` did not exist. The exact
+  system-Python command also loaded Django 6.0 instead of the locked Django 5.2
+  line and failed while importing model constraints.
+- Impact: no commerce records changed. The empty SQLite file was the only
+  database artifact created, and the configured PostgreSQL database remained
+  untouched during diagnosis.
+- Resolution: database-profile detection now reads process and `.env` values
+  through `python-decouple`, the project virtual environment was rebuilt on
+  Python 3.12 from the hash-locked development requirements, the empty SQLite
+  artifact was removed, and the migrated PostgreSQL-backed server passed the
+  browser smoke matrix.
+
+## 2026-08-29 — Runserver regression probes initially inherited the developer .env
+
+- The first expanded subprocess suite changed its working directory to isolate
+  test `.env` files, assuming `python-decouple` began discovery there.
+- Result: four probes failed because the imported project module anchored
+  discovery to the repository `.env`; the partial-profile probe also used a
+  compound `try` statement after a semicolon, which is invalid Python syntax.
+- Impact: only the isolated test run failed; no database, provider, or customer
+  state changed.
+- Resolution: the harness now supplies one temporary-directory `AutoConfig`
+  object before importing either `manage.py` or Django settings, and the
+  partial-profile script uses valid multiline syntax. All 16 deployment-mode
+  process tests then passed.
+
+## 2026-08-29 — Python 3.12 dependency installation was network-blocked in the sandbox
+
+- Attempted the hash-enforced development-lock installation in the replacement
+  project virtual environment through the default sandbox.
+- Result: package-index name resolution failed before any dependency was
+  installed.
+- Impact: the previous Python 3.11 virtual environment remained intact in its
+  rollback directory, and no repository or application data changed.
+- Resolution: reran the exact hash-locked install through the approved network
+  boundary. The Python 3.12 environment then passed `pip check` and the focused
+  startup/homepage tests.
+
+## 2026-08-29 — The first local PostgreSQL commerce suite reused a stale test schema
+
+- Attempted the complete commerce suite with `--keepdb` against the existing
+  dedicated PostgreSQL test database.
+- Result: removed `socialaccount_*` tables and leftover fixtures prevented
+  Django from flushing the current installed-app graph, producing two failures
+  and eight cleanup errors.
+- Impact: the authoritative local commerce database was not used or changed by
+  the failed suite; contamination was confined to the role-owned `test_`
+  database.
+- Resolution: verified the exact test-database prefix, ownership, stale tables,
+  and absence of other connections, reset only its `public` schema, and reran
+  migrations through Django's test runner. The complete PostgreSQL commerce
+  suite then passed 183 tests with 6 intentional skips.

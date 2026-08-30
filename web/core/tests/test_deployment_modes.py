@@ -2,6 +2,7 @@ import os
 import subprocess
 import sys
 from pathlib import Path
+from tempfile import TemporaryDirectory
 
 from django.test import SimpleTestCase
 
@@ -181,51 +182,185 @@ else:
 class DeploymentModeProcessTests(SimpleTestCase):
     project_root = Path(__file__).resolve().parents[3]
 
-    def test_bare_runserver_uses_safe_local_defaults(self):
+    runserver_setting_names = (
+        "TREADJOY_ENVIRONMENT",
+        "TREADJOY_MODE",
+        "SECRET_KEY",
+        "DB_NAME",
+        "DB_USER",
+        "DB_PASSWORD",
+        "DB_HOST",
+        "DB_PORT",
+        "TREADJOY_RUNSERVER_DEFAULTS",
+    )
+
+    def run_defaults_probe(self, script, *, env_file="", overrides=None):
         environment = os.environ.copy()
-        for name in (
-            "TREADJOY_ENVIRONMENT",
-            "TREADJOY_MODE",
-            "SECRET_KEY",
-            "DB_NAME",
-            "DB_USER",
-            "DB_PASSWORD",
-            "DB_HOST",
-            "DB_PORT",
-            "TREADJOY_RUNSERVER_DEFAULTS",
-        ):
-            environment[name] = ""
-        environment["STRIPE_SECRET_KEY"] = ""
-        environment["STRIPE_WEBHOOK_SECRET"] = ""
+        for name in list(environment):
+            if name.startswith("STRIPE_"):
+                environment.pop(name)
+        for name in self.runserver_setting_names:
+            environment.pop(name, None)
         environment["PYTHONPATH"] = str(self.project_root)
-        result = subprocess.run(
-            [
-                sys.executable,
-                "-c",
-                "import os, sys; os.environ['DJANGO_SETTINGS_MODULE'] = 'Shoes.settings'; "
-                "sys.argv = ['manage.py', 'runserver']; "
-                "from manage import _configure_runserver_defaults; "
-                "_configure_runserver_defaults(); import django; django.setup(); "
-                "from django.conf import settings; "
-                "assert settings.TREADJOY_ENVIRONMENT == 'local'; "
-                "assert settings.TREADJOY_MODE == 'research'; "
-                "assert settings.DATABASES['default']['ENGINE'] == "
-                "'django.db.backends.sqlite3'",
-            ],
-            # Run outside the repository so an ignored developer .env file
-            # cannot affect this genuinely unconfigured startup check.
-            cwd="/tmp",
-            env=environment,
-            capture_output=True,
-            text=True,
-            timeout=30,
-            check=False,
-        )
+        environment.update(overrides or {})
+
+        with TemporaryDirectory() as temporary_directory:
+            if env_file:
+                Path(temporary_directory, ".env").write_text(
+                    env_file,
+                    encoding="utf-8",
+                )
+            isolated_config_script = (
+                "import os\n"
+                "import decouple\n"
+                "decouple.config = decouple.AutoConfig(search_path=os.getcwd())\n"
+            )
+            return subprocess.run(
+                [sys.executable, "-c", isolated_config_script + script],
+                cwd=temporary_directory,
+                env=environment,
+                capture_output=True,
+                text=True,
+                timeout=30,
+                check=False,
+            )
+
+    def assert_process_succeeded(self, result):
         self.assertEqual(
             result.returncode,
             0,
             msg=f"stdout:\n{result.stdout}\nstderr:\n{result.stderr}",
         )
+
+    def test_bare_runserver_uses_safe_local_defaults(self):
+        result = self.run_defaults_probe(
+            "import os, sys; os.environ['DJANGO_SETTINGS_MODULE'] = 'Shoes.settings'; "
+            "sys.argv = ['manage.py', 'runserver']; "
+            "from manage import _configure_runserver_defaults; "
+            "_configure_runserver_defaults(); import django; django.setup(); "
+            "from django.conf import settings; "
+            "assert settings.TREADJOY_ENVIRONMENT == 'local'; "
+            "assert settings.TREADJOY_MODE == 'research'; "
+            "assert settings.DATABASES['default']['ENGINE'] == "
+            "'django.db.backends.sqlite3'"
+        )
+        self.assert_process_succeeded(result)
+
+    def test_runserver_honors_complete_commerce_dotenv_database_profile(self):
+        result = self.run_defaults_probe(
+            "import os, sys; os.environ['DJANGO_SETTINGS_MODULE'] = 'Shoes.settings'; "
+            "sys.argv = ['manage.py', 'runserver']; "
+            "from manage import _configure_runserver_defaults; "
+            "_configure_runserver_defaults(); import django; django.setup(); "
+            "from django.conf import settings; "
+            "assert settings.TREADJOY_ENVIRONMENT == 'local'; "
+            "assert settings.TREADJOY_MODE == 'commerce'; "
+            "assert settings.DATABASES['default']['ENGINE'] == "
+            "'django.db.backends.postgresql'; "
+            "assert settings.DATABASES['default']['NAME'] == 'dotenv_commerce'; "
+            "assert os.environ.get('TREADJOY_RUNSERVER_DEFAULTS') is None",
+            env_file=(
+                "TREADJOY_MODE=commerce\n"
+                "SECRET_KEY=dotenv-commerce-secret\n"
+                "DB_NAME=dotenv_commerce\n"
+                "DB_USER=dotenv_user\n"
+                "DB_PASSWORD=dotenv_password\n"
+                "DB_HOST=127.0.0.1\n"
+                "DB_PORT=5432\n"
+                "STRIPE_SECRET_KEY=sk_test_dotenv\n"
+                "STRIPE_WEBHOOK_SECRET=whsec_dotenv\n"
+            ),
+        )
+        self.assert_process_succeeded(result)
+
+    def test_runserver_honors_complete_research_dotenv_database_profile(self):
+        result = self.run_defaults_probe(
+            "import os, sys; os.environ['DJANGO_SETTINGS_MODULE'] = 'Shoes.settings'; "
+            "sys.argv = ['manage.py', 'runserver']; "
+            "from manage import _configure_runserver_defaults; "
+            "_configure_runserver_defaults(); import django; django.setup(); "
+            "from django.conf import settings; "
+            "assert settings.TREADJOY_MODE == 'research'; "
+            "assert settings.DATABASES['default']['ENGINE'] == "
+            "'django.db.backends.postgresql'; "
+            "assert settings.DATABASES['default']['NAME'] == 'dotenv_research'; "
+            "assert not hasattr(settings, 'STRIPE_SECRET_KEY')",
+            env_file=(
+                "TREADJOY_MODE=research\n"
+                "SECRET_KEY=dotenv-research-secret\n"
+                "DB_NAME=dotenv_research\n"
+                "DB_USER=dotenv_user\n"
+                "DB_PASSWORD=dotenv_password\n"
+                "DB_HOST=127.0.0.1\n"
+                "DB_PORT=5432\n"
+            ),
+        )
+        self.assert_process_succeeded(result)
+
+    def test_process_database_settings_override_dotenv(self):
+        result = self.run_defaults_probe(
+            "import os, sys; os.environ['DJANGO_SETTINGS_MODULE'] = 'Shoes.settings'; "
+            "sys.argv = ['manage.py', 'runserver']; "
+            "from manage import _configure_runserver_defaults; "
+            "_configure_runserver_defaults(); import django; django.setup(); "
+            "from django.conf import settings; "
+            "assert settings.TREADJOY_MODE == 'research'; "
+            "assert settings.DATABASES['default']['NAME'] == 'process_database'; "
+            "assert settings.DATABASES['default']['ENGINE'] == "
+            "'django.db.backends.postgresql'",
+            env_file=(
+                "TREADJOY_MODE=commerce\n"
+                "SECRET_KEY=dotenv-commerce-secret\n"
+                "DB_NAME=dotenv_commerce\n"
+                "DB_USER=dotenv_user\n"
+                "DB_PASSWORD=dotenv_password\n"
+                "DB_HOST=dotenv.invalid\n"
+                "DB_PORT=5432\n"
+                "STRIPE_SECRET_KEY=sk_test_dotenv\n"
+                "STRIPE_WEBHOOK_SECRET=whsec_dotenv\n"
+            ),
+            overrides={
+                "TREADJOY_MODE": "research",
+                "DB_NAME": "process_database",
+                "STRIPE_SECRET_KEY": "",
+                "STRIPE_WEBHOOK_SECRET": "",
+            },
+        )
+        self.assert_process_succeeded(result)
+
+    def test_partial_dotenv_database_profile_fails_closed(self):
+        result = self.run_defaults_probe(
+            "import os, sys\n"
+            "os.environ['DJANGO_SETTINGS_MODULE'] = 'Shoes.settings'\n"
+            "sys.argv = ['manage.py', 'runserver']\n"
+            "from manage import _configure_runserver_defaults\n"
+            "_configure_runserver_defaults()\n"
+            "from django.core.exceptions import ImproperlyConfigured\n"
+            "import django\n"
+            "try:\n django.setup()\n"
+            "except ImproperlyConfigured as exc:\n"
+            " assert 'DB_USER' in str(exc)\n"
+            " assert 'partial_database' not in str(exc)\n"
+            "else:\n raise AssertionError('partial database profile did not fail closed')",
+            env_file=(
+                "TREADJOY_MODE=research\n"
+                "SECRET_KEY=partial-profile-secret\n"
+                "DB_NAME=partial_database\n"
+            ),
+        )
+        self.assert_process_succeeded(result)
+
+    def test_non_runserver_command_does_not_receive_local_defaults(self):
+        result = self.run_defaults_probe(
+            "import os, sys; sys.argv = ['manage.py', 'check']; "
+            "from manage import _configure_runserver_defaults; "
+            "_configure_runserver_defaults(); "
+            "assert 'TREADJOY_ENVIRONMENT' not in os.environ; "
+            "assert 'TREADJOY_MODE' not in os.environ; "
+            "assert 'SECRET_KEY' not in os.environ; "
+            "assert 'TREADJOY_RUNSERVER_DEFAULTS' not in os.environ"
+        )
+        self.assert_process_succeeded(result)
 
     def environment_for(self, mode):
         environment = os.environ.copy()
@@ -261,13 +396,6 @@ class DeploymentModeProcessTests(SimpleTestCase):
             text=True,
             timeout=30,
             check=False,
-        )
-
-    def assert_process_succeeded(self, result):
-        self.assertEqual(
-            result.returncode,
-            0,
-            msg=f"stdout:\n{result.stdout}\nstderr:\n{result.stderr}",
         )
 
     def test_commerce_mode_registers_order_taking_capabilities(self):
