@@ -3,7 +3,9 @@
 TreadJoy uses two independent settings axes:
 
 - `TREADJOY_MODE` is `research` or `commerce` and controls application
-  capability. Research must not contain any nonempty Stripe configuration.
+  capability. Research rejects nonempty Stripe configuration in every
+  environment; staging and production reject even empty `STRIPE_*` process
+  variables so deployment manifests must omit them entirely.
 - `TREADJOY_ENVIRONMENT` is `local`, `ci`, `staging`, or `production` and
   controls deployment hardening. `ci` is available only through
   `Shoes.ci_settings` with `TREADJOY_CI=true`.

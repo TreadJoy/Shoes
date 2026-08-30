@@ -792,3 +792,39 @@
   environment then passed Django checks and started successfully on
   `127.0.0.1:8000` in a normal terminal; the temporary server was stopped after
   verification.
+
+## 2026-08-30 — A2.1 public-profile probes still read the developer `.env`
+
+- Attempted the focused production-settings suite after making public research
+  manifests reject even empty `STRIPE_*` process variables.
+- Result: 13 cases failed before their intended assertions because
+  `python-decouple` found the ignored project `.env` through its settings-module
+  search path. Merely changing the subprocess working directory did not change
+  that search behavior.
+- Impact: the failures occurred during settings import. No application,
+  database, provider, or repository data was changed, and no configured value
+  was printed by the test assertions.
+- Resolution: run each public-profile probe from a temporary directory and
+  explicitly bind `decouple.config` to that directory before importing Django.
+  The rerun passed all 20 focused production/deployment-mode cases and now
+  proves both an absent public research Stripe manifest and isolated settings
+  inputs.
+
+## 2026-08-30 — A2.1 documentation search used unsafe shell quoting
+
+- Attempted an `rg` documentation audit with Markdown backticks inside a
+  double-quoted shell argument. The shell interpreted fragments as command
+  substitutions and the resulting search output was invalid.
+- Impact: the read-only command changed no repository, database, provider, or
+  user data and printed no secret value.
+- Resolution: reran the audit with a focused, single-quoted expression and
+  retained the repository's documented rule against risky shell escaping.
+
+## 2026-08-30 — A2.1 workflow audit used an unavailable Ruby/Psych helper
+
+- Attempted to parse the application CI workflow with `YAML.safe_load_file`,
+  which is not available in the installed Ruby/Psych version.
+- Impact: parsing stopped immediately; the read-only command changed no file,
+  CI configuration, or external state.
+- Resolution: used the compatible `YAML.safe_load(File.read(...), aliases:
+  true)` interface for the final workflow syntax check.

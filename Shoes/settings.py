@@ -31,6 +31,33 @@ if (
 TREADJOY_MODE = environment.choice("TREADJOY_MODE", _VALID_TREADJOY_MODES)
 IS_COMMERCE_MODE = TREADJOY_MODE == "commerce"
 
+_STRIPE_SETTING_NAMES = (
+    "STRIPE_SECRET_KEY",
+    "STRIPE_WEBHOOK_SECRET",
+)
+
+if not IS_COMMERCE_MODE:
+    # Reject provider configuration before apps, storage, email, or URL
+    # configuration can initialize. Empty local overrides remain harmless.
+    _configured_stripe_settings = {
+        name for name in _STRIPE_SETTING_NAMES if environment.string(name, default="")
+    }
+    _configured_stripe_settings.update(
+        name
+        for name, value in os.environ.items()
+        if name.startswith("STRIPE_") and value.strip()
+    )
+    if IS_PUBLIC_ENVIRONMENT:
+        _configured_stripe_settings.update(
+            name for name in os.environ if name.startswith("STRIPE_")
+        )
+    if _configured_stripe_settings:
+        raise ImproperlyConfigured(
+            "Stripe configuration must not be present when "
+            "TREADJOY_MODE='research': "
+            f"{', '.join(sorted(_configured_stripe_settings))}."
+        )
+
 DEBUG = environment.boolean(
     "DJANGO_DEBUG",
     default=True if TREADJOY_ENVIRONMENT in {"local", "ci"} else None,
@@ -261,12 +288,6 @@ else:
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
 
-_STRIPE_SETTING_NAMES = (
-    "STRIPE_SECRET_KEY",
-    "STRIPE_WEBHOOK_SECRET",
-)
-
-
 def _required_commerce_setting(name: str) -> str:
     return environment.string(name, required=True)
 
@@ -274,20 +295,6 @@ def _required_commerce_setting(name: str) -> str:
 if IS_COMMERCE_MODE:
     STRIPE_SECRET_KEY = _required_commerce_setting("STRIPE_SECRET_KEY")
     STRIPE_WEBHOOK_SECRET = _required_commerce_setting("STRIPE_WEBHOOK_SECRET")
-else:
-    _configured_stripe_settings = {
-        name for name in _STRIPE_SETTING_NAMES if environment.string(name, default="")
-    }
-    _configured_stripe_settings.update(
-        name
-        for name, value in os.environ.items()
-        if name.startswith("STRIPE_") and value.strip()
-    )
-    if _configured_stripe_settings:
-        raise ImproperlyConfigured(
-            "Stripe configuration must not be present when TREADJOY_MODE='research': "
-            f"{', '.join(sorted(_configured_stripe_settings))}."
-        )
 
 
 if IS_PUBLIC_ENVIRONMENT:

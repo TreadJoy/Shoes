@@ -4,6 +4,12 @@ Run `python manage.py check_release_content` from each deployment-mode
 environment before approving a public release. A nonzero exit is a release
 blocker; do not suppress it.
 
+For a research release, also run `python manage.py check --deploy --fail-level
+WARNING` and `python manage.py check_research_boundary` after migrations in the
+exact release environment. Record both successful outputs. Any commerce app,
+route, import, setting, table, migration record, or content type is a release
+blocker; see `research-capability-boundary.md`.
+
 ## Asset Review
 
 - Every public image, logo, video poster, and product-media file appears in

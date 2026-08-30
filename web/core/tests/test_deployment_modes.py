@@ -8,7 +8,33 @@ from django.test import SimpleTestCase
 
 
 DJANGO_SETUP_PROBE = r"""
+import importlib.abc
+import json
+import os
 import sys
+
+
+FORBIDDEN_MODULE_PREFIXES = ("web.cart", "web.orders", "stripe")
+
+
+def is_forbidden_module(name):
+    return any(
+        name == prefix or name.startswith(f"{prefix}.")
+        for prefix in FORBIDDEN_MODULE_PREFIXES
+    )
+
+
+class ResearchImportBlocker(importlib.abc.MetaPathFinder):
+    def find_spec(self, fullname, path=None, target=None):
+        if is_forbidden_module(fullname):
+            raise AssertionError(
+                f"Research startup attempted forbidden import: {fullname}"
+            )
+        return None
+
+
+if os.environ.get("TREADJOY_MODE") == "research":
+    sys.meta_path.insert(0, ResearchImportBlocker())
 
 import django
 
@@ -16,11 +42,66 @@ django.setup()
 
 from django.apps import apps
 from django.conf import settings
-from django.urls import NoReverseMatch, Resolver404, resolve, reverse
+from django.test import Client
+from django.urls import NoReverseMatch, Resolver404, get_resolver, resolve, reverse
+from django.urls.resolvers import URLPattern, URLResolver
 
 
 assert settings.ACCOUNT_LOGIN_METHODS == {"username"}
 assert settings.ACCOUNT_EMAIL_VERIFICATION == "optional"
+
+
+def collect_routes(patterns, prefix="", namespaces=()):
+    routes = set()
+    for entry in patterns:
+        route = f"{prefix}{entry.pattern}"
+        if isinstance(entry, URLResolver):
+            child_namespaces = namespaces
+            if entry.namespace:
+                child_namespaces = (*namespaces, entry.namespace)
+            routes.update(
+                collect_routes(entry.url_patterns, route, child_namespaces)
+            )
+        elif isinstance(entry, URLPattern):
+            qualified_name = None
+            if entry.name:
+                qualified_name = ":".join((*namespaces, entry.name))
+            routes.add((route, qualified_name))
+    return routes
+
+
+expected_commerce_routes = {
+    ("cart/", "cart:cart_detail"),
+    ("cart/add/", "cart:add_to_cart"),
+    ("cart/update/<int:item_id>/", "cart:update_cart_item"),
+    ("cart/remove/<int:item_id>/", "cart:remove_from_cart"),
+    ("cart/clear/", "cart:clear_cart"),
+    ("orders/", "orders:order_list"),
+    ("orders/checkout/", "orders:checkout"),
+    (
+        "orders/success/attempt/<uuid:attempt_id>/",
+        "orders:checkout_success",
+    ),
+    ("orders/success/<int:order_id>/", "orders:order_success"),
+    ("orders/history/", None),
+    ("orders/<int:order_id>/", "orders:order_detail"),
+    ("orders/stripe/webhook/", "orders:stripe_webhook"),
+}
+
+blocked_commerce_paths = (
+    "/cart/",
+    "/cart/add/",
+    "/cart/update/1/",
+    "/cart/remove/1/",
+    "/cart/clear/",
+    "/orders/",
+    "/orders/checkout/",
+    "/orders/success/attempt/00000000-0000-0000-0000-000000000001/",
+    "/orders/success/1/",
+    "/orders/history/",
+    "/orders/1/",
+    "/orders/stripe/webhook/",
+)
 
 
 if settings.TREADJOY_MODE == "commerce":
@@ -29,11 +110,30 @@ if settings.TREADJOY_MODE == "commerce":
     assert apps.is_installed("web.orders")
     assert apps.get_model("orders", "Order") is not None
     assert reverse("cart:cart_detail") == "/cart/"
+    assert reverse("cart:add_to_cart") == "/cart/add/"
     assert reverse("cart:update_cart_item", args=[1]) == "/cart/update/1/"
+    assert reverse("cart:remove_from_cart", args=[1]) == "/cart/remove/1/"
+    assert reverse("cart:clear_cart") == "/cart/clear/"
     assert reverse("orders:order_list") == "/orders/"
     assert reverse("orders:checkout") == "/orders/checkout/"
+    assert reverse(
+        "orders:checkout_success",
+        args=["00000000-0000-0000-0000-000000000001"],
+    ) == "/orders/success/attempt/00000000-0000-0000-0000-000000000001/"
+    assert reverse("orders:order_success", args=[1]) == "/orders/success/1/"
+    assert reverse("orders:order_detail", args=[1]) == "/orders/1/"
     assert reverse("orders:stripe_webhook") == "/orders/stripe/webhook/"
     assert resolve("/orders/history/").url_name is None
+
+    active_commerce_routes = {
+        route
+        for route in collect_routes(get_resolver().url_patterns)
+        if route[0].startswith(("cart/", "orders/"))
+    }
+    assert active_commerce_routes == expected_commerce_routes, (
+        active_commerce_routes,
+        expected_commerce_routes,
+    )
 
     for removed_route_name, args in (
         ("cart:add_to_cart_item", [1]),
@@ -66,6 +166,8 @@ else:
 
     for route_name in (
         "cart:cart_detail",
+        "cart:add_to_cart",
+        "cart:clear_cart",
         "orders:order_list",
         "orders:checkout",
         "orders:stripe_webhook",
@@ -77,22 +179,21 @@ else:
         else:
             raise AssertionError(f"{route_name} is available in research mode.")
 
-    try:
-        reverse("cart:update_cart_item", args=[1])
-    except NoReverseMatch:
-        pass
-    else:
-        raise AssertionError("cart:update_cart_item is available in research mode.")
-
-    for route_path in (
-        "/cart/",
-        "/cart/update/1/",
-        "/orders/",
-        "/orders/history/",
-        "/orders/1/",
-        "/orders/checkout/",
-        "/orders/stripe/webhook/",
+    for route_name, args in (
+        ("cart:update_cart_item", [1]),
+        ("cart:remove_from_cart", [1]),
+        ("orders:checkout_success", ["00000000-0000-0000-0000-000000000001"]),
+        ("orders:order_success", [1]),
+        ("orders:order_detail", [1]),
     ):
+        try:
+            reverse(route_name, args=args)
+        except NoReverseMatch:
+            pass
+        else:
+            raise AssertionError(f"{route_name} is available in research mode.")
+
+    for route_path in blocked_commerce_paths:
         try:
             resolve(route_path)
         except Resolver404:
@@ -176,6 +277,34 @@ else:
     )
     assert "/cart/add/" not in product_html
     assert "Add to Cart" not in product_html
+
+    crafted_payload = json.dumps({
+        "variant_id": 1,
+        "quantity": 999,
+        "email": "research-boundary@example.invalid",
+        "state": "IL",
+        "type": "checkout.session.completed",
+        "data": {"object": {"id": "cs_research_boundary"}},
+    })
+    client = Client(enforce_csrf_checks=True)
+    for route_path in blocked_commerce_paths:
+        for method in ("GET", "HEAD", "OPTIONS", "POST", "PUT", "PATCH", "DELETE"):
+            request_kwargs = {}
+            if method in {"POST", "PUT", "PATCH", "DELETE"}:
+                request_kwargs.update({
+                    "data": crafted_payload,
+                    "content_type": "application/json",
+                    "HTTP_STRIPE_SIGNATURE": "synthetic-research-signature",
+                })
+            response = client.generic(method, route_path, **request_kwargs)
+            assert response.status_code == 404, (
+                method,
+                route_path,
+                response.status_code,
+            )
+            assert "Location" not in response.headers
+
+    assert not any(is_forbidden_module(name) for name in sys.modules)
 """
 
 
@@ -455,17 +584,29 @@ class DeploymentModeProcessTests(SimpleTestCase):
                 )
 
     def test_research_mode_rejects_stripe_credentials(self):
-        environment = self.environment_for("research")
-        environment["STRIPE_SECRET_KEY"] = "sk_test_must_not_be_loaded"
+        for setting_name in (
+            "STRIPE_SECRET_KEY",
+            "STRIPE_WEBHOOK_SECRET",
+            "STRIPE_FUTURE_TOKEN",
+        ):
+            with self.subTest(setting_name=setting_name):
+                marker = f"do-not-print-{setting_name.casefold()}"
+                environment = self.environment_for("research")
+                environment[setting_name] = marker
 
-        result = self.run_setup(environment, "import django; django.setup()")
+                result = self.run_setup(
+                    environment,
+                    "import django; django.setup()",
+                )
 
-        self.assertNotEqual(result.returncode, 0)
-        self.assertIn(
-            "Stripe configuration must not be present when "
-            "TREADJOY_MODE='research': STRIPE_SECRET_KEY",
-            result.stderr,
-        )
+                self.assertNotEqual(result.returncode, 0)
+                self.assertIn(
+                    "Stripe configuration must not be present when "
+                    f"TREADJOY_MODE='research': {setting_name}",
+                    result.stderr,
+                )
+                self.assertNotIn(marker, result.stdout)
+                self.assertNotIn(marker, result.stderr)
 
 
 class CISettingsProcessTests(SimpleTestCase):

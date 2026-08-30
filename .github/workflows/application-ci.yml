@@ -234,6 +234,7 @@ jobs:
           python manage.py migrate --noinput
           python manage.py migrate --check
           python manage.py makemigrations --check --dry-run
+          python manage.py check_research_boundary
 
       - name: Run compile, configuration, and static checks
         env: *blocked_provider_network

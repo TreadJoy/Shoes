@@ -2,6 +2,7 @@ import os
 import subprocess
 import sys
 from pathlib import Path
+from tempfile import TemporaryDirectory
 
 from django.http import HttpResponse
 from django.middleware.clickjacking import XFrameOptionsMiddleware
@@ -12,6 +13,33 @@ from Shoes.middleware import ContentSecurityPolicyMiddleware
 
 
 PUBLIC_SETUP_PROBE = r"""
+import importlib.abc
+import os
+import sys
+
+
+FORBIDDEN_MODULE_PREFIXES = ("web.cart", "web.orders", "stripe")
+
+
+def is_forbidden_module(name):
+    return any(
+        name == prefix or name.startswith(f"{prefix}.")
+        for prefix in FORBIDDEN_MODULE_PREFIXES
+    )
+
+
+class ResearchImportBlocker(importlib.abc.MetaPathFinder):
+    def find_spec(self, fullname, path=None, target=None):
+        if is_forbidden_module(fullname):
+            raise AssertionError(
+                f"Public research startup attempted forbidden import: {fullname}"
+            )
+        return None
+
+
+if os.environ.get("TREADJOY_MODE") == "research":
+    sys.meta_path.insert(0, ResearchImportBlocker())
+
 import django
 
 django.setup()
@@ -29,6 +57,8 @@ assert settings.MEDIA_URL == "https://media.ci.invalid/media/"
 assert "https://media.ci.invalid" in settings.CONTENT_SECURITY_POLICY
 assert "upgrade-insecure-requests" in settings.CONTENT_SECURITY_POLICY
 call_command("check", "--deploy", "--fail-level", "WARNING")
+if settings.TREADJOY_MODE == "research":
+    assert not any(is_forbidden_module(name) for name in sys.modules)
 """
 
 
@@ -72,8 +102,6 @@ class PublicSettingsProcessTests(SimpleTestCase):
                 "SECURE_HSTS_SECONDS": "3600",
                 "SECURE_HSTS_INCLUDE_SUBDOMAINS": "false",
                 "SECURE_HSTS_PRELOAD": "false",
-                "STRIPE_SECRET_KEY": "",
-                "STRIPE_WEBHOOK_SECRET": "",
             }
         )
         if mode == "commerce":
@@ -83,18 +111,30 @@ class PublicSettingsProcessTests(SimpleTestCase):
                     "STRIPE_WEBHOOK_SECRET": "whsec_public_settings_boundary",
                 }
             )
+        existing_pythonpath = environment.get("PYTHONPATH", "")
+        environment["PYTHONPATH"] = os.pathsep.join(
+            item
+            for item in (str(self.project_root), existing_pythonpath)
+            if item
+        )
         return environment
 
     def run_setup(self, environment, script=PUBLIC_SETUP_PROBE):
-        return subprocess.run(
-            [sys.executable, "-c", script],
-            cwd=self.project_root,
-            env=environment,
-            capture_output=True,
-            text=True,
-            timeout=30,
-            check=False,
-        )
+        with TemporaryDirectory() as temporary_directory:
+            isolated_config_script = (
+                "import os\n"
+                "import decouple\n"
+                "decouple.config = decouple.AutoConfig(search_path=os.getcwd())\n"
+            )
+            return subprocess.run(
+                [sys.executable, "-c", isolated_config_script + script],
+                cwd=temporary_directory,
+                env=environment,
+                capture_output=True,
+                text=True,
+                timeout=30,
+                check=False,
+            )
 
     def assert_setup_succeeds(self, environment):
         result = self.run_setup(environment)
@@ -144,10 +184,33 @@ class PublicSettingsProcessTests(SimpleTestCase):
                 environment[name] = value
                 self.assert_setup_fails(environment, message)
 
-    def test_research_rejects_unknown_stripe_configuration(self):
-        environment = self.environment_for("research")
-        environment["STRIPE_FUTURE_TOKEN"] = "nonempty"
-        self.assert_setup_fails(environment, "STRIPE_FUTURE_TOKEN")
+    def test_research_rejects_stripe_configuration_before_other_services(self):
+        for setting_name in (
+            "STRIPE_SECRET_KEY",
+            "STRIPE_WEBHOOK_SECRET",
+            "STRIPE_FUTURE_TOKEN",
+        ):
+            with self.subTest(setting_name=setting_name):
+                marker = f"do-not-print-{setting_name.casefold()}"
+                environment = self.environment_for("research")
+                environment[setting_name] = marker
+                environment["EMAIL_HOST"] = ""
+
+                result = self.run_setup(environment, "import django; django.setup()")
+
+                self.assertNotEqual(result.returncode, 0)
+                self.assertIn(setting_name, result.stderr)
+                self.assertNotIn("EMAIL_HOST", result.stderr)
+                self.assertNotIn(marker, result.stdout)
+                self.assertNotIn(marker, result.stderr)
+
+    def test_public_research_requires_stripe_variable_names_to_be_absent(self):
+        for setting_name in ("STRIPE_SECRET_KEY", "STRIPE_WEBHOOK_SECRET"):
+            with self.subTest(setting_name=setting_name):
+                environment = self.environment_for("research")
+                environment[setting_name] = ""
+
+                self.assert_setup_fails(environment, setting_name)
 
     def test_configuration_errors_do_not_expose_secret_values(self):
         marker = "do-not-print-this-public-r2-secret-marker"

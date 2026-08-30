@@ -342,16 +342,17 @@ P1 storefront, email, accessibility, SEO, performance, monitoring, and admin-usa
 
 ### A2.1 — Prove the research-mode capability boundary
 
-- **Priority / status:** P0 — Not started.
+- **Priority / status:** P0 — In progress; implementation and local acceptance evidence complete on 2026-08-30, with A1.2 owner acceptance and required GitHub CI still pending.
 - **Objective:** Make it technically impossible for the research deployment to initiate payment or create commerce records.
 - **Why it matters:** Research is intentionally public before commerce and must fail closed even under crafted requests or configuration mistakes.
-- **Current state:** Mode-aware installed apps/routes and subprocess tests are a strong base; shared product preview routes remain intentional; complete production-environment and dependency-import assertions are not yet in CI.
+- **Current state:** Research startup now rejects forbidden provider configuration, app/context/settings exposure, and commerce/Stripe imports; the active resolver is checked for commerce namespaces, prefixes, and callback modules. A read-only `check_research_boundary` command also rejects commerce database remnants, and research CI invokes it after migrations. Shared catalog previews remain intentionally read-only.
 - **Required work:** Add route/app/import/configuration assertions; test all known commerce URL patterns and crafted POSTs; verify templates/context never emit purchase controls or commerce endpoints; ensure research migrations/database lack commerce tables where intended; make Stripe packages/configuration unreachable at startup; document allowed research capabilities.
 - **Dependencies:** A1.1 and A1.2.
 - **Affected areas:** Shoes/settings.py, Shoes/urls.py, base/navigation/product templates, deployment-mode tests, release checklist.
 - **Security considerations:** Test direct URLs rather than navigation only; reject credentials rather than ignore them; avoid sharing sessions, databases, caches, secrets, or media containing commerce/customer data.
 - **Testing requirements:** PostgreSQL research suite, URL enumeration, crafted order/payment requests, template link scan, import instrumentation, and production-like startup with/without forbidden Stripe variables.
 - **Acceptance criteria:** CI proves no registered/importable order-taking path, Stripe initialization, order creation, or commerce credential in research mode; allowed product previews remain read-only and documented.
+- **Implementation evidence (2026-08-30):** The clean-process contract blocks attempted `web.cart`, `web.orders`, or `stripe` imports before `django.setup()` and freezes all 12 commerce routes. Each concrete route returned a direct 404 for GET, HEAD, OPTIONS, POST, PUT, PATCH, and DELETE with realistic cart, checkout, and signed-webhook-shaped inputs. Rendered-surface scans covered representative anonymous pages, authenticated profile state, and stocked/preorder previews; no commerce destinations or purchase controls were emitted, while the read-only preview message remained visible. Fresh PostgreSQL runs migrated research from zero, passed `check_research_boundary`, and passed 104 tests with 5 skips; the full commerce PostgreSQL suite passed 205 tests with 14 skips. After the final public-manifest assertion was added, the SQLite research and commerce suites passed 105 tests with 6 skips and 206 tests with 18 skips respectively. In-app Browser verification confirmed both preview types remained read-only and all 12 commerce URLs returned 404. No model, migration, dependency, provider call, or separate artifact was introduced. Required GitHub checks have not yet run on this change, and A1.2 remains implemented with owner acceptance pending, so A2.1 is not marked complete.
 
 ### A2.2 — Make research identity, consent, email, and abuse controls production-ready
 

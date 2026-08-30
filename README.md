@@ -26,6 +26,11 @@ assumptions. In particular:
   limitations.
 - `docs/production-configuration.md`, `docs/ci.md`, and
   `docs/dependencies.md` are the detailed operating references.
+- `docs/research-capability-boundary.md` defines the allowed research surface
+  and the fail-closed runtime/database release check.
+- `docs/privacy/` contains the draft A1.4 data register, operating policy,
+  request/incident procedures, validation evidence, and approval gates. It is
+  not in force until its approval record is complete.
 - `docs/visual-regression.md` defines the manual commerce/research and
   mobile/desktop presentation-review matrix.
 
@@ -56,8 +61,9 @@ live infrastructure.
 `TREADJOY_MODE` is required and must be `commerce` or `research`.
 `TREADJOY_ENVIRONMENT` is required and must be `local`, `ci`, `staging`, or
 `production`. Research excludes commerce apps/routes and rejects every
-nonempty `STRIPE_*` variable. Research and commerce must use separate
-PostgreSQL databases.
+nonempty `STRIPE_*` variable; public research manifests must omit all
+`STRIPE_*` variable names, including empty values. Research and commerce must
+use separate PostgreSQL databases.
 
 ## Local Setup
 
@@ -159,6 +165,18 @@ history for secrets. Local SQLite-only success does not prove row-locking or
 concurrency behavior. Reproduce the PostgreSQL jobs using the restricted-role
 procedure in `docs/ci.md`; do not grant the runtime role `CREATEDB` merely to
 make Django's default test runner convenient.
+
+After migrating a research database, run the read-only capability check:
+
+```sh
+env TREADJOY_ENVIRONMENT=local TREADJOY_MODE=research \
+  STRIPE_SECRET_KEY= STRIPE_WEBHOOK_SECRET= \
+  .venv/bin/python manage.py check_research_boundary
+```
+
+The command must pass in PostgreSQL CI and the exact release environment. It
+fails on commerce mode, commerce routes/imports/settings, or any residual
+cart/order database state.
 
 Before any public release, run `manage.py check_release_content` in the exact
 deployment-mode environment. A nonzero result is a release blocker; see

@@ -10,7 +10,8 @@ TreadJoy requires four stable GitHub checks before `main` can advance:
 The application workflow runs for pushes to `main`, pull requests targeting
 `main`, and manual dispatches. Each deployment mode receives a separate
 PostgreSQL service and process environment. The research job does not define
-any `STRIPE_*` variable and explicitly selects only installed research apps.
+any `STRIPE_*` variable, runs the read-only `check_research_boundary` command
+after migrating from zero, and explicitly selects only installed research apps.
 Normal application tests use the guarded `ci` environment profile. Each job
 also loads a synthetic staging profile with `Shoes.settings` and runs the
 warning-fatal Django deployment check; its R2, SMTP, database, and hostname
@@ -50,6 +51,11 @@ check`, verify PostgreSQL 17.11 and the database role flags, migrate an empty
 database, detect unapplied or missing migrations, compile Python, run Django's
 normal and warning-fatal deployment checks, and collect static files beneath
 the runner's temporary directory.
+
+The research migration step also proves that its migration graph and new
+PostgreSQL schema contain no cart/order tables, migration records, or content
+types. The boundary command inspects the active runtime and URL resolver in the
+same process and fails if commerce or Stripe code was imported.
 
 Commerce uses full Django discovery. It then runs the stocked and preorder
 allocation concurrency classes explicitly so the log proves their PostgreSQL
@@ -106,6 +112,7 @@ python -m pip check
 python manage.py migrate --noinput
 python manage.py migrate --check
 python manage.py makemigrations --check --dry-run
+python manage.py check_research_boundary  # research mode only
 python -m compileall -q Shoes web
 python manage.py check
 env DJANGO_SETTINGS_MODULE=Shoes.settings \
@@ -195,6 +202,10 @@ with the official version-and-digest-pinned image.
   pre-created or `--keepdb` was omitted; do not grant `CREATEDB` to fix it.
 - A research startup error naming Stripe means the shell inherited commerce
   variables; remove them completely.
+- A research-boundary database failure means the selected database contains
+  commerce residue or was initialized with the wrong mode. Do not delete or
+  relabel records blindly; stop and verify the database identity and restore
+  or reprovision the research database from an approved research-only source.
 - A skipped concurrency or database-contract test means the job is not using
   PostgreSQL and must fail acceptance even if the remaining suite is green.
 - A static-collection failure should be fixed through `CI_STATIC_ROOT`; do not

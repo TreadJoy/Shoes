@@ -3,6 +3,8 @@
 from django.conf import settings
 from django.core.checks import Error, Tags, register
 
+from .research_boundary import runtime_boundary_violations, url_boundary_violations
+
 
 @register(Tags.security, deploy=True)
 def check_public_settings_contract(app_configs, **kwargs):
@@ -47,6 +49,34 @@ def check_public_settings_contract(app_configs, **kwargs):
                 "Only the HSTS rollout advisories justified by the configured "
                 "HSTS stage may be silenced.",
                 id="treadjoy.E009",
+            )
+        )
+    return errors
+
+
+@register(Tags.security, deploy=True)
+def check_research_capability_boundary(app_configs, **kwargs):
+    """Reject commerce runtime or URL capabilities in research mode."""
+    if settings.IS_COMMERCE_MODE:
+        return []
+
+    runtime_violations = runtime_boundary_violations()
+    route_violations = url_boundary_violations()
+    errors = []
+    if runtime_violations:
+        errors.append(
+            Error(
+                "; ".join(runtime_violations),
+                hint="Remove commerce configuration and imports from research startup.",
+                id="treadjoy.E010",
+            )
+        )
+    if route_violations:
+        errors.append(
+            Error(
+                "; ".join(route_violations),
+                hint="Keep cart and order URLconfs conditional on commerce mode.",
+                id="treadjoy.E011",
             )
         )
     return errors
