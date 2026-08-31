@@ -1,0 +1,22 @@
+{
+  "profile": "product-admin",
+  "canonicalMap": "UX-CONTRACT.md",
+  "sourceRoots": [
+    "templates/waitlist",
+    "templates/survey",
+    "static/css",
+    "web/core",
+    "web/survey",
+    "web/waitlist"
+  ],
+  "requiredCapabilities": [
+    "Form",
+    "Select/Listbox",
+    "Toast",
+    "CRUD"
+  ],
+  "ownership": {
+    "Select/Listbox": "native",
+    "Date": "native"
+  }
+}

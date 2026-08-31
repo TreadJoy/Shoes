@@ -251,21 +251,24 @@
                 <a href="{% url 'survey:survey_welcome' %}" class="editorial-link">Take the Survey →</a>
             </div>
 
-            <form method="post" action="{% url 'core:home' %}#home-waitlist" class="home-waitlist-form waitlist-form" novalidate>
+            <form method="post" action="{% url 'waitlist:join_homepage' %}" class="home-waitlist-form waitlist-form" novalidate>
                 {% csrf_token %}
                 {{ waitlist_form.non_field_errors }}
-
-                <div class="form-group">
-                    {{ waitlist_form.first_name.label_tag }}
-                    {{ waitlist_form.first_name }}
-                    {{ waitlist_form.first_name.errors }}
-                </div>
 
                 <div class="form-group">
                     {{ waitlist_form.email.label_tag }}
                     {{ waitlist_form.email }}
                     {{ waitlist_form.email.errors }}
                 </div>
+
+                <div class="form-group consent-field">
+                    {{ waitlist_form.consent }}
+                    {{ waitlist_form.consent.label_tag }}
+                    {{ waitlist_form.consent.errors }}
+                </div>
+                {{ waitlist_form.company_website }}
+
+                <p class="form-help">Read the <a href="{% url 'core:privacy' %}">research privacy notice</a> before joining.</p>
 
                 <button type="submit" class="btn-primary" data-waitlist-submit>Join the Waitlist</button>
             </form>

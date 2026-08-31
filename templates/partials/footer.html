@@ -33,19 +33,22 @@
         </div>
 
         <div class="footer-links">
-            <h3>Account</h3>
-            {% if user.is_authenticated %}
-                <a href="{% url 'accounts:profile' %}">Profile</a>
-                {% if is_commerce_mode %}
+            {% if is_commerce_mode %}
+                <h3>Account</h3>
+                {% if user.is_authenticated %}
+                    <a href="{% url 'accounts:profile' %}">Profile</a>
                     <a href="{% url 'orders:order_list' %}">Orders</a>
+                    <form method="post" action="{% url 'account_logout' %}">
+                        {% csrf_token %}
+                        <button type="submit">Sign Out</button>
+                    </form>
+                {% else %}
+                    <a href="{% url 'account_login' %}">Sign In</a>
+                    <a href="{% url 'account_signup' %}">Sign Up</a>
                 {% endif %}
-                <form method="post" action="{% url 'account_logout' %}">
-                    {% csrf_token %}
-                    <button type="submit">Sign Out</button>
-                </form>
             {% else %}
-                <a href="{% url 'account_login' %}">Sign In</a>
-                <a href="{% url 'account_signup' %}">Sign Up</a>
+                <h3>Privacy</h3>
+                <a href="{% url 'core:privacy' %}">Research Privacy Notice</a>
             {% endif %}
         </div>
 

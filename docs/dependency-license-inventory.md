@@ -1,6 +1,6 @@
 # Dependency License Inventory
 
-Reverified unchanged on 2026-08-30 after clean CPython 3.12 hash-enforced installations using `pip-licenses==5.5.5 --with-system --format=markdown --with-urls`; Phase 6 made no dependency change. The inventory is factual package metadata, not a legal conclusion. No added package reported an unknown or custom license. `psycopg` and `psycopg-binary` report `LGPL-3.0-only`; owner review remains required before A0.3 is accepted.
+Reverified on 2026-08-30 after A2.2 added the official Resend 2.42.0 SDK and regenerated both CPython 3.12 hash locks. `pip-licenses==5.5.5 --with-system --format=markdown --with-urls` reports Resend as MIT. The inventory is factual package metadata, not a legal conclusion. No added package reported an unknown or custom license. `psycopg` and `psycopg-binary` report `LGPL-3.0-only`; owner review remains required before A0.3 is accepted.
 
 ## Runtime Lock
 
@@ -23,6 +23,7 @@ Reverified unchanged on 2026-08-30 after clean CPython 3.12 hash-enforced instal
 | python-dateutil    | 2.9.0.post0 | Apache Software License; BSD License | https://github.com/dateutil/dateutil                                 |
 | python-decouple    | 3.8         | MIT License                          | http://github.com/henriquebastos/python-decouple/                    |
 | requests           | 2.34.2      | Apache Software License              | https://github.com/psf/requests                                      |
+| resend             | 2.42.0      | MIT License                          | https://github.com/resendlabs/resend-python                           |
 | s3transfer         | 0.19.2      | Apache Software License              | https://github.com/boto/s3transfer                                   |
 | six                | 1.17.0      | MIT License                          | https://github.com/benjaminp/six                                     |
 | sqlparse           | 0.6.0       | BSD License                          | https://github.com/andialbrecht/sqlparse                             |
@@ -83,6 +84,7 @@ Reverified unchanged on 2026-08-30 after clean CPython 3.12 hash-enforced instal
 | python-decouple         | 3.8         | MIT License                          | http://github.com/henriquebastos/python-decouple/                    |
 | python-discovery        | 1.5.3       | MIT License                          | https://github.com/tox-dev/python-discovery                          |
 | requests                | 2.34.2      | Apache Software License              | https://github.com/psf/requests                                      |
+| resend                  | 2.42.0      | MIT License                          | https://github.com/resendlabs/resend-python                           |
 | rich                    | 15.0.0      | MIT License                          | https://github.com/Textualize/rich                                   |
 | s3transfer              | 0.19.2      | Apache Software License              | https://github.com/boto/s3transfer                                   |
 | setuptools              | 84.0.0      | MIT                                  | https://github.com/pypa/setuptools                                   |

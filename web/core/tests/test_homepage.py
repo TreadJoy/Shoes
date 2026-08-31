@@ -5,7 +5,7 @@ from django.test import TestCase, override_settings
 from django.urls import reverse
 
 from web.products.models import PartType
-from web.waitlist.models import WaitlistSignup
+from web.waitlist.models import ResearchOutboundEmail, WaitlistSubscription
 
 
 class HomepageModeTests(TestCase):
@@ -41,7 +41,7 @@ class HomepageModeTests(TestCase):
         self.assertContains(response, 'href="/products/?audience=men"')
         self.assertContains(response, 'href="/products/?audience=women"')
         self.assertContains(response, 'href="/how-it-works/"')
-        self.assertContains(response, 'action="/#home-waitlist"')
+        self.assertContains(response, 'action="/waitlist/join/homepage/"')
         self.assertContains(response, "novalidate")
         self.assertNotContains(response, "Shop Men →")
         self.assertNotContains(response, "Shop Women →")
@@ -59,13 +59,13 @@ class HomepageModeTests(TestCase):
 
         self.assertEqual(response.status_code, 405)
         self.assertEqual(response.headers["Allow"], "GET")
-        self.assertFalse(WaitlistSignup.objects.exists())
+        self.assertFalse(WaitlistSubscription.objects.exists())
 
     @skipIf(settings.IS_COMMERCE_MODE, "Research-mode homepage test")
-    def test_research_home_creates_normalized_signup_with_source(self):
+    def test_research_home_join_endpoint_creates_pending_email_only_request(self):
         response = self.client.post(
-            reverse("core:home"),
-            {"first_name": "  Jo  ", "email": "Jo@Example.COM"},
+            reverse("waitlist:join_homepage"),
+            {"email": "Jo@Example.COM", "consent": "on"},
         )
 
         self.assertRedirects(
@@ -73,41 +73,41 @@ class HomepageModeTests(TestCase):
             f"{reverse('core:home')}#home-waitlist",
             fetch_redirect_response=False,
         )
-        signup = WaitlistSignup.objects.get()
-        self.assertEqual(signup.first_name, "Jo")
+        signup = WaitlistSubscription.objects.get()
         self.assertEqual(signup.email, "jo@example.com")
         self.assertEqual(signup.source, "homepage")
+        self.assertEqual(signup.status, "pending")
+        self.assertEqual(ResearchOutboundEmail.objects.count(), 1)
 
     @skipIf(settings.IS_COMMERCE_MODE, "Research-mode homepage test")
     def test_research_home_duplicate_is_idempotent(self):
         first = self.client.post(
-            reverse("core:home"),
-            {"first_name": "Jo", "email": "jo@example.com"},
+            reverse("waitlist:join_homepage"),
+            {"email": "jo@example.com", "consent": "on"},
         )
         second = self.client.post(
-            reverse("core:home"),
-            {"first_name": "Different", "email": "JO@EXAMPLE.COM"},
+            reverse("waitlist:join_homepage"),
+            {"email": "JO@EXAMPLE.COM", "consent": "on"},
             follow=True,
         )
 
         self.assertEqual(first.status_code, 302)
-        self.assertContains(second, "already on the waitlist")
-        self.assertEqual(WaitlistSignup.objects.count(), 1)
-        signup = WaitlistSignup.objects.get()
-        self.assertEqual(signup.first_name, "Jo")
+        self.assertContains(second, "Check your email if your address is eligible")
+        self.assertEqual(WaitlistSubscription.objects.count(), 1)
+        signup = WaitlistSubscription.objects.get()
         self.assertEqual(signup.source, "homepage")
 
     @skipIf(settings.IS_COMMERCE_MODE, "Research-mode homepage test")
-    def test_research_home_renders_field_errors_without_creating_signup(self):
+    def test_research_home_rejects_post_and_join_page_renders_field_errors(self):
         response = self.client.post(
             reverse("core:home"),
-            {"first_name": "Jo", "email": "jo@example..com"},
+            {"email": "jo@example..com", "consent": "on"},
         )
-
+        self.assertEqual(response.status_code, 405)
+        response = self.client.post(reverse("waitlist:join_waitlist"), {"email": "jo@example..com", "consent": "on"})
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "Enter a valid email address")
-        self.assertContains(response, 'aria-invalid="true"')
-        self.assertFalse(WaitlistSignup.objects.exists())
+        self.assertFalse(WaitlistSubscription.objects.exists())
 
     def test_home_uses_the_six_authoritative_modular_part_types(self):
         response = self.client.get(reverse("core:home"))

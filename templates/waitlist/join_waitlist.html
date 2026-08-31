@@ -1,53 +1,30 @@
 {% extends "base.html" %}
-
-{% block title %}Join Waitlist | TreadJoy{% endblock %}
-
+{% block title %}Join the Waitlist | TreadJoy{% endblock %}
 {% block content %}
-
-<div class="waitlist-page">
-
-    <div class="waitlist-card">
-        <p class="eyebrow">Coming Soon</p>
-
-        <h1>Join the TreadJoy Waitlist</h1>
-
-        <p>
-            Be the first to know when new TreadJoy products launch,
-            get early updates, and help shape the brand.
-        </p>
-
-        <div class="waitlist-count">
-            <strong>{{ signup_count }}</strong>
-            <span>people have joined so far</span>
-        </div>
-
-        <form method="post" class="waitlist-form" novalidate>
-            {% csrf_token %}
-
-            {{ form.non_field_errors }}
-
-            <div class="form-group">
-                {{ form.first_name.label_tag }}
-                {{ form.first_name }}
-                {{ form.first_name.errors }}
-            </div>
-
-            <div class="form-group">
-                {{ form.email.label_tag }}
-                {{ form.email }}
-                {{ form.email.errors }}
-            </div>
-
-            <button type="submit" class="btn-primary">
-                Join Waitlist
-            </button>
-        </form>
-
-        <a href="{% url 'core:home' %}" class="back-link">
-            ← Back to Home
-        </a>
-    </div>
-
-</div>
-
+<section class="waitlist-page" aria-labelledby="waitlist-title">
+  <div class="waitlist-card">
+    <p class="eyebrow">Research Updates</p>
+    <h1 id="waitlist-title">Join the TreadJoy Waitlist</h1>
+    <p>Confirm by email to receive launch and product-development updates. We limit these updates to two per UTC calendar month.</p>
+    <form method="post" class="waitlist-form" novalidate>
+      {% csrf_token %}
+      {% if form.errors %}<div class="form-error-summary" role="alert" tabindex="-1"><strong>Check the highlighted fields.</strong></div>{% endif %}
+      {{ form.non_field_errors }}
+      <div class="form-group">
+        {{ form.email.label_tag }}
+        {{ form.email }}
+        {{ form.email.errors }}
+      </div>
+      <div class="form-group consent-field">
+        {{ form.consent }}
+        {{ form.consent.label_tag }}
+        {{ form.consent.errors }}
+      </div>
+      {{ form.company_website }}
+      <p class="form-help">Read the <a href="{% url 'core:privacy' %}">research privacy notice</a> before joining.</p>
+      <button type="submit" class="btn-primary">Email My Confirmation Link</button>
+    </form>
+    <a href="{% url 'core:home' %}" class="back-link">← Back to Home</a>
+  </div>
+</section>
 {% endblock %}

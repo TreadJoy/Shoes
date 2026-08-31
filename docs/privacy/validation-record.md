@@ -34,24 +34,38 @@ Observed repository facts:
   legacy JSON columns and the backup-gated purge command remain.
 - Shared templates connect browsers to Google Fonts; optional YouTube embeds
   use `youtube-nocookie.com` only after activation.
-- Reproduced forms contain no in-context privacy notice, consent/version
-  record, retention statement, unsubscribe control, or footer privacy link.
+- The original A1.4 reproduction found no in-context privacy notice,
+  consent/version record, retention statement, unsubscribe control, or footer
+  privacy link. A2.2 has since added those application controls, but the notice
+  and retention policy remain draft and therefore not effective approval.
 - No analytics, customer upload, selected production email, selected managed
   origin/database, live R2, monitoring provider, or backup configuration was
   found.
 
 ## Policy-to-schema traceability
 
+### A2.2 implementation delta (2026-08-30)
+
+Research now excludes allauth/sites/public accounts while retaining staff
+authentication. `WaitlistSubscription`, append-only `ConsentEvent`, HMAC-keyed
+`EmailSuppression`, bounded email/webhook records, broadcast approval, and
+aggregate abuse metrics replace the old signup-only record. Existing rows are
+quarantined and cannot be contacted. Completed survey rows no longer contain
+user/session columns; free text is capped, list/search exposure is removed, and
+anonymous CSV export is dedicated-permission, formula-safe, and audited. The
+data-register rows below were updated to describe that implementation without
+changing their draft policy version or implying adviser approval.
+
 ### Shared and research models
 
 | Repository record | Sensitive/current fields | Data-class IDs | Coverage result |
 |---|---|---|---|
 | `auth.User`, groups, permissions | username, password hash, login/join times, email/name, staff flags and authorization | `ID-ACCOUNT-001` | Covered |
-| `account.EmailAddress`, `EmailConfirmation` | email, verified/primary, confirmation key and timestamps | `ID-ACCOUNT-001`, `ID-EMAIL-TOKEN-001` | Covered |
+| `account.EmailAddress`, `EmailConfirmation` (commerce only) | email, verified/primary, confirmation key and timestamps | `ID-ACCOUNT-001`, `ID-EMAIL-TOKEN-001` | Covered; absent from research |
 | `sessions.Session` | session key, serialized auth/flow data, expiry | `OPS-SESSION-001` | Covered |
 | `survey.SurveyResponse` | preference choices, favorite brand, free text, created time; cleared legacy linkage | `RS-SURVEY-001` | Covered |
 | Survey session draft | five in-progress answers, including free text | `RS-SURVEY-DRAFT-001`, `OPS-SESSION-001` | Covered |
-| `waitlist.WaitlistSignup` | email, optional first name, source, created time | `REL-WAITLIST-001`; future `REL-CONSENT-001` and `REL-SUPPRESSION-001` | Covered; enforcement records missing |
+| Waitlist subscription/consent/suppression/outbox records | nullable email, versioned events, HMAC digest, bounded provider IDs/status | `REL-WAITLIST-001`, `REL-CONSENT-001`, `REL-SUPPRESSION-001`, `OPS-EMAIL-001` | Implemented; policy/provider approval remains blocked |
 | `admin.LogEntry` | staff actor, object representation, change message, timestamp | `OPS-STAFF-AUDIT-001` | Covered; broad default behavior needs A3.4 review |
 | Product/part `FileField` and future public human media | file/object metadata and public depiction | `RIGHTS-MEDIA-001` | Public product media is non-personal unless people/rights evidence is introduced; private rights store missing |
 | Preorder event actor/reason | staff identity and free-text reason | `OPS-STAFF-AUDIT-001`, `COM-ORDER-HISTORY-001` | Covered |
@@ -92,8 +106,8 @@ purpose or retention.
 
 | Surface | Current exposure | Risk / required follow-up |
 |---|---|---|
-| Waitlist admin | Email and first name in list display and search | Relationship/marketing role not enforced; list-page PII should be minimized in A2.2/A3.4 |
-| Survey admin | Preference values in list; favorite brand and free text searchable | Anonymous does not mean nonsensitive; restrict research role and avoid free-text exposure in list/search |
+| Waitlist admin | Bounded status/source/timestamp/provider-reference views; raw email/token/digest fields excluded | Relationship manager group is least-privilege; assignment and staging access review remain release gates |
+| Survey admin | Read-only structured filters; no free-text list/search; dedicated audited anonymous CSV action | Research analyst group is least-privilege; assignment and staging access review remain release gates |
 | Cart admin | Guest session key in list and search; inline items | Session ownership identifier is restricted; remove from ordinary display/search and enforce support scope |
 | Order/address admin | Contact/address searchable; many commerce records read-only | Read-only is helpful but not sufficient; role boundaries, list minimization, MFA/access perimeter, export controls, and direct-POST tests remain A3.4 |
 | Payment/refund/Stripe admin | Full provider identifiers searchable/displayed; deletion mostly disabled | Restrict to finance/security roles and consider masked display/approved lookup |

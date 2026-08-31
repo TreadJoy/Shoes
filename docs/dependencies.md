@@ -15,17 +15,18 @@ installs only `requirements.txt`; it contains no development tools.
 | Direct package | Deployment use | Reason | Constraint | Source / reported license |
 | --- | --- | --- | --- | --- |
 | Django | Both modes | Server-rendered web application and admin framework. | `>=5.2.12,<5.3` retains the current LTS line. | djangoproject.com / BSD-3-Clause |
-| django-allauth | Both modes | Account workflows, verification, recovery, and login. | `>=65.18,<66` retains the current major line. | allauth.org / MIT |
+| django-allauth | Commerce only | Account workflows, verification, recovery, and login. Research excludes it at startup. | `>=65.18,<66` retains the current major line. | allauth.org / MIT |
 | holidays | Commerce | United States business-day calculations for order operations. | `>=0.102,<1` accepts compatible pre-1.0 fixes. | github.com/vacanza/holidays / MIT |
 | Pillow | Both modes | Image metadata validation in the release-content check. | `>=12.1.1,<13` retains the current major line. | python-pillow.github.io / MIT-CMU |
 | psycopg[binary] | Both modes | PostgreSQL database adapter with reproducible binary wheels. | `>=3.3.4,<4` retains the current major line. | psycopg.org / LGPL-3.0-only, owner review required |
 | python-decouple | Both modes | Environment-driven configuration. | `>=3.8,<4` retains its current major line. | github.com/henriquebastos/python-decouple / MIT |
+| resend | Research jobs/webhook | Confirmation delivery, contact/segment sync, broadcast send, and signed webhook verification behind a narrow adapter. | `>=2.42,<3` retains the reviewed major line. | github.com/resendlabs/resend-python / MIT |
 | stripe | Commerce only | Hosted Checkout and verified Stripe webhook processing. | `>=15.1,<16` retains the current major line. | stripe.com / MIT |
 | django-storages[s3] | Public environments | Django storage backend for R2-backed public media; its S3 extra provides boto3. | `>=1.14.6,<2` keeps the reviewed stable major line. | django-storages / BSD-3-Clause |
 
-Commerce-only packages are installed from the same release lock in research
-mode but cannot be initialized there: research settings reject Stripe
-credentials and exclude commerce routes and apps.
+Mode-specific packages are installed from the same release lock. Research
+cannot initialize Stripe/allauth/commerce code; Resend is imported lazily only
+inside the research delivery, sync, broadcast, or signed-webhook adapter.
 
 ## Development policy
 

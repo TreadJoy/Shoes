@@ -1,0 +1,3 @@
+{% extends "base.html" %}
+{% block title %}Confirm Updates | TreadJoy{% endblock %}
+{% block content %}<section class="waitlist-page" aria-labelledby="confirm-title"><div class="waitlist-card"><p class="eyebrow">One More Step</p><h1 id="confirm-title">Confirm TreadJoy Updates</h1><p>This page has not changed your subscription. Choose the button to confirm.</p><form method="post" novalidate>{% csrf_token %}<button class="btn-primary" type="submit">Confirm Subscription</button></form></div></section>{% endblock %}

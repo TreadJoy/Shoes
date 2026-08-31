@@ -28,9 +28,15 @@ not a committed `.env` file:
 - An absolute `STATIC_ROOT`; `R2_ACCOUNT_ID`, `R2_BUCKET_NAME`,
   `R2_ACCESS_KEY_ID`, `R2_SECRET_ACCESS_KEY`, and
   `R2_MEDIA_CUSTOM_DOMAIN`.
-- `EMAIL_HOST`, `EMAIL_PORT`, `EMAIL_HOST_USER`, `EMAIL_HOST_PASSWORD`,
-  `DEFAULT_FROM_EMAIL`, and `SERVER_EMAIL`. Public settings always use SMTP
-  with STARTTLS; choosing the provider and activating addresses remain A2.2.
+- Commerce requires `EMAIL_HOST`, `EMAIL_PORT`, `EMAIL_HOST_USER`,
+  `EMAIL_HOST_PASSWORD`, `DEFAULT_FROM_EMAIL`, and `SERVER_EMAIL` and uses SMTP
+  with STARTTLS.
+- Research requires the approved notice version/body/matching SHA-256,
+  retention version, production-strength identity HMAC key,
+  Resend send/webhook/segment configuration, two sender addresses on distinct
+  verified `tread-joy.com` subdomains, and monitored
+  `RESEARCH_EMAIL_REPLY_TO=hello@tread-joy.com`. The management key belongs
+  only in the contact-sync/broadcast job, not the ordinary web process.
 - `SECURE_HSTS_SECONDS`, `SECURE_HSTS_INCLUDE_SUBDOMAINS`, and
   `SECURE_HSTS_PRELOAD`.
 

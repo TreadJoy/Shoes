@@ -15,16 +15,36 @@ from django.urls import get_resolver
 from django.urls.resolvers import URLPattern, URLResolver
 
 
-FORBIDDEN_APP_NAMES = ("web.cart", "web.orders")
-FORBIDDEN_APP_LABELS = ("cart", "orders")
+FORBIDDEN_APP_NAMES = (
+    "allauth",
+    "allauth.account",
+    "django.contrib.sites",
+    "web.accounts",
+    "web.cart",
+    "web.orders",
+)
+FORBIDDEN_APP_LABELS = ("account", "accounts", "sites", "cart", "orders")
 FORBIDDEN_CONTEXT_PROCESSORS = (
     "web.cart.context_processors.cart_summary",
 )
-FORBIDDEN_MODULE_PREFIXES = ("web.cart", "web.orders", "stripe")
+FORBIDDEN_MODULE_PREFIXES = (
+    "allauth",
+    "web.accounts",
+    "web.cart",
+    "web.orders",
+    "stripe",
+)
 FORBIDDEN_SETTING_PREFIXES = ("STRIPE_",)
-FORBIDDEN_URL_NAMESPACES = ("cart", "orders")
-FORBIDDEN_URL_PREFIXES = ("cart/", "orders/")
-FORBIDDEN_TABLE_PREFIXES = ("cart_", "orders_")
+FORBIDDEN_URL_NAMESPACES = ("account", "accounts", "cart", "orders")
+FORBIDDEN_URL_PREFIXES = ("accounts/", "cart/", "orders/")
+FORBIDDEN_TABLE_PREFIXES = (
+    "account_",
+    "socialaccount_",
+    "django_site",
+    "accounts_",
+    "cart_",
+    "orders_",
+)
 
 
 def _matching_prefixes(names: Iterable[str], prefixes: Iterable[str]) -> set[str]:
@@ -222,19 +242,19 @@ def database_observation_violations(
     violations = []
     if forbidden_tables:
         violations.append(
-            f"forbidden commerce tables present: {len(forbidden_tables)}"
+            f"forbidden capability tables present: {len(forbidden_tables)}"
         )
     if not recorder_present:
         violations.append("migration recorder table is missing")
     elif migration_count:
         violations.append(
-            f"forbidden commerce migration records present: {migration_count}"
+            f"forbidden capability migration records present: {migration_count}"
         )
 
     migration_apps = set(migration_apps)
     if migration_apps:
         violations.append(
-            "forbidden commerce migrations loaded: "
+            "forbidden capability migrations loaded: "
             + ", ".join(sorted(migration_apps))
         )
 
@@ -242,7 +262,7 @@ def database_observation_violations(
         violations.append("content type table is missing")
     elif content_type_count:
         violations.append(
-            f"forbidden commerce content types present: {content_type_count}"
+            f"forbidden capability content types present: {content_type_count}"
         )
 
     return violations

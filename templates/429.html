@@ -1,0 +1,3 @@
+{% extends "base.html" %}
+{% block title %}Please Wait | TreadJoy{% endblock %}
+{% block content %}<section class="survey-page" aria-labelledby="throttle-title"><div class="survey-card" role="alert"><h1 id="throttle-title">Please Wait Before Trying Again</h1><p>Too many requests were submitted from this browser. Try again in about {{ retry_after }} seconds.</p><a class="btn-primary" href="{% url 'core:home' %}">Return Home</a></div></section>{% endblock %}

@@ -14,7 +14,7 @@ import os
 import sys
 
 
-FORBIDDEN_MODULE_PREFIXES = ("web.cart", "web.orders", "stripe")
+FORBIDDEN_MODULE_PREFIXES = ("allauth", "web.accounts", "web.cart", "web.orders", "stripe")
 
 
 def is_forbidden_module(name):
@@ -45,10 +45,6 @@ from django.conf import settings
 from django.test import Client
 from django.urls import NoReverseMatch, Resolver404, get_resolver, resolve, reverse
 from django.urls.resolvers import URLPattern, URLResolver
-
-
-assert settings.ACCOUNT_LOGIN_METHODS == {"username"}
-assert settings.ACCOUNT_EMAIL_VERIFICATION == "optional"
 
 
 def collect_routes(patterns, prefix="", namespaces=()):
@@ -89,6 +85,11 @@ expected_commerce_routes = {
 }
 
 blocked_commerce_paths = (
+    "/accounts/",
+    "/accounts/login/",
+    "/accounts/signup/",
+    "/accounts/password/reset/",
+    "/accounts/profile/",
     "/cart/",
     "/cart/add/",
     "/cart/update/1/",
@@ -105,6 +106,8 @@ blocked_commerce_paths = (
 
 
 if settings.TREADJOY_MODE == "commerce":
+    assert settings.ACCOUNT_LOGIN_METHODS == {"username"}
+    assert settings.ACCOUNT_EMAIL_VERIFICATION == "optional"
     assert settings.IS_COMMERCE_MODE
     assert apps.is_installed("web.cart")
     assert apps.is_installed("web.orders")
@@ -156,6 +159,9 @@ else:
     assert not settings.IS_COMMERCE_MODE
     assert not apps.is_installed("web.cart")
     assert not apps.is_installed("web.orders")
+    assert not apps.is_installed("allauth")
+    assert not apps.is_installed("django.contrib.sites")
+    assert not apps.is_installed("web.accounts")
 
     try:
         apps.get_model("orders", "Order")
@@ -237,16 +243,6 @@ else:
     assert "Join the TreadJoy Waitlist" in waitlist_html
     assert 'href="/cart/' not in survey_html + waitlist_html
     assert 'href="/orders/' not in survey_html + waitlist_html
-
-    class ResearchUser:
-        is_authenticated = True
-        username = "research-user"
-        email = "research@example.com"
-
-    request.user = ResearchUser()
-    profile_html = render_to_string("account/profile.html", request=request)
-    assert "/orders/" not in profile_html
-    assert "View Order History" not in profile_html
 
     class EmptyVariants:
         def count(self):

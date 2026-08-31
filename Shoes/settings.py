@@ -1,7 +1,10 @@
 """Environment-driven Django settings for TreadJoy."""
 
-from pathlib import Path
+import hashlib
+import hmac
 import os
+from email.utils import parseaddr
+from pathlib import Path
 
 from django.core.exceptions import ImproperlyConfigured
 
@@ -130,17 +133,20 @@ INSTALLED_APPS = [
     "django.contrib.sessions",
     "django.contrib.messages",
     "django.contrib.staticfiles",
-    "django.contrib.sites",
-    "allauth",
-    "allauth.account",
     "web.core.apps.CoreConfig",
     "web.products",
     "web.survey",
     "web.waitlist",
-    "web.accounts",
 ]
 if IS_COMMERCE_MODE:
-    INSTALLED_APPS += ["web.cart", "web.orders"]
+    INSTALLED_APPS += [
+        "django.contrib.sites",
+        "allauth",
+        "allauth.account",
+        "web.accounts",
+        "web.cart",
+        "web.orders",
+    ]
 
 
 MIDDLEWARE = [
@@ -152,8 +158,9 @@ MIDDLEWARE = [
     "django.contrib.auth.middleware.AuthenticationMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
-    "allauth.account.middleware.AccountMiddleware",
 ]
+if IS_COMMERCE_MODE:
+    MIDDLEWARE.append("allauth.account.middleware.AccountMiddleware")
 
 ROOT_URLCONF = "Shoes.urls"
 
@@ -313,20 +320,133 @@ else:
     SERVER_EMAIL = DEFAULT_FROM_EMAIL
 
 
-SITE_ID = 1
-AUTHENTICATION_BACKENDS = [
-    "django.contrib.auth.backends.ModelBackend",
-    "allauth.account.auth_backends.AuthenticationBackend",
-]
-LOGIN_URL = "account_login"
+AUTHENTICATION_BACKENDS = ["django.contrib.auth.backends.ModelBackend"]
+if IS_COMMERCE_MODE:
+    SITE_ID = 1
+    AUTHENTICATION_BACKENDS.append(
+        "allauth.account.auth_backends.AuthenticationBackend"
+    )
+LOGIN_URL = "account_login" if IS_COMMERCE_MODE else "/admin/login/"
 LOGIN_REDIRECT_URL = "core:home"
 LOGOUT_REDIRECT_URL = "core:home"
 ACCOUNT_LOGIN_REDIRECT_URL = "core:home"
 ACCOUNT_LOGOUT_REDIRECT_URL = "core:home"
 ACCOUNT_SIGNUP_REDIRECT_URL = "core:home"
-ACCOUNT_LOGIN_METHODS = {"username"}
-ACCOUNT_EMAIL_VERIFICATION = "optional"
-ACCOUNT_ADAPTER = "web.accounts.adapter.TreadJoyAccountAdapter"
+if IS_COMMERCE_MODE:
+    ACCOUNT_LOGIN_METHODS = {"username"}
+    ACCOUNT_EMAIL_VERIFICATION = "optional"
+    ACCOUNT_ADAPTER = "web.accounts.adapter.TreadJoyAccountAdapter"
+
+
+RESEARCH_PRIVACY_NOTICE_VERSION = environment.string(
+    "RESEARCH_PRIVACY_NOTICE_VERSION",
+    default="0.1-draft"
+    if not IS_PUBLIC_ENVIRONMENT or IS_COMMERCE_MODE
+    else None,
+    required=IS_PUBLIC_ENVIRONMENT and not IS_COMMERCE_MODE,
+)
+RESEARCH_PRIVACY_NOTICE_BODY = environment.string(
+    "RESEARCH_PRIVACY_NOTICE_BODY",
+    default=(
+        "The research privacy notice is awaiting adviser and technical approval. "
+        "Research participation is not open from this local preview."
+    )
+    if not IS_PUBLIC_ENVIRONMENT or IS_COMMERCE_MODE
+    else None,
+    required=IS_PUBLIC_ENVIRONMENT and not IS_COMMERCE_MODE,
+)
+RESEARCH_PRIVACY_NOTICE_SHA256 = environment.string(
+    "RESEARCH_PRIVACY_NOTICE_SHA256",
+    default=hashlib.sha256(RESEARCH_PRIVACY_NOTICE_BODY.encode()).hexdigest()
+    if not IS_PUBLIC_ENVIRONMENT or IS_COMMERCE_MODE
+    else None,
+    required=IS_PUBLIC_ENVIRONMENT and not IS_COMMERCE_MODE,
+)
+if IS_PUBLIC_ENVIRONMENT and not IS_COMMERCE_MODE:
+    RESEARCH_IDENTITY_HMAC_KEY = environment.strong_secret(
+        "RESEARCH_IDENTITY_HMAC_KEY"
+    )
+else:
+    RESEARCH_IDENTITY_HMAC_KEY = environment.string(
+        "RESEARCH_IDENTITY_HMAC_KEY",
+        default="local-research-identity-key-not-for-public-use",
+    )
+RESEARCH_RESEND_SEND_API_KEY = environment.string(
+    "RESEARCH_RESEND_SEND_API_KEY",
+    default="",
+    required=IS_PUBLIC_ENVIRONMENT and not IS_COMMERCE_MODE,
+)
+RESEARCH_RESEND_MANAGEMENT_API_KEY = environment.string(
+    "RESEARCH_RESEND_MANAGEMENT_API_KEY", default=""
+)
+RESEARCH_RESEND_WEBHOOK_SECRET = environment.string(
+    "RESEARCH_RESEND_WEBHOOK_SECRET",
+    default="",
+    required=IS_PUBLIC_ENVIRONMENT and not IS_COMMERCE_MODE,
+)
+RESEARCH_RESEND_SEGMENT_ID = environment.string(
+    "RESEARCH_RESEND_SEGMENT_ID",
+    default="",
+    required=IS_PUBLIC_ENVIRONMENT and not IS_COMMERCE_MODE,
+)
+RESEARCH_EMAIL_TRANSACTIONAL_FROM = environment.string(
+    "RESEARCH_EMAIL_TRANSACTIONAL_FROM",
+    default="TreadJoy Research <confirm@confirm.localhost>",
+    required=IS_PUBLIC_ENVIRONMENT and not IS_COMMERCE_MODE,
+)
+RESEARCH_EMAIL_MARKETING_FROM = environment.string(
+    "RESEARCH_EMAIL_MARKETING_FROM",
+    default="TreadJoy <updates@updates.localhost>",
+    required=IS_PUBLIC_ENVIRONMENT and not IS_COMMERCE_MODE,
+)
+RESEARCH_EMAIL_REPLY_TO = environment.string(
+    "RESEARCH_EMAIL_REPLY_TO",
+    default="hello@tread-joy.com",
+    required=IS_PUBLIC_ENVIRONMENT and not IS_COMMERCE_MODE,
+)
+RESEARCH_RETENTION_POLICY_VERSION = environment.string(
+    "RESEARCH_RETENTION_POLICY_VERSION",
+    default="",
+    required=IS_PUBLIC_ENVIRONMENT and not IS_COMMERCE_MODE,
+)
+RESEARCH_EMAIL_PROVIDER = "resend" if IS_PUBLIC_ENVIRONMENT else "fake"
+
+if IS_PUBLIC_ENVIRONMENT and not IS_COMMERCE_MODE:
+    if "draft" in RESEARCH_PRIVACY_NOTICE_VERSION.casefold():
+        raise ImproperlyConfigured(
+            "RESEARCH_PRIVACY_NOTICE_VERSION must identify an approved notice."
+        )
+    if "draft" in RESEARCH_RETENTION_POLICY_VERSION.casefold():
+        raise ImproperlyConfigured(
+            "RESEARCH_RETENTION_POLICY_VERSION must identify an effective policy."
+        )
+    if not hmac.compare_digest(
+        hashlib.sha256(RESEARCH_PRIVACY_NOTICE_BODY.encode()).hexdigest(),
+        RESEARCH_PRIVACY_NOTICE_SHA256,
+    ):
+        raise ImproperlyConfigured(
+            "RESEARCH_PRIVACY_NOTICE_SHA256 must match the approved notice body."
+        )
+    if RESEARCH_EMAIL_REPLY_TO.lower() != "hello@tread-joy.com":
+        raise ImproperlyConfigured(
+            "RESEARCH_EMAIL_REPLY_TO must be the monitored hello@tread-joy.com mailbox."
+        )
+    _transactional_address = parseaddr(RESEARCH_EMAIL_TRANSACTIONAL_FROM)[1].lower()
+    _marketing_address = parseaddr(RESEARCH_EMAIL_MARKETING_FROM)[1].lower()
+    _sender_domains = {
+        _transactional_address.rpartition("@")[2],
+        _marketing_address.rpartition("@")[2],
+    }
+    if (
+        not _transactional_address
+        or not _marketing_address
+        or len(_sender_domains) != 2
+        or not all(domain.endswith(".tread-joy.com") for domain in _sender_domains)
+    ):
+        raise ImproperlyConfigured(
+            "Research transactional and marketing senders must use two distinct "
+            "verified tread-joy.com subdomains."
+        )
 
 HOMEPAGE_YOUTUBE_VIDEO_ID = environment.string(
     "HOMEPAGE_YOUTUBE_VIDEO_ID", default=""

@@ -7,6 +7,8 @@ class CoreConfig(AppConfig):
     name = "web.core"
 
     def ready(self):
+        from django.db.models.signals import post_migrate
+
         from .research_boundary import runtime_boundary_violations
 
         violations = runtime_boundary_violations()
@@ -18,3 +20,11 @@ class CoreConfig(AppConfig):
             )
 
         from . import checks  # noqa: F401
+
+        from web.waitlist.roles import configure_research_roles
+
+        post_migrate.connect(
+            configure_research_roles,
+            dispatch_uid="treadjoy.configure_research_roles",
+            weak=False,
+        )

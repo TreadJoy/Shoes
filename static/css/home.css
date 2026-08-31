@@ -676,6 +676,10 @@
     font-weight: 700;
 }
 
+.home-waitlist-form .consent-field label {
+    margin: 0;
+}
+
 .home-waitlist-form .btn-primary {
     border-color: var(--color-text);
     background: var(--color-text);

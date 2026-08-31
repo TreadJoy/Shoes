@@ -108,10 +108,10 @@ class ResearchBoundaryEvaluationTests(SimpleTestCase):
         self.assertEqual(
             violations,
             [
-                "forbidden commerce tables present: 2",
-                "forbidden commerce migration records present: 2",
-                "forbidden commerce migrations loaded: cart, orders",
-                "forbidden commerce content types present: 3",
+                "forbidden capability tables present: 2",
+                "forbidden capability migration records present: 2",
+                "forbidden capability migrations loaded: cart, orders",
+                "forbidden capability content types present: 3",
             ],
         )
 
@@ -267,17 +267,15 @@ class ResearchRenderedSurfaceTests(TestCase):
             reverse("products:product_detail", args=[self.preorder_product.slug]),
             reverse("survey:survey_welcome"),
             reverse("waitlist:join_waitlist"),
-            reverse("account_login"),
-            reverse("account_signup"),
-            reverse("account_reset_password"),
+            reverse("core:privacy"),
         )
         responses = [self.client.get(url) for url in anonymous_urls]
 
-        self.client.force_login(self.user)
-        responses.append(self.client.get(reverse("accounts:profile")))
-
         for response in responses:
             self.assert_research_only_html(response)
+
+        for path in ("/accounts/", "/accounts/login/", "/accounts/signup/", "/accounts/password/reset/", "/accounts/profile/"):
+            self.assertEqual(self.client.get(path).status_code, 404)
 
         for product in (self.stocked_product, self.preorder_product):
             response = self.client.get(
@@ -290,6 +288,6 @@ class ResearchRenderedSurfaceTests(TestCase):
             any(
                 name == prefix or name.startswith(f"{prefix}.")
                 for name in sys.modules
-                for prefix in ("web.cart", "web.orders", "stripe")
+                for prefix in ("allauth", "web.accounts", "web.cart", "web.orders", "stripe")
             )
         )

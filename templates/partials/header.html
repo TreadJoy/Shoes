@@ -244,19 +244,21 @@
                 <span>Social links pending approval.</span>
             </div>
 
-            <div class="mobile-account-links">
-                {% if user.is_authenticated %}
-                    <a href="{% url 'accounts:profile' %}">Account</a>
-                    {% if is_commerce_mode %}<a href="{% url 'orders:order_list' %}">Orders</a>{% endif %}
-                    <form method="post" action="{% url 'account_logout' %}">
-                        {% csrf_token %}
-                        <button type="submit">Sign Out</button>
-                    </form>
-                {% else %}
-                    <a href="{% url 'account_login' %}">Sign In</a>
-                    <a href="{% url 'account_signup' %}">Create Account</a>
-                {% endif %}
-            </div>
+            {% if is_commerce_mode %}
+                <div class="mobile-account-links">
+                    {% if user.is_authenticated %}
+                        <a href="{% url 'accounts:profile' %}">Account</a>
+                        <a href="{% url 'orders:order_list' %}">Orders</a>
+                        <form method="post" action="{% url 'account_logout' %}">
+                            {% csrf_token %}
+                            <button type="submit">Sign Out</button>
+                        </form>
+                    {% else %}
+                        <a href="{% url 'account_login' %}">Sign In</a>
+                        <a href="{% url 'account_signup' %}">Create Account</a>
+                    {% endif %}
+                </div>
+            {% endif %}
         </nav>
     </div>
 </header>

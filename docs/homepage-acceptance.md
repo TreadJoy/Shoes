@@ -188,20 +188,22 @@ database, blank Stripe environment variables, and a unique test email address.
 4. Test waitlist submission with the unique test email.
    - Action: first submit a malformed email, then a valid mixed-case email, then
      the same email again with different capitalization.
-   - Expected: malformed input stays inline with an associated field error and
-     `aria-invalid=true`; valid input shows `Joining…`, prevents a second click,
-     redirects to `/#home-waitlist`, and shows success; the duplicate reports
-     already-on-list and leaves exactly one normalized row.
-   - Failure signs: server error, lost first name, duplicate row, missing CSRF,
-     generic unassociated error, overwritten attribution, or commerce redirect.
+   - Expected: malformed input stays inline with an associated field error;
+     valid input redirects to `/#home-waitlist` with the neutral check-email
+     response; the duplicate returns the same response and leaves exactly one
+     normalized pending subscription while the confirmation-send cap is obeyed.
+   - Failure signs: server error, first-name field, address-enumerating response,
+     duplicate subscription, missing consent/CSRF, overwritten attribution, or
+     commerce redirect.
 
    Verify the stored source in a research-environment shell:
 
    ```bash
-   .venv/bin/python manage.py shell -c "from web.waitlist.models import WaitlistSignup; print(WaitlistSignup.objects.order_by('-created_at').values('email', 'source').first())"
+   .venv/bin/python manage.py shell -c "from web.waitlist.models import WaitlistSubscription; print(WaitlistSubscription.objects.order_by('-created_at').values('status', 'source').first())"
    ```
 
-   - Expected: the normalized test email appears once and `source` is `homepage`.
+   - Expected: one pending row exists and `source` is `homepage`; do not print
+     the submitted address into shared verification logs.
    - Failure signs: blank source or `waitlist_page` for an email first created on
      the homepage.
 

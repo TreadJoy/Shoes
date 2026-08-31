@@ -335,6 +335,42 @@ a:focus-visible {
   list-style: none;
 }
 
+.form-error-summary {
+  margin-bottom: var(--space-4);
+  padding: var(--space-3) var(--space-4);
+  border: var(--border-width-strong) solid var(--color-danger-border);
+  border-radius: var(--radius-md);
+  background: var(--color-danger-surface);
+  color: var(--color-danger);
+}
+
+.form-help {
+  margin: var(--space-2) 0 0;
+  color: var(--color-text-muted);
+  font-size: var(--font-size-sm);
+}
+
+.form-group textarea {
+  resize: none;
+}
+
+.consent-field {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: start;
+  gap: var(--space-3);
+}
+
+.consent-field label {
+  margin: 0;
+  font-weight: 600;
+  line-height: 1.45;
+}
+
+.consent-field .errorlist {
+  grid-column: 1 / -1;
+}
+
 .message {
   border: var(--border-width) solid var(--color-info-border);
   border-radius: var(--radius-md);
@@ -1291,6 +1327,10 @@ input[type="radio"] {
     text-align: left;
     max-width: 420px;
     margin: 0 auto 1.5rem;
+}
+
+.waitlist-form .form-group {
+    margin-bottom: var(--space-4);
 }
 
 .waitlist-form button {

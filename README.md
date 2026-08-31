@@ -28,6 +28,8 @@ assumptions. In particular:
   `docs/dependencies.md` are the detailed operating references.
 - `docs/research-capability-boundary.md` defines the allowed research surface
   and the fail-closed runtime/database release check.
+- `docs/research-engagement-boundary.md` defines the A2.2 consent, provider,
+  staff, abuse, retention, and still-blocked activation contract.
 - `docs/privacy/` contains the draft A1.4 data register, operating policy,
   request/incident procedures, validation evidence, and approval gates. It is
   not in force until its approval record is complete.
@@ -45,7 +47,9 @@ live infrastructure.
   preorder batches.
 - `web/cart` and `web/orders` are installed only in commerce mode.
 - `web/survey` stores anonymous responses (with session drafts only during completion), and
-  `web/waitlist` stores a normalized email plus optional first name and controlled source.
+  `web/waitlist` owns email-only double opt-in, consent, suppression, bounded
+  provider delivery records, and aggregate abuse signals. Research installs no
+  django-allauth/sites/accounts apps or public account routes.
 - Commerce cart mutations are server-side transactional operations. Each cart has one
   principal, and signing in merges the guest cart with availability-cap notices.
 - Stripe-hosted Checkout is the payment boundary; TreadJoy must never collect
@@ -154,7 +158,7 @@ env TREADJOY_ENVIRONMENT=local TREADJOY_MODE=research \
   .venv/bin/python manage.py check
 env TREADJOY_ENVIRONMENT=local TREADJOY_MODE=research \
   TREADJOY_RUNSERVER_DEFAULTS=1 STRIPE_SECRET_KEY= STRIPE_WEBHOOK_SECRET= \
-  .venv/bin/python manage.py test web.core web.products web.survey web.waitlist web.accounts
+  .venv/bin/python manage.py test web.core web.products web.survey web.waitlist
 .venv/bin/python -m compileall -q Shoes web
 .venv/bin/python -m pip check
 ```
@@ -171,12 +175,24 @@ After migrating a research database, run the read-only capability check:
 ```sh
 env TREADJOY_ENVIRONMENT=local TREADJOY_MODE=research \
   STRIPE_SECRET_KEY= STRIPE_WEBHOOK_SECRET= \
-  .venv/bin/python manage.py check_research_boundary
+.venv/bin/python manage.py check_research_boundary
+.venv/bin/python manage.py check_research_engagement
 ```
 
 The command must pass in PostgreSQL CI and the exact release environment. It
 fails on commerce mode, commerce routes/imports/settings, or any residual
 cart/order database state.
+
+Research email is delivered and synchronized only by explicit jobs:
+
+```sh
+.venv/bin/python manage.py deliver_research_email --limit 100
+.venv/bin/python manage.py sync_research_resend --limit 100
+.venv/bin/python manage.py enforce_research_retention
+```
+
+The retention command changes nothing without `--apply` plus a matching
+effective policy version. Local/CI use a deterministic fake email adapter.
 
 Before any public release, run `manage.py check_release_content` in the exact
 deployment-mode environment. A nonzero result is a release blocker; see

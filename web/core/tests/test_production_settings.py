@@ -18,7 +18,13 @@ import os
 import sys
 
 
-FORBIDDEN_MODULE_PREFIXES = ("web.cart", "web.orders", "stripe")
+FORBIDDEN_MODULE_PREFIXES = (
+    "allauth",
+    "web.accounts",
+    "web.cart",
+    "web.orders",
+    "stripe",
+)
 
 
 def is_forbidden_module(name):
@@ -50,7 +56,10 @@ from django.core.management import call_command
 assert settings.IS_PUBLIC_ENVIRONMENT
 assert not settings.DEBUG
 assert settings.SECURE_PROXY_SSL_HEADER == ("HTTP_X_FORWARDED_PROTO", "https")
-assert settings.EMAIL_BACKEND == "django.core.mail.backends.smtp.EmailBackend"
+if settings.TREADJOY_MODE == "commerce":
+    assert settings.EMAIL_BACKEND == "django.core.mail.backends.smtp.EmailBackend"
+else:
+    assert settings.RESEARCH_EMAIL_PROVIDER == "resend"
 assert settings.STORAGES["default"]["BACKEND"] == "storages.backends.s3.S3Storage"
 assert settings.STORAGES["staticfiles"]["BACKEND"] == "django.contrib.staticfiles.storage.ManifestStaticFilesStorage"
 assert settings.MEDIA_URL == "https://media.ci.invalid/media/"
@@ -111,6 +120,22 @@ class PublicSettingsProcessTests(SimpleTestCase):
                     "STRIPE_WEBHOOK_SECRET": "whsec_public_settings_boundary",
                 }
             )
+        else:
+            environment.update(
+                {
+                    "RESEARCH_PRIVACY_NOTICE_VERSION": "ci-approved-notice-v1",
+                    "RESEARCH_PRIVACY_NOTICE_BODY": "Synthetic CI research privacy notice.",
+                    "RESEARCH_PRIVACY_NOTICE_SHA256": "7f9862d185c863a44aecce5c100391d98888738d7d47a1b802dff54b8ea1f205",
+                    "RESEARCH_IDENTITY_HMAC_KEY": "ci-research-hmac-key-not-a-secret-0123456789-ABCDEFGHIJKLMNOPQRSTUVWXYZ",
+                    "RESEARCH_RESEND_SEND_API_KEY": "re_ci_send_key_not_a_secret",
+                    "RESEARCH_RESEND_WEBHOOK_SECRET": "whsec_ci_resend_not_a_secret",
+                    "RESEARCH_RESEND_SEGMENT_ID": "ci-research-segment",
+                    "RESEARCH_EMAIL_TRANSACTIONAL_FROM": "TreadJoy Research <confirm@confirm.tread-joy.com>",
+                    "RESEARCH_EMAIL_MARKETING_FROM": "TreadJoy <updates@updates.tread-joy.com>",
+                    "RESEARCH_EMAIL_REPLY_TO": "hello@tread-joy.com",
+                    "RESEARCH_RETENTION_POLICY_VERSION": "ci-retention-v1",
+                }
+            )
         existing_pythonpath = environment.get("PYTHONPATH", "")
         environment["PYTHONPATH"] = os.pathsep.join(
             item
@@ -169,6 +194,63 @@ class PublicSettingsProcessTests(SimpleTestCase):
                 environment = self.environment_for()
                 environment[name] = ""
                 self.assert_setup_fails(environment, name)
+
+        for name in (
+            "RESEARCH_PRIVACY_NOTICE_VERSION",
+            "RESEARCH_PRIVACY_NOTICE_BODY",
+            "RESEARCH_PRIVACY_NOTICE_SHA256",
+            "RESEARCH_IDENTITY_HMAC_KEY",
+            "RESEARCH_RESEND_SEND_API_KEY",
+            "RESEARCH_RESEND_WEBHOOK_SECRET",
+            "RESEARCH_RESEND_SEGMENT_ID",
+            "RESEARCH_EMAIL_TRANSACTIONAL_FROM",
+            "RESEARCH_EMAIL_MARKETING_FROM",
+            "RESEARCH_EMAIL_REPLY_TO",
+            "RESEARCH_RETENTION_POLICY_VERSION",
+        ):
+            with self.subTest(mode="research", name=name):
+                environment = self.environment_for("research")
+                environment[name] = ""
+                self.assert_setup_fails(environment, name)
+
+    def test_public_research_rejects_unapproved_or_inconsistent_email_contract(self):
+        cases = (
+            (
+                "RESEARCH_IDENTITY_HMAC_KEY",
+                "too-short",
+                "generated production-strength secret",
+            ),
+            (
+                "RESEARCH_PRIVACY_NOTICE_SHA256",
+                "0" * 64,
+                "must match the approved notice body",
+            ),
+            (
+                "RESEARCH_PRIVACY_NOTICE_VERSION",
+                "research-notice-draft",
+                "must identify an approved notice",
+            ),
+            (
+                "RESEARCH_RETENTION_POLICY_VERSION",
+                "draft-retention-v1",
+                "must identify an effective policy",
+            ),
+            (
+                "RESEARCH_EMAIL_REPLY_TO",
+                "unmonitored@tread-joy.com",
+                "monitored hello@tread-joy.com mailbox",
+            ),
+            (
+                "RESEARCH_EMAIL_MARKETING_FROM",
+                "TreadJoy <updates@confirm.tread-joy.com>",
+                "two distinct verified",
+            ),
+        )
+        for name, value, message in cases:
+            with self.subTest(name=name):
+                environment = self.environment_for("research")
+                environment[name] = value
+                self.assert_setup_fails(environment, message)
 
     def test_public_profiles_reject_relaxed_or_inconsistent_security_values(self):
         cases = (

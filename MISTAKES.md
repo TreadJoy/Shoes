@@ -828,3 +828,118 @@
   CI configuration, or external state.
 - Resolution: used the compatible `YAML.safe_load(File.read(...), aliases:
   true)` interface for the final workflow syntax check.
+
+## 2026-08-30 — A2.2 migration generation exposed stale imports and local provider settings
+
+- A combined delete/add `apply_patch` was rejected before changing a model;
+  the edit was reapplied as atomic delete and add operations.
+- The first migration-generation probe inherited nonempty Stripe values from
+  the ignored developer `.env` and correctly failed the research boundary.
+  The next probe reached a stale `WaitlistSignup` admin import and stopped.
+- Resolution: neutralized provider values only for the explicit local command,
+  updated admin imports first, then generated and manually converted the
+  waitlist migration to a data-preserving rename/quarantine migration.
+- Impact: both failed commands stopped before database access; no provider,
+  persistent data, or secret value was changed or printed.
+
+## 2026-08-30 — A2.2 lock regeneration needed writable caches and approved network
+
+- The first `pip-compile` used the host's non-writable pip-tools cache. The
+  retry used `/private/tmp` but DNS was blocked by the default sandbox.
+- Resolution: regenerated both hash locks through the approved network
+  boundary with task-scoped writable caches, then installed only the locked
+  Resend SDK to inspect its exact webhook/contact/segment/broadcast signatures.
+- Impact: the failed runs changed no lock or installed package; the successful
+  run intentionally updated both reviewed locks and the project virtualenv.
+
+## 2026-08-30 — A2.2 focused tests initially retained A2.1 account/waitlist assumptions
+
+- The first focused suite found expected stale tests importing
+  `WaitlistSignup`, asserting removed survey identity columns, and rendering
+  allauth profile links in research. It also found a mobile account block that
+  still reversed allauth routes.
+- Resolution: removed the research account block, expanded the clean-process
+  import/route proof, and replaced the old waitlist assertions with double
+  opt-in, digest-token, CSRF, throttling, suppression, outbox, and retention
+  tests. The rerun passed 58 tests with two PostgreSQL-only skips.
+- Impact: disposable SQLite test databases only; no persistent or provider
+  data was used.
+
+## 2026-08-30 — A2.2 privacy routing initially broke shared commerce surfaces
+
+- The first commerce regression run found eight failures after `/privacy/` was
+  registered only in research mode even though shared survey/order templates
+  still reverse that route in commerce.
+- Resolution: kept the research notice route shared while preserving the
+  research-only effective-content/configuration contract. The affected tests
+  and the later 232-test commerce suite passed.
+- Impact: disposable test databases only; no public route, provider, or
+  persistent deployment was changed.
+
+## 2026-08-30 — A2.2 design tooling was partly unavailable and initially over-scoped
+
+- The first strict premium-UI audit traversed `.venv` and reported dependency
+  sources unrelated to the maintained interface. A scoped `premium-ui.json`
+  manifest fixed the audit boundary and the strict rerun reported no findings.
+- `npx -p @google/design.md designmd lint DESIGN.md` could not run because this
+  workspace has no Node/npm runtime. No runtime was installed merely to satisfy
+  a documentation lint helper; the design contract and front matter were
+  checked with the available local tools instead.
+- Impact: read-only validation only; no design-system token or dependency was
+  changed by either failed attempt.
+
+## 2026-08-30 — A2.2 unrestricted research test discovery imported excluded apps
+
+- Running bare `manage.py test` in research mode imported test modules for
+  `web.accounts`, `web.cart`, and `web.orders`, even though those apps are not
+  installed. That predictably caused account-test route errors and made the
+  runtime import boundary fail.
+- Resolution: retained repository-wide discovery for commerce and used the
+  documented explicit installed research labels (`web.core`, `web.products`,
+  `web.survey`, `web.waitlist`). That 126-test suite passed with six expected
+  SQLite/PostgreSQL skips, and CI uses the same labels.
+- Impact: disposable SQLite test databases only. The product boundary was not
+  weakened and excluded app code is not imported by the passing research run.
+
+## 2026-08-30 — A2.2 disposable Browser verification needed scoped retries
+
+- The first local server bind was denied by the sandbox and was rerun through
+  the approved localhost runserver boundary. Two read-only selectors also used
+  stale assumptions: the honeypot is named `company_website`, and the mobile
+  navigation button changes from “Open navigation” to “Close navigation.”
+- A scripted second-survey loop looked for another “Next Question” button after
+  the application had already returned the expected 24-hour 429 response.
+  Inspecting the fresh DOM confirmed the throttle instead of repeating the
+  action.
+- Resolution: corrected the selectors, verified the fresh DOM after each state
+  change, reset the Browser viewport, stopped the server, and deleted the exact
+  disposable SQLite database and temporary settings file.
+- Impact: synthetic `example.test` identities and a temporary database only;
+  no Resend call, real personal data, or project database was used.
+
+## 2026-08-30 — A2.2 dependency audit first ran behind blocked network access
+
+- The first hash-locked runtime audit could not prepare its isolated audit
+  environment because package-index access was blocked by the default sandbox.
+- Resolution: reran the runtime and development lock audits through the
+  approved dependency-audit network boundary with a task-scoped cache. Both
+  reported no known vulnerabilities.
+- Impact: the failed attempt changed no dependency or lock; the successful
+  audits were read-only against the already regenerated lock files.
+
+## 2026-08-30 — A2.2 public import probe briefly overreached into Django auth internals
+
+- A strengthened clean-process probe initially blocked every import under
+  `django.contrib.sites`. Django's built-in auth admin imports the sites
+  shortcut module even when the sites app is not installed, so the valid
+  research startup failed before the intended boundary assertions.
+- The first direct engagement-command success test also used the deliberately
+  draft local notice/blank retention defaults, so the command correctly
+  refused to pass. A combined corrective patch then missed context because the
+  two target snippets lived in different test files.
+- Resolution: kept the installed-app/table/migration/content-type prohibition
+  for sites, limited import blocking to allauth/accounts/commerce/Stripe, and
+  supplied synthetic effective versions only in the success test. The focused
+  and final suites passed.
+- Impact: subprocess and disposable test databases only; no boundary was
+  relaxed for installed capabilities and no persistent configuration changed.

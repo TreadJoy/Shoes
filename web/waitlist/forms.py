@@ -1,29 +1,24 @@
 from django import forms
 
-from .models import WaitlistSignup
+
+CONSENT_LABEL = (
+    "I want launch and product-development updates from TreadJoy, "
+    "limited to two messages per UTC calendar month."
+)
 
 
-class WaitlistSignupForm(forms.Form):
-    first_name = forms.CharField(
-        label="First name",
-        max_length=WaitlistSignup._meta.get_field("first_name").max_length,
-        required=False,
-        widget=forms.TextInput(
-            attrs={
-                "autocomplete": "given-name",
-            }
-        ),
-    )
+class WaitlistSubscriptionForm(forms.Form):
     email = forms.EmailField(
-        label="Email",
-        max_length=WaitlistSignup._meta.get_field("email").max_length,
-        widget=forms.EmailInput(
-            attrs={
-                "autocomplete": "email",
-                "inputmode": "email",
-            }
-        ),
+        label="Email address",
+        max_length=254,
+        widget=forms.EmailInput(attrs={"autocomplete": "email", "inputmode": "email"}),
+    )
+    consent = forms.BooleanField(label=CONSENT_LABEL, required=True)
+    company_website = forms.CharField(
+        required=False,
+        label="Leave this field empty",
+        widget=forms.HiddenInput(attrs={"tabindex": "-1", "autocomplete": "off", "aria-hidden": "true"}),
     )
 
     def clean_email(self):
-        return self.cleaned_data["email"].lower()
+        return self.cleaned_data["email"].strip().lower()

@@ -1,7 +1,7 @@
-from django.contrib.auth import get_user_model
 from django.test import TestCase
 from django.urls import reverse
 
+from web.waitlist.models import ResearchAbuseMetric
 from web.survey.models import SurveyResponse
 
 
@@ -53,6 +53,8 @@ class SurveyFlowTests(TestCase):
 
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "Select a valid choice")
+        self.assertContains(response, "autofocus")
+        self.assertContains(response, 'aria-invalid="true"')
         self.assertNotIn("style_preference", self.client.session.get(
             "survey_draft", {}
         ))
@@ -80,8 +82,8 @@ class SurveyFlowTests(TestCase):
         self.assertRedirects(responses[-1], reverse("survey:survey_thank_you"))
         self.assertEqual(SurveyResponse.objects.count(), 1)
         survey = SurveyResponse.objects.get()
-        self.assertIsNone(survey.user)
-        self.assertEqual(survey.session_key, "")
+        self.assertFalse(hasattr(survey, "user"))
+        self.assertFalse(hasattr(survey, "session_key"))
         self.assertEqual(survey.style_preference, "athletic")
         self.assertEqual(survey.comfort_importance, "very_important")
         self.assertEqual(survey.price_range, "100_150")
@@ -92,17 +94,35 @@ class SurveyFlowTests(TestCase):
         )
         self.assertNotIn("survey_draft", self.client.session)
 
-    def test_authenticated_completion_remains_anonymous(self):
-        self.client.force_login(
-            get_user_model().objects.create_user(
-                username="survey-user",
-                email="survey@example.com",
-                password="CorrectHorseBattery9!",
-            )
-        )
+    def test_additional_feedback_is_capped_and_warns_against_personal_information(self):
+        for number, field_name, value in self.steps[:-1]:
+            self.post_step(number, field_name, value)
+        response = self.post_step(5, "additional_feedback", "x" * 1001)
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "at most 1000 characters")
+        self.assertContains(response, "Do not include names")
+        self.assertFalse(SurveyResponse.objects.exists())
 
+    def test_second_completion_within_24_hours_is_rate_limited(self):
         self.complete_survey()
+        response = self.post_step(1, "style_preference", "athletic")
+        self.assertEqual(response.status_code, 429)
+        self.assertIn("Retry-After", response)
 
-        survey = SurveyResponse.objects.get()
-        self.assertIsNone(survey.user)
-        self.assertEqual(survey.session_key, "")
+    def test_sixty_first_step_post_in_an_hour_is_rate_limited(self):
+        url = reverse("survey:survey_question", args=[1])
+        for _ in range(60):
+            self.client.post(url, {"style_preference": "invented-choice"})
+        response = self.client.post(url, {"style_preference": "athletic"})
+        self.assertEqual(response.status_code, 429)
+        self.assertIn("Retry-After", response)
+
+    def test_honeypot_writes_no_response_or_submitted_text(self):
+        response = self.client.post(
+            reverse("survey:survey_question", args=[1]),
+            {"style_preference": "athletic", "company_website": "secret bot text"},
+        )
+        self.assertRedirects(response, reverse("survey:survey_thank_you"))
+        self.assertFalse(SurveyResponse.objects.exists())
+        metric = ResearchAbuseMetric.objects.get(action="survey", kind="honeypot")
+        self.assertEqual(metric.count, 1)

@@ -5,10 +5,23 @@ environment before approving a public release. A nonzero exit is a release
 blocker; do not suppress it.
 
 For a research release, also run `python manage.py check --deploy --fail-level
-WARNING` and `python manage.py check_research_boundary` after migrations in the
+WARNING`, `python manage.py check_research_boundary`, and `python manage.py
+check_research_engagement` after migrations in the
 exact release environment. Record both successful outputs. Any commerce app,
 route, import, setting, table, migration record, or content type is a release
 blocker; see `research-capability-boundary.md`.
+
+Also require the effective adviser-approved privacy notice body/version/hash
+and retention version, exact
+staff-group assignments, monitored reply mailbox, scheduler jobs, Resend
+domain/webhook/broadcast/suppression/retry staging evidence, and the scoped
+Cloudflare rate-rule ordinary-flow/abuse proof in
+`research-engagement-boundary.md`. Turnstile must remain absent unless its
+recorded threshold and false-positive review passed.
+
+Verify a controlled-inbox confirmation uses the approved research hostname,
+and prove edge/origin/application/monitoring logs redact the opaque path token
+from confirmation and unsubscribe URLs. Either failure blocks release.
 
 ## Asset Review
 

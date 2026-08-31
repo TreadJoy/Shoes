@@ -18,11 +18,11 @@ from django.contrib import admin
 from django.urls import path, include
 from django.conf import settings
 from django.conf.urls.static import static
-from allauth.account.decorators import secure_admin_login
-
-
 admin.autodiscover()
-admin.site.login = secure_admin_login(admin.site.login)
+if settings.IS_COMMERCE_MODE:
+    from allauth.account.decorators import secure_admin_login
+
+    admin.site.login = secure_admin_login(admin.site.login)
 
 urlpatterns = [
     path("admin/", admin.site.urls),
@@ -32,15 +32,12 @@ urlpatterns = [
     path("survey/", include("web.survey.urls")),
     path("waitlist/", include("web.waitlist.urls")),
 
-    # Your custom accounts/profile pages
-    path("accounts/profile/", include("web.accounts.urls")),
-
-    # Django allauth login/signup/logout pages
-    path("accounts/", include("allauth.urls")),
 ]
 
 if settings.IS_COMMERCE_MODE:
     urlpatterns += [
+        path("accounts/profile/", include("web.accounts.urls")),
+        path("accounts/", include("allauth.urls")),
         path("cart/", include("web.cart.urls")),
         path("orders/", include("web.orders.urls")),
     ]

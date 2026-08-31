@@ -60,7 +60,8 @@ same process and fails if commerce or Stripe code was imported.
 Commerce uses full Django discovery. It then runs the stocked and preorder
 allocation concurrency classes explicitly so the log proves their PostgreSQL
 row-locking cases executed rather than skipped. Research runs `web.core`,
-`web.products`, `web.survey`, `web.waitlist`, and `web.accounts`; blanket
+`web.products`, `web.survey`, and `web.waitlist`; research deliberately does
+not install `web.accounts` or django-allauth. Blanket
 discovery is intentionally not used because commerce migration tests are not
 part of the research application graph. Both jobs explicitly run the shared
 waitlist database-contract test proving a unique-constraint failure rolls back
@@ -133,8 +134,13 @@ in a shared shell or committed file.
 Run `python manage.py test --keepdb --noinput` for commerce. For research, run:
 
 ```sh
-python manage.py test web.core web.products web.survey web.waitlist web.accounts --keepdb --noinput
+python manage.py test web.core web.products web.survey web.waitlist --keepdb --noinput
 ```
+
+Do not use repository-wide discovery for the research job. Django would import
+test modules belonging to deliberately uninstalled commerce/account apps before
+it can skip them, invalidating the clean-process import proof. The explicit
+labels above are the complete set of installed TreadJoy research apps.
 
 Reproduce the secret scan from a full checkout with Docker:
 

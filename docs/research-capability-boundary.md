@@ -11,22 +11,22 @@ resources required by A2.3.
 
 ## Allowed capabilities
 
-Research mode installs Django administration/authentication/session support,
-django-allauth account flows, and these TreadJoy applications:
+Research mode installs Django administration/authentication/session support
+for staff only, plus these TreadJoy applications:
 
 - `web.core` for public brand, story, contact, and how-it-works pages;
 - `web.products` for read-only public catalog and product previews;
 - `web.survey` for anonymous completed survey responses;
-- `web.waitlist` for normalized research signups; and
-- `web.accounts` for the approved optional account flows.
+- `web.waitlist` for double-opt-in research subscriptions, consent,
+  suppression, provider delivery state, and aggregate abuse signals.
 
 Its public URL surface may include `/`, `/about/`, `/how-it-works/`,
-`/contact/`, `/products/`, `/survey/`, `/waitlist/`, and `/accounts/`.
+`/contact/`, `/privacy/`, `/products/`, `/survey/`, and `/waitlist/`.
 `/admin/` remains available for separately permissioned research operations.
 Research catalog and preorder records are presentation/testing copies only;
 they are never the commerce source of truth.
 
-The research database may contain only the shared Django/allauth records and
+The research database may contain only the shared Django staff-auth records and
 data needed by the allowed applications above. It must have separate
 credentials and storage from commerce and must never be initialized from,
 restored from, or pointed at the commerce database.
@@ -44,6 +44,8 @@ Research mode must not expose or load:
 - any nonempty `STRIPE_*` configuration value; or
 - the `stripe`, `web.cart`, or `web.orders` Python modules during application
   startup, URL resolution, template rendering, or crafted requests.
+- django-allauth, `django.contrib.sites`, `web.accounts`, any public
+  `/accounts/` route, or their migrations, tables, content types, and imports.
 
 The Stripe distribution remains installed in the shared hash-locked runtime.
 That installation is not a research capability: clean-process tests make any
@@ -66,9 +68,16 @@ After applying research migrations, run:
 ```sh
 python manage.py check --deploy --fail-level WARNING
 python manage.py check_research_boundary
+python manage.py check_research_engagement
 ```
 
-`check_research_boundary` is read-only and refuses to report success in
+Both commands are read-only and refuse to report success in commerce mode.
+`check_research_boundary` exits nonzero if forbidden identity or commerce
+capabilities are present. `check_research_engagement` additionally verifies
+the approved notice/provider/retention configuration and staff roles; it is
+expected to fail until A1.4 and staging gates are effective.
+
+`check_research_boundary` refuses to report success in
 commerce mode. It exits nonzero if the runtime, active URL tree, migration
 graph, database tables, migration history, or content types contain a commerce
 capability. Its output contains only setting/module names and aggregate counts,

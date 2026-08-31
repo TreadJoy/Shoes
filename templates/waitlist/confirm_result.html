@@ -1,0 +1,3 @@
+{% extends "base.html" %}
+{% block title %}Confirmation Result | TreadJoy{% endblock %}
+{% block content %}<section class="waitlist-page" aria-labelledby="result-title"><div class="waitlist-card"><h1 id="result-title">Confirmation Result</h1>{% if outcome == "confirmed" or outcome == "active" %}<p>Your subscription is confirmed.</p>{% elif outcome == "expired" %}<p>This confirmation link has expired. Submit the waitlist form again for a new link.</p>{% else %}<p>This confirmation link is not valid.</p>{% endif %}<a class="btn-primary" href="{% url 'core:home' %}">Return Home</a></div></section>{% endblock %}
