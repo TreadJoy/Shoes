@@ -943,3 +943,16 @@
   and final suites passed.
 - Impact: subprocess and disposable test databases only; no boundary was
   relaxed for installed capabilities and no persistent configuration changed.
+
+## 2026-08-31 — Bare runserver diagnosis distinguished environment failures
+
+- `python manage.py runserver` from the project directory loaded the ignored
+  local `.env`, which supplies research mode plus Stripe variables. The
+  fail-closed research settings rejected those variables before startup.
+- The shell's `python` is `/opt/anaconda3/bin/python` with Django 6.0, while
+  the project lock uses `.venv` with Django 5.2.17. The system interpreter
+  therefore failed later on Django's renamed `CheckConstraint` argument.
+- Resolution: the locked `.venv/bin/python manage.py runserver` started on a
+  localhost-only port when provider/database overrides were explicitly empty;
+  the server was stopped immediately after the smoke test. No application
+  database or provider was contacted or changed.

@@ -197,7 +197,7 @@ P1 storefront, email, accessibility, SEO, performance, monitoring, and admin-usa
 
 ### A0.1 — Remove unsafe launch data and establish asset provenance
 
-- **Priority / status:** P0 — Complete.
+- **Priority / status:** P0 — Complete and accepted.
 - **Objective:** Ensure no test/customer-like data, unapproved image, hidden metadata, or development claim can enter a public release.
 - **Why it matters:** Publishing identifiable or unlicensed media creates privacy, trust, and legal risk; test catalog content makes a real store appear fraudulent or unfinished.
 - **Current state:** The tracked test imagery and public test catalog have been quarantined, and the public catalog renders its safe empty state. Homepage and social placeholders remain intentionally documented release blockers pending approved factual content.
@@ -211,7 +211,7 @@ P1 storefront, email, accessibility, SEO, performance, monitoring, and admin-usa
 
 ### A0.2 — Remove confirmed dead and duplicate implementation paths
 
-- **Priority / status:** P0 — Complete.
+- **Priority / status:** P0 — Complete and accepted.
 - **Objective:** Leave one discoverable implementation for every active route and business workflow.
 - **Why it matters:** Stale checkout/auth/cart code invites security fixes and features to be applied to the wrong path and may be accidentally reconnected later.
 - **Current state:** Confirmed unrouted root-level scaffolding has been removed. Cart mutations and customer order presentation now have one canonical route name and owning view, with the former order-history URL retained only as a login-protected compatibility redirect.
@@ -225,7 +225,7 @@ P1 storefront, email, accessibility, SEO, performance, monitoring, and admin-usa
 
 ### A0.3 — Create minimal reproducible dependency manifests
 
-- **Priority / status:** P0 — Complete.
+- **Priority / status:** P0 — Complete and accepted.
 - **Objective:** Replace the unrelated frozen environment with reviewed runtime and development dependency inputs and reproducible locks.
 - **Why it matters:** Unused packages expand attack surface, slow builds, obscure licenses, and make security upgrades harder.
 - **Current state:** Reviewed runtime and standalone development inputs now
@@ -265,7 +265,7 @@ P1 storefront, email, accessibility, SEO, performance, monitoring, and admin-usa
 
 ### A1.1 — Add PostgreSQL CI for both deployment modes
 
-- **Priority / status:** P0 — Complete (2026-08-26).
+- **Priority / status:** P0 — Complete and accepted (2026-08-26).
 - **Objective:** Make every release prove Django and database behavior against PostgreSQL in commerce and research modes.
 - **Why it matters:** SQLite skips the locking semantics used to prevent duplicate allocation and future overselling.
 - **Current state:** GitHub requires separate commerce and research PostgreSQL
@@ -300,7 +300,7 @@ P1 storefront, email, accessibility, SEO, performance, monitoring, and admin-usa
 
 ### A1.2 — Harden and validate production settings
 
-- **Priority / status:** P0 — Complete (2026-08-30).
+- **Priority / status:** P0 — Complete and accepted (2026-08-30).
 - **Objective:** Make unsafe or incomplete production configuration fail before serving traffic.
 - **Why it matters:** Current non-DEBUG settings are incomplete for a Cloudflare proxy, production origins, CSP, storage, email, and security invariants.
 - **Current state:** The repository implements explicit local/CI/staging/production profiles, Cloudflare-locked ingress validation, exact hosts/origins, PostgreSQL TLS policy, SMTP/R2/static requirements, CSP, secure cookies, and staged HSTS checks. Owner acceptance and live provider/origin validation remain pending; repository configuration is not deployed infrastructure.
@@ -314,7 +314,7 @@ P1 storefront, email, accessibility, SEO, performance, monitoring, and admin-usa
 
 ### A1.3 — Establish logging, health, monitoring, and incident foundations
 
-- **Priority / status:** P0 — Complete (2026-08-28).
+- **Priority / status:** P0 — Complete and accepted (2026-08-28).
 - **Objective:** Make service health and business-critical failures visible without exposing sensitive data.
 - **Why it matters:** Payment, reservation, inventory, email, and deployment failures cannot rely on console logs or customer reports.
 - **Current state:** Application logging is basic; there are no health/readiness endpoints, error monitor, alert routes, correlation IDs, runbooks, or provider-event failure dashboard.
@@ -327,7 +327,7 @@ P1 storefront, email, accessibility, SEO, performance, monitoring, and admin-usa
 
 ### A1.4 — Approve privacy, retention, and security operating policy
 
-- **Priority / status:** P0 — Not started.
+- **Priority / status:** P0 — Complete and accepted.
 - **Objective:** Define which data TreadJoy collects, why, who can access it, how long it remains, and how incidents/deletion requests are handled.
 - **Why it matters:** Schema, logs, backups, analytics, support tools, and provider payloads cannot be designed safely without retention and authority decisions.
 - **Current state:** Orders, addresses, survey responses, waitlist emails, sessions, and raw Stripe payloads are stored without a complete approved retention/deletion matrix or data-subject request process.
@@ -342,7 +342,7 @@ P1 storefront, email, accessibility, SEO, performance, monitoring, and admin-usa
 
 ### A2.1 — Prove the research-mode capability boundary
 
-- **Priority / status:** P0 — Complete (08-30-2026)
+- **Priority / status:** P0 — Complete and accepted (08-30-2026)
 - **Objective:** Make it technically impossible for the research deployment to initiate payment or create commerce records.
 - **Why it matters:** Research is intentionally public before commerce and must fail closed even under crafted requests or configuration mistakes.
 - **Current state:** Mode-aware installed apps/routes and subprocess tests are a strong base; shared product preview routes remain intentional; complete production-environment and dependency-import assertions are not yet in CI.
