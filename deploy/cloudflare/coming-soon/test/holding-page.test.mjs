@@ -103,6 +103,7 @@ test("robots.txt allows crawlers to observe the noindex response", async () => {
 test("Wrangler is asset-only and has no routes, bindings, variables, or secrets", async () => {
   const config = JSON.parse(await text("wrangler.jsonc"));
   assert.equal(config.name, "treadjoy-coming-soon");
+  assert.equal(config.preview_urls, true);
   assert.deepEqual(config.assets, {
     directory: "./public",
     not_found_handling: "404-page",
