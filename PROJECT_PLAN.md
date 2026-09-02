@@ -395,6 +395,16 @@ P1 storefront, email, accessibility, SEO, performance, monitoring, and admin-usa
   more than 35 days, and the owner as responder. Exact charges must be shown
   before later provisioning. No provider, infrastructure, credential,
   database, DNS, R2, or deployment state was changed.
+- **Implementation evidence (2026-09-02):** Phase 1 of the separately approved
+  temporary holding-page plan is recorded in
+  `docs/cloudflare-coming-soon.md`. The asset-only `treadjoy-coming-soon`
+  package pins Node 24 and Wrangler, contains a noindexed holding page and
+  branded 404, applies restrictive response headers, and has built-in content
+  and boundary tests. Clean installation, nine Node tests, Wrangler dry-run,
+  local HTTP checks, five responsive widths, keyboard tab order, and local
+  Lighthouse targets passed subject to the documented native-zoom limitation.
+  No Cloudflare account, GitHub permission, Worker, route, DNS record, custom
+  domain, credential, database, binding, or public deployment state changed.
 
 ## Phase 3 — Commerce data integrity and identity
 

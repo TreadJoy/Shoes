@@ -1,5 +1,46 @@
 # Verification Limitations
 
+## 2026-09-02 — Holding-page dependency fetch needed scoped network access
+
+- Attempted to obtain the disposable npm 11 runner needed to create and verify
+  the Phase 1 `package-lock.json` from the default sandbox.
+- Result: public npm registry DNS resolution was blocked; no package or
+  repository file was changed by the failed fetch.
+- Resolution: reran the exact npm-runner download with scoped approved network
+  access, generated the lock, completed `npm ci`, and recorded zero known
+  vulnerabilities.
+- Impact: no global package, provider, credential, infrastructure, database,
+  DNS, or public deployment state changed.
+
+## 2026-09-02 — Wrangler local verification needed isolated writable paths
+
+- Attempted the holding-page dry run with Wrangler's default macOS state path
+  and attempted the local server in the default network sandbox.
+- Result: the dry run could not create Wrangler's log/configuration directory
+  outside the workspace, and the local server could not bind its loopback
+  inspector port. Follow-up sandboxed `curl` calls could not cross into the
+  approved local-server process boundary.
+- Resolution: redirected Wrangler log/configuration/cache state to dedicated
+  paths under `/private/tmp`, reran the dry run successfully, and used scoped
+  approved loopback access for the local server and two HTTP checks.
+- Impact: disposable local logs and browser evidence only; no Cloudflare
+  account, Worker, route, DNS, credential, database, or public state changed.
+
+## 2026-09-02 — In-app browser did not expose measurable native zoom
+
+- Attempted to exercise and measure the required 200% browser zoom with the
+  in-app browser's keyboard controls after validating the five explicit
+  viewport widths.
+- Result: repeated zoom shortcuts left the reported viewport, device-pixel
+  ratio, and visual scale unchanged, so an exact native 200% result could not
+  be claimed from that surface. Its network-idle wait was also unsupported; a
+  normal load-state check succeeded instead.
+- Resolution: verified a 720 CSS-pixel reflow equivalent to a 1440-pixel
+  desktop at 200%, with no horizontal overflow, and retained exact native 200%
+  zoom as a deployment-time manual gate in `docs/cloudflare-coming-soon.md`.
+- Impact: verification limitation only; no application or external state
+  changed.
+
 ## 2026-08-31 — Base-interpreter content check could not initialize PostgreSQL backend
 
 - Attempted a read-only `TREADJOY_MODE=research python manage.py

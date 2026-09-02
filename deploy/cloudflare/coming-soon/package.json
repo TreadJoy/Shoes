@@ -1,0 +1,17 @@
+{
+  "name": "treadjoy-coming-soon",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Source and verification for TreadJoy's temporary Cloudflare holding page.",
+  "type": "module",
+  "engines": {
+    "node": ">=24 <25"
+  },
+  "scripts": {
+    "test": "node --test",
+    "check": "npm test && wrangler deploy --dry-run"
+  },
+  "devDependencies": {
+    "wrangler": "4.128.0"
+  }
+}

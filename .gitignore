@@ -28,3 +28,7 @@ staticfiles/
 
 # Logs
 *.log
+
+# Node tooling
+node_modules/
+.wrangler/

@@ -1,0 +1,215 @@
+:root {
+  color-scheme: light;
+  --color-sky: #4ccbf0;
+  --color-gold: #eddc4f;
+  --color-ink: #191919;
+  --color-stone: #e9e1d5;
+  --color-cool: #dce5e7;
+  --page-gutter: clamp(1.25rem, 4vw, 4rem);
+  --frame-border: clamp(0.25rem, 0.5vw, 0.5rem);
+  font-family: ui-rounded, "Arial Rounded MT Bold", "Avenir Next", Avenir,
+    "Segoe UI", Helvetica, Arial, sans-serif;
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html {
+  background: var(--color-stone);
+}
+
+body {
+  min-width: 20rem;
+  margin: 0;
+  color: var(--color-ink);
+  background: var(--color-stone);
+}
+
+.poster {
+  min-block-size: 100vh;
+  min-block-size: 100svh;
+  padding: var(--page-gutter);
+  display: grid;
+}
+
+.poster__frame {
+  position: relative;
+  isolation: isolate;
+  min-block-size: calc(100vh - (2 * var(--page-gutter)));
+  min-block-size: calc(100svh - (2 * var(--page-gutter)));
+  padding: clamp(1.25rem, 4vw, 4rem);
+  display: grid;
+  grid-template-rows: auto 1fr;
+  border: var(--frame-border) solid var(--color-ink);
+  background: var(--color-cool);
+  box-shadow: clamp(0.6rem, 1.5vw, 1.25rem) clamp(0.6rem, 1.5vw, 1.25rem) 0
+    var(--color-sky);
+}
+
+.poster__frame::before,
+.poster__frame::after {
+  position: absolute;
+  z-index: -1;
+  content: "";
+  pointer-events: none;
+}
+
+.poster__frame::before {
+  inset: 0 0 auto auto;
+  inline-size: clamp(4.5rem, 14vw, 13rem);
+  block-size: clamp(1rem, 2.5vw, 2rem);
+  background: var(--color-gold);
+  border-block-end: var(--frame-border) solid var(--color-ink);
+  border-inline-start: var(--frame-border) solid var(--color-ink);
+}
+
+.poster__frame::after {
+  inset: auto auto 0 0;
+  inline-size: clamp(1rem, 2.5vw, 2rem);
+  block-size: clamp(4.5rem, 14vw, 13rem);
+  background: var(--color-sky);
+  border-block-start: var(--frame-border) solid var(--color-ink);
+  border-inline-end: var(--frame-border) solid var(--color-ink);
+}
+
+.brand {
+  width: fit-content;
+  margin: 0;
+  padding: 0.45em 0.7em;
+  color: var(--color-stone);
+  background: var(--color-ink);
+  font-size: clamp(0.9rem, 1.5vw, 1.15rem);
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  line-height: 1;
+}
+
+.message {
+  align-self: center;
+  margin-block: clamp(3rem, 10vh, 8rem);
+  padding-inline: clamp(0rem, 4vw, 4rem);
+}
+
+.message h1 {
+  max-inline-size: 8ch;
+  margin: 0;
+  font-size: clamp(4rem, 15vw, 13rem);
+  font-weight: 900;
+  letter-spacing: -0.085em;
+  line-height: 0.78;
+}
+
+.message h1 > span {
+  display: block;
+  width: fit-content;
+}
+
+.message__accent {
+  margin-block-start: 0.13em;
+  margin-inline-start: clamp(0rem, 9vw, 8rem);
+  padding: 0.06em 0.12em 0.11em;
+  background: var(--color-gold);
+  box-shadow: 0.06em 0.06em 0 var(--color-ink);
+  transform: rotate(-1.5deg);
+}
+
+.message > p:not(.error-code) {
+  max-inline-size: 31rem;
+  margin: clamp(2rem, 5vw, 4rem) 0 0;
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  font-size: clamp(1rem, 2.4vw, 1.35rem);
+  font-weight: 650;
+  line-height: 1.5;
+}
+
+.message--not-found {
+  display: grid;
+  justify-items: start;
+}
+
+.message--not-found h1 {
+  max-inline-size: 10ch;
+  font-size: clamp(3.5rem, 12vw, 10rem);
+  line-height: 0.88;
+}
+
+.error-code {
+  margin: 0 0 1rem;
+  padding: 0.25em 0.5em;
+  background: var(--color-gold);
+  border: 0.2rem solid var(--color-ink);
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  font-size: clamp(1rem, 2vw, 1.25rem);
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  line-height: 1;
+}
+
+.home-link {
+  margin-block-start: 2rem;
+  padding: 0.75rem 1rem;
+  color: var(--color-ink);
+  background: var(--color-sky);
+  border: 0.2rem solid var(--color-ink);
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  font-weight: 800;
+  line-height: 1.2;
+  text-underline-offset: 0.18em;
+}
+
+.home-link:hover {
+  background: var(--color-gold);
+}
+
+.home-link:focus-visible {
+  outline: 0.25rem solid var(--color-ink);
+  outline-offset: 0.25rem;
+}
+
+::selection {
+  color: var(--color-ink);
+  background: var(--color-gold);
+}
+
+@media (max-width: 30rem) {
+  .poster__frame {
+    padding: 1.25rem;
+  }
+
+  .message {
+    margin-block: 3rem;
+  }
+
+  .message h1 {
+    font-size: clamp(3.75rem, 21vw, 6rem);
+  }
+
+  .message__accent {
+    margin-inline-start: 0.25em;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+  }
+}
+
+@media (forced-colors: active) {
+  .poster__frame,
+  .brand,
+  .message__accent,
+  .error-code,
+  .home-link {
+    border: 0.2rem solid CanvasText;
+    box-shadow: none;
+    forced-color-adjust: auto;
+  }
+}
