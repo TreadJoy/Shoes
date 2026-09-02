@@ -4,6 +4,19 @@ Run `python manage.py check_release_content` from each deployment-mode
 environment before approving a public release. A nonzero exit is a release
 blocker; do not suppress it.
 
+For the research deployment, complete the A2.3 prerequisite gate in
+`docs/a2.3-prerequisite-gate.md` before provisioning or publishing any public
+resource. The gate records dependency status, owner directions, evidence
+limitations, and unresolved launch blockers.
+
+For the owner-authorized private development-team-only POC, blank media, no
+claims, labeled privacy/terms/accessibility placeholders, and the sole contact
+email `ethan@tread-joy.com` are permitted only behind enforced private access.
+This exception does not relax the public-release check: verified social
+destination URLs, factual approved content, effective policy pages, and all
+named privacy/legal/accessibility evidence remain required before public
+traffic or consumer outreach.
+
 For a research release, also run `python manage.py check --deploy --fail-level
 WARNING`, `python manage.py check_research_boundary`, and `python manage.py
 check_research_engagement` after migrations in the

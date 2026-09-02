@@ -1,5 +1,35 @@
 # Verification Limitations
 
+## 2026-08-31 — Base-interpreter content check could not initialize PostgreSQL backend
+
+- Attempted a read-only `TREADJOY_MODE=research python manage.py
+  check_release_content` rerun after updating the private POC gate.
+- Result: the base Anaconda interpreter lacks `psycopg` and `psycopg2`, so
+  Django could not initialize its PostgreSQL backend. This is an environment
+  limitation, not an application result.
+- Impact: no provider, database, credential, infrastructure, or application
+  state changed. The prior dependency-locked run remains the valid content
+  evidence and still reports the intentional public blockers.
+- Resolution: use the project's hash-locked/dependency-complete environment
+  for future management-command verification; do not install ad hoc runtime
+  packages or reinterpret this failure as a content pass.
+
+## 2026-08-31 — A2.3 Plan 1 prerequisite checks confirmed launch blockers
+
+- Attempted the read-only local research checks for release content and
+  research engagement readiness while preparing the A2.3 prerequisite gate.
+- Result: `check_release_content` reported the two known blockers
+  `homepage-development-media` and `pending-social-links`. The local ignored
+  SQLite database also reported three forbidden commerce tables, eleven
+  forbidden migration records, three forbidden content types, a draft privacy
+  notice, a draft retention policy, and missing staff-role readiness.
+- Impact: no provider, credential, infrastructure, DNS, R2, deployment, or
+  application source state changed. The local database was not deleted or
+  relabeled.
+- Resolution: recorded the evidence and explicit stop conditions in
+  `docs/a2.3-prerequisite-gate.md`; require a clean research PostgreSQL
+  database and effective A1.3/A1.4/A2.2 evidence before provisioning.
+
 ## 2026-08-26 — A1.1 branch creation required managed Git approval
 
 - Attempted to create `codex/a1-1-postgresql-ci` with `git switch -c` inside
@@ -956,3 +986,17 @@
   localhost-only port when provider/database overrides were explicitly empty;
   the server was stopped immediately after the smoke test. No application
   database or provider was contacted or changed.
+
+## 2026-08-31 — Google Workspace Gmail activation remained pending after valid DNS propagation
+
+- Cloudflare already contained the sole required root MX record
+  (`smtp.google.com`, priority 1) and the Google SPF TXT record. Google Public
+  DNS independently returned that MX record with a successful response.
+- Two Google Workspace activation checks nevertheless ended with “Unable to
+  verify at the moment” after several minutes each.
+- Resolution: made no speculative DNS changes and left Workspace on its safe
+  retry screen. The remaining dependency is Google's activation-side
+  propagation; retry after its documented delay rather than duplicating or
+  replacing the valid records.
+- Impact: no DNS record was created, deleted, or modified. The only external
+  actions were two Workspace verification attempts.

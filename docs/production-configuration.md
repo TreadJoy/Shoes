@@ -37,6 +37,10 @@ not a committed `.env` file:
   verified `tread-joy.com` subdomains, and monitored
   `RESEARCH_EMAIL_REPLY_TO=hello@tread-joy.com`. The management key belongs
   only in the contact-sync/broadcast job, not the ordinary web process.
+- The owner-scoped private development POC is a temporary exception: use
+  `ethan@tread-joy.com` for its operational/reply/error-mail destination,
+  assign only the owner, and keep consumer marketing/broadcast disabled. This
+  exception does not relax the public deployment contract above.
 - `SECURE_HSTS_SECONDS`, `SECURE_HSTS_INCLUDE_SUBDOMAINS`, and
   `SECURE_HSTS_PRELOAD`.
 

@@ -48,6 +48,16 @@ These values remain non-operative until the required scoped privacy/legal and
 accounting/tax reviews are recorded, technical completeness is attested, and a
 later policy version receives an effective date.
 
+## Scoped private POC exception
+
+On 2026-08-31, the project owner authorized a private, development-team-only
+proof of concept for testing and learning. Legal, accounting, tax, and
+commerce/consumer-outreach holds are deferred for this scope only. This
+exception does not make `0.1-draft` effective, waive technical privacy or
+security controls, authorize consumer traffic, or approve public claims. The
+deferred reviews and holds remain required before a public research release or
+commerce activity.
+
 ## Dependency discrepancies
 
 ### A1.2
@@ -66,8 +76,9 @@ correlation middleware, redaction filter, monitoring integration, or A1.3
 operations runbooks.
 
 This is a source-of-truth discrepancy. A1.4 does not claim those controls and
-does not reimplement them. The project owner must reopen A1.3 or attach valid
-implementation evidence before incident monitoring or redaction acceptance.
+does not reimplement them. The project owner reopened A1.3 on 2026-08-31;
+implementation and staging-alert evidence are still required before incident
+monitoring or redaction acceptance.
 
 ## Launch blockers remaining after this draft
 
@@ -99,3 +110,4 @@ implementation evidence before incident monitoring or redaction acceptance.
 | Version | Date | Status | Change |
 |---|---|---|---|
 | `0.1-draft` | 2026-08-30 | Owner accepted; adviser/technical/operational review pending | Initial repository-grounded policy package and engineering proposals; owner accepted the draft without recorded exceptions |
+| `0.1-draft` | 2026-08-31 | Owner-scoped private POC exception; public approval gates unchanged | Internal development-team-only POC authorized; legal/accounting/consumer holds deferred only for this scope |

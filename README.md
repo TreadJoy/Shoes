@@ -22,6 +22,7 @@ assumptions. In particular:
 - `AGENTS.md` contains the approved product, commerce, security, and working
   policies.
 - `PROJECT_PLAN.md` is the living current-state assessment and launch roadmap.
+- `docs/project-ideas.md` is the living owner backlog for broader product and brand ideas.
 - `MISTAKES.md` is the append-only record of failed attempts and verification
   limitations.
 - `docs/production-configuration.md`, `docs/ci.md`, and

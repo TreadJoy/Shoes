@@ -185,7 +185,7 @@ P1 storefront, email, accessibility, SEO, performance, monitoring, and admin-usa
 ### Major decisions still requiring owner or specialist approval
 
 - Managed Django/PostgreSQL origin vendor, region, service tier, connection-pooling limits, and recovery objectives.
-- Production email provider, mailbox activation, SPF/DKIM/DMARC, and retry/escalation policy. `hello@tread-joy.com` and `noreply@tread-joy.com` are reserved future addresses, not active or monitored addresses.
+- Production email provider, mailbox activation, SPF/DKIM/DMARC, and retry/escalation policy. `hello@tread-joy.com` and `noreply@tread-joy.com` remain reserved future public addresses; the owner-scoped private POC temporarily uses `ethan@tread-joy.com` for operational/reply/error mail only.
 - Supported carriers, shipping service levels, live/contract/table rate source, order cutoff, holiday calendar, and unresponsive preorder-delay behavior.
 - Tax registrations/nexus treatment and product tax codes, confirmed with a qualified advisor before enabling collection.
 - Terms, privacy, cookie/analytics, shipping, return, warranty, accessibility, and contact disclosures reviewed for the actual business.
@@ -314,7 +314,8 @@ P1 storefront, email, accessibility, SEO, performance, monitoring, and admin-usa
 
 ### A1.3 — Establish logging, health, monitoring, and incident foundations
 
-- **Priority / status:** P0 — Complete and accepted (2026-08-28).
+- **Priority / status:** P0 — In progress; reopened by the owner for
+  implementation (2026-08-31).
 - **Objective:** Make service health and business-critical failures visible without exposing sensitive data.
 - **Why it matters:** Payment, reservation, inventory, email, and deployment failures cannot rely on console logs or customer reports.
 - **Current state:** Application logging is basic; there are no health/readiness endpoints, error monitor, alert routes, correlation IDs, runbooks, or provider-event failure dashboard.
@@ -327,7 +328,9 @@ P1 storefront, email, accessibility, SEO, performance, monitoring, and admin-usa
 
 ### A1.4 — Approve privacy, retention, and security operating policy
 
-- **Priority / status:** P0 — Complete and accepted.
+- **Priority / status:** P0 — Open; the `0.1-draft` policy is not effective for
+  public deployment. The owner recorded a scoped private POC exception;
+  required reviewer approvals remain outstanding (2026-08-31).
 - **Objective:** Define which data TreadJoy collects, why, who can access it, how long it remains, and how incidents/deletion requests are handled.
 - **Why it matters:** Schema, logs, backups, analytics, support tools, and provider payloads cannot be designed safely without retention and authority decisions.
 - **Current state:** Orders, addresses, survey responses, waitlist emails, sessions, and raw Stripe payloads are stored without a complete approved retention/deletion matrix or data-subject request process.
@@ -369,7 +372,8 @@ P1 storefront, email, accessibility, SEO, performance, monitoring, and admin-usa
 
 ### A2.3 — Provision, rehearse, and launch the research deployment
 
-- **Priority / status:** P0 — Not started.
+- **Priority / status:** P0 — In progress; Plan 1 passed for a private
+  development-team-only POC, while public launch remains blocked (2026-08-31).
 - **Objective:** Deploy research mode through Cloudflare to a managed Django/PostgreSQL origin with repeatable release and recovery.
 - **Why it matters:** The research site is the first public validation surface and the production architecture rehearsal for commerce.
 - **Current state:** `tread-joy.com` has been purchased through Cloudflare as the intended base domain, but no research hostname allocation, DNS, TLS, managed origin, R2, managed database, deployment definition, backups, observability, or rollback process is configured.
@@ -379,6 +383,18 @@ P1 storefront, email, accessibility, SEO, performance, monitoring, and admin-usa
 - **Security considerations:** Separate research secrets/database from commerce; no Stripe credentials; restrict origin/admin; protect deploy credentials; cache only public safe responses; treat R2 custom-domain objects as public.
 - **Testing requirements:** Clean deploy, migrations, smoke/user-flow/accessibility checks, header/TLS/cache validation, backup and point-in-time/restore drill, origin-bypass attempt, monitoring alert, rollback to prior artifact, and research negative commerce tests in production-like staging.
 - **Acceptance criteria:** Research runs from a recorded commit with green required checks, approved domain/TLS/content/legal notices, WCAG 2.2 AA launch evidence, acceptable measured performance, separate data/services, tested restore/rollback, active monitoring, and owner launch acceptance; it cannot take an order.
+- **Implementation evidence (2026-08-31):** Plan 1 is recorded in
+  `docs/a2.3-prerequisite-gate.md`, and the Plan 2 provider/recovery evaluation
+  is recorded in `docs/a2.3-provider-decision.md`. The owner accepted a private,
+  development-team-only POC with one assigned user, temporary mailbox
+  `ethan@tread-joy.com`, blank media, no claims, and labeled policy
+  placeholders. A1.3 is reopened; A1.4 remains non-effective for public use;
+  A2.2 and public content/provider evidence remain launch blockers. Plan 2
+  selects Render in Ohio with a Free POC web service, the smallest paid
+  PostgreSQL tier, no marketing services, encrypted local exports retained no
+  more than 35 days, and the owner as responder. Exact charges must be shown
+  before later provisioning. No provider, infrastructure, credential,
+  database, DNS, R2, or deployment state was changed.
 
 ## Phase 3 — Commerce data integrity and identity
 

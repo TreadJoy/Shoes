@@ -53,6 +53,13 @@ Public research requires:
 - monitored `RESEARCH_EMAIL_REPLY_TO=hello@tread-joy.com`; and
 - effective `RESEARCH_RETENTION_POLICY_VERSION`.
 
+The owner-scoped private development POC is narrower than public research: it
+uses `ethan@tread-joy.com` as the temporary operational, reply, and error-mail
+destination, assigns only the owner, and does not enable consumer
+marketing/broadcast mail. The distinct public sender subdomains and monitored
+`hello@tread-joy.com` reply mailbox remain mandatory before public activation;
+this temporary exception does not change that contract.
+
 CI/local use the deterministic fake adapter and make no Resend call.
 Confirmation URLs use the first configured `ALLOWED_HOSTS` entry as the public
 host. A2.3 must place the approved research hostname first and verify the exact
