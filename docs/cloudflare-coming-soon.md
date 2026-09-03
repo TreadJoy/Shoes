@@ -119,6 +119,34 @@ public deployment.
   to `eb66dde5`, then restored `bdf569e2` to 100%. The restored public page and
   preview Access redirect were rechecked afterward.
 
+### Phase 3 provider evidence — 2026-09-03
+
+- After a fresh DNS export and review, the zone contained the original three
+  mail/ownership records unchanged. Cloudflare added exactly two proxied Worker
+  records for the custom domains: the apex (`@`) and `www`.
+- Production custom domains `tread-joy.com` and `www.tread-joy.com` are attached
+  to `treadjoy-coming-soon`. The production `workers.dev` URL is disabled;
+  versioned preview URLs remain enabled and protected by the existing
+  preview-only Cloudflare Access policy.
+- Three active 301 redirect rules preserve the original path and query string:
+  `http://tread-joy.com/*` to the HTTPS apex, and both HTTP and HTTPS
+  `www.tread-joy.com/*` to the equivalent HTTPS apex URL.
+- Read-only checks returned one redirect for each noncanonical URL, `200` for
+  the canonical root, and a branded `404` for an unknown apex path. The apex
+  and `www` HTTPS responses carry the configured security/noindex headers and
+  `Strict-Transport-Security: max-age=3600`, with no `includeSubDomains` or
+  `preload` directive.
+- Cloudflare's dashboard HSTS control does not offer a one-hour duration, so an
+  active response-header transform named `TreadJoy staged HSTS edge header`
+  applies the exact one-hour value only to the apex and `www` hostnames. The
+  same value is also source-controlled in `public/_headers` for the next
+  successful Worker deployment.
+- Commit `ff76c28` passed the nine built-in Node tests. Its Workers Builds
+  attempts stalled before cloning/installing; the initial attempt and one
+  retry were canceled after waiting. No Worker content version changed: the
+  deployed version remains `bdf569e2` from `d3997a9` while the edge HSTS rule
+  supplies the staged header.
+
 ## Deployment gate
 
 Do not deploy from an unreviewed local working tree. Phase 2 must connect
@@ -131,7 +159,8 @@ Phase 3 must re-export and compare DNS, preserve the existing mail and
 verification records, obtain action-time confirmation immediately before
 attaching the apex and `www` custom domains, and verify HTTPS before staging
 HSTS. The staged one-hour HSTS value is added only after that live check; it
-does not include subdomains or preload.
+does not include subdomains or preload. The provider evidence above records
+the completed cutover and the temporary Workers Builds runner issue.
 
 ## Rollback
 
@@ -140,10 +169,12 @@ Worker version from Cloudflare's deployment history, then confirm its version
 identifier, source commit, response status, headers, and rendered page. A Git
 revert followed by the normal tested deployment is the durable source rollback.
 
-Public routing rollback is a separate Phase 3 operation: detach both Worker
-custom domains and restore the reviewed pre-cutover DNS export. Never edit or
-replace the authoritative mail or ownership-verification records as part of a
-web rollback.
+Public routing rollback is a separate Phase 3 operation: disable the three
+redirect rules and staged HSTS transform if required, detach both Worker custom
+domains, and restore the reviewed pre-cutover DNS export. Never edit or replace
+the authoritative mail or ownership-verification records as part of a web
+rollback. Re-enable the production `workers.dev` URL only as an explicit,
+reviewed rollback action.
 
 ## References
 
