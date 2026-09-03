@@ -93,6 +93,32 @@ These measurements are local diagnostics, not evidence of Cloudflare edge
 performance, Access protection, redirects, TLS, custom-domain behavior, or a
 public deployment.
 
+### Phase 2 provider evidence — 2026-09-02
+
+- Workers Builds is connected only to `TreadJoy/Shoes`; the GitHub organization
+  authorization was completed with repository-scoped access.
+- Worker `treadjoy-coming-soon` is configured for production branch `main`,
+  root `deploy/cloudflare/coming-soon`, build `npm test`, deploy
+  `npx wrangler deploy`, non-production version command
+  `npx wrangler versions upload`, non-production builds enabled, and watch
+  include `deploy/cloudflare/coming-soon/**` (excluding `node_modules/**` and
+  `.git/`).
+- A Cloudflare-managed Workers Builds token was approved at action time. No
+  token value is stored here; build variables and secrets are empty, and no
+  runtime bindings, database, KV, R2, Hyperdrive, or application APIs were
+  added.
+- The `d3997a9` main-branch build succeeded and produced preview version
+  `bdf569e2`. The production `workers.dev` URL returned `200` for `/` and
+  `404` for an unknown path with the configured security and noindex headers.
+  The preview URL redirected to Cloudflare Access (`302`), while production
+  remained publicly readable.
+- Preview-only Cloudflare Access uses the Cloudflare-account-members allow
+  policy with 24-hour sessions. No custom domains, routes, DNS records, HSTS,
+  or production `workers.dev` disablement were changed.
+- The approved rollback drill temporarily moved 100% traffic from `bdf569e2`
+  to `eb66dde5`, then restored `bdf569e2` to 100%. The restored public page and
+  preview Access redirect were rechecked afterward.
+
 ## Deployment gate
 
 Do not deploy from an unreviewed local working tree. Phase 2 must connect
