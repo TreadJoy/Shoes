@@ -130,7 +130,8 @@ granting the persistent GitHub integration permission.
 Phase 3 must re-export and compare DNS, preserve the existing mail and
 verification records, obtain action-time confirmation immediately before
 attaching the apex and `www` custom domains, and verify HTTPS before staging
-HSTS. HSTS is intentionally absent from this package until that live check.
+HSTS. The staged one-hour HSTS value is added only after that live check; it
+does not include subdomains or preload.
 
 ## Rollback
 

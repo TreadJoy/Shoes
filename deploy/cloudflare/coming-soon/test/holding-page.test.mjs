@@ -76,7 +76,7 @@ test("the stylesheet uses approved colors and no remote resources or motion", as
   assert.match(css, /:focus-visible/);
 });
 
-test("the response policy is restrictive and intentionally excludes HSTS", async () => {
+test("the response policy is restrictive with staged HSTS", async () => {
   const headers = await text("public/_headers");
   const requiredHeaders = [
     "Content-Security-Policy:",
@@ -88,11 +88,12 @@ test("the response policy is restrictive and intentionally excludes HSTS", async
     "X-Content-Type-Options: nosniff",
     "X-Frame-Options: DENY",
     "Referrer-Policy: no-referrer",
+    "Strict-Transport-Security: max-age=3600",
     "Permissions-Policy:",
     "X-Robots-Tag: noindex, nofollow, noarchive",
   ];
   for (const directive of requiredHeaders) assert.ok(headers.includes(directive), directive);
-  assert.doesNotMatch(headers, /strict-transport-security/i);
+  assert.doesNotMatch(headers, /includeSubDomains|preload/i);
   assert.doesNotMatch(headers, /set-cookie/i);
 });
 
