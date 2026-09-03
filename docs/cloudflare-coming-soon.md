@@ -147,6 +147,37 @@ public deployment.
   deployed version remains `bdf569e2` from `d3997a9` while the edge HSTS rule
   supplies the staged header.
 
+### Phase 4 provider evidence — 2026-09-03
+
+- The account has one active member with the `Super Administrator - All
+  Privileges` role. The owner profile email is verified. Account two-factor
+  authentication is currently inactive; enabling a factor requires the owner
+  to complete the credential/OTP flow directly and was not attempted here.
+- The account Notifications page has no configured rules. The current
+  notification catalog does not expose a Workers Builds build-failure rule,
+  and the Worker settings page has no native build-alert destination. The
+  newer Workers Builds event-subscription path would require a separately
+  approved queue/consumer and alert endpoint, so no notification resources
+  were created.
+- The inventory remains intentionally small: one static-assets Worker with no
+  runtime bindings, variables, secrets, Logpush, Tail Worker, or enabled
+  Workers Observability; no Web Analytics property is configured. Hyperdrive
+  has no configurations; R2 has no active subscription or bucket; KV, D1, and
+  Analytics Engine have no resources; and account API tokens, OAuth clients,
+  Access service tokens, and reusable Zero Trust policies are empty.
+- The existing preview-only Access application and its
+  `Cloudflare Workers Preview URLs` account-member allow policy remain in
+  place. They are required for the protected Worker previews and were not
+  changed.
+- A persistent cloudflared tunnel named `First Tunnel for web Data to DBEAVER`
+  remains healthy with one connected replica and no routes. It is an unfinished
+  administration path, not part of the public Worker or database architecture.
+  Its token and local connector were not rotated or removed; any cleanup,
+  rotation, or policy change requires separate owner approval.
+- Billing remains on the existing free Worker and Zero Trust plans. No paid
+  upgrade, R2 subscription, analytics product, or other billable feature was
+  enabled.
+
 ## Deployment gate
 
 Do not deploy from an unreviewed local working tree. Phase 2 must connect
@@ -161,6 +192,13 @@ attaching the apex and `www` custom domains, and verify HTTPS before staging
 HSTS. The staged one-hour HSTS value is added only after that live check; it
 does not include subdomains or preload. The provider evidence above records
 the completed cutover and the temporary Workers Builds runner issue.
+
+Phase 4 is an audit-only hygiene step. Preserve the single owner role and
+preview Access policy, do not enable paid products, and do not create a
+Workers Builds event-subscription consumer until an alert destination and a
+separately approved resource design exist. Treat the existing DBeaver tunnel
+as a persistent exception and obtain explicit deletion or rotation approval
+before changing it.
 
 ## Rollback
 
