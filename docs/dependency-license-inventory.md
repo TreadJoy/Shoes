@@ -1,6 +1,12 @@
 # Dependency License Inventory
 
-Reverified on 2026-08-30 after A2.2 added the official Resend 2.42.0 SDK and regenerated both CPython 3.12 hash locks. `pip-licenses==5.5.5 --with-system --format=markdown --with-urls` reports Resend as MIT. The inventory is factual package metadata, not a legal conclusion. No added package reported an unknown or custom license. `psycopg` and `psycopg-binary` report `LGPL-3.0-only`; owner review remains required before A0.3 is accepted.
+Reverified on 2026-09-03 after A2.3 added Gunicorn 26.2.0 and regenerated
+both CPython 3.12 hash locks. An isolated hash-locked installation reports
+Gunicorn's package metadata as MIT. The prior A2.2 inventory reports the
+official Resend 2.42.0 SDK as MIT. This inventory is factual package metadata,
+not a legal conclusion. No added package reported an unknown or custom
+license. `psycopg` and `psycopg-binary` report `LGPL-3.0-only`; owner review
+remains required before A0.3 is accepted.
 
 ## Runtime Lock
 
@@ -14,6 +20,7 @@ Reverified on 2026-08-30 after A2.2 added the official Resend 2.42.0 SDK and reg
 | charset-normalizer | 3.5.1       | MIT                                  | https://github.com/jawah/charset_normalizer/blob/master/CHANGELOG.md |
 | django-allauth     | 65.19.1     | MIT License                          | https://allauth.org                                                  |
 | django-storages    | 1.14.6      | BSD License                          | https://github.com/jschneier/django-storages                         |
+| gunicorn           | 26.2.0      | MIT                                  | https://gunicorn.org                                                 |
 | holidays           | 0.103       | MIT                                  | https://github.com/vacanza/holidays/                                 |
 | idna               | 3.19        | BSD-3-Clause                         | https://github.com/kjd/idna                                          |
 | jmespath           | 1.1.0       | MIT License                          | https://github.com/jmespath/jmespath.py                              |
@@ -54,6 +61,7 @@ Reverified on 2026-08-30 after A2.2 added the official Resend 2.42.0 SDK and reg
 | django-allauth          | 65.19.1     | MIT License                          | https://allauth.org                                                  |
 | django-storages         | 1.14.6      | BSD License                          | https://github.com/jschneier/django-storages                         |
 | filelock                | 3.32.4      | MIT                                  | https://github.com/tox-dev/py-filelock                               |
+| gunicorn                | 26.2.0      | MIT                                  | https://gunicorn.org                                                 |
 | holidays                | 0.103       | MIT                                  | https://github.com/vacanza/holidays/                                 |
 | identify                | 2.6.19      | MIT                                  | https://github.com/pre-commit/identify                               |
 | idna                    | 3.19        | BSD-3-Clause                         | https://github.com/kjd/idna                                          |

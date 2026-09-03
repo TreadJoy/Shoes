@@ -19,28 +19,36 @@ identify variable names and requirements but never print values.
 Set these through the selected managed origin's configuration or secret store,
 not a committed `.env` file:
 
-- `TREADJOY_INGRESS=cloudflare-locked`, `DJANGO_DEBUG=false`, a generated
+- `TREADJOY_INGRESS=cloudflare-locked`, a generated
+  `TREADJOY_ORIGIN_SHARED_SECRET`, `DJANGO_DEBUG=false`, a generated
   `SECRET_KEY`, exact non-wildcard `ALLOWED_HOSTS`, and HTTPS-only
   `CSRF_TRUSTED_ORIGINS` whose hosts are listed in `ALLOWED_HOSTS`.
-- `DB_NAME`, `DB_USER`, `DB_PASSWORD`, `DB_HOST`, `DB_PORT`, and
-  `DB_SSLMODE`. `verify-ca` and `verify-full` additionally require an absolute
+- Either a provider `DATABASE_URL` PostgreSQL connection string or the explicit
+  `DB_NAME`, `DB_USER`, `DB_PASSWORD`, `DB_HOST`, and `DB_PORT` values, plus
+  `DB_SSLMODE`. A provider URL defaults public environments to `require` TLS;
+  `verify-ca` and `verify-full` additionally require an absolute
   `DB_SSLROOTCERT` path.
 - An absolute `STATIC_ROOT`; `R2_ACCOUNT_ID`, `R2_BUCKET_NAME`,
   `R2_ACCESS_KEY_ID`, `R2_SECRET_ACCESS_KEY`, and
   `R2_MEDIA_CUSTOM_DOMAIN`.
-- Commerce requires `EMAIL_HOST`, `EMAIL_PORT`, `EMAIL_HOST_USER`,
-  `EMAIL_HOST_PASSWORD`, `DEFAULT_FROM_EMAIL`, and `SERVER_EMAIL` and uses SMTP
-  with STARTTLS.
+- Public commerce and research services require `EMAIL_HOST`, `EMAIL_PORT`,
+  `EMAIL_HOST_USER`, `EMAIL_HOST_PASSWORD`, `DEFAULT_FROM_EMAIL`, and
+  `SERVER_EMAIL`; Django uses SMTP with STARTTLS for operational mail. Research
+  confirmation delivery additionally uses the Resend settings below.
 - Research requires the approved notice version/body/matching SHA-256,
   retention version, production-strength identity HMAC key,
-  Resend send/webhook/segment configuration, two sender addresses on distinct
-  verified `tread-joy.com` subdomains, and monitored
+  Resend send/webhook/segment configuration (the segment is optional only for
+  the private POC while contact synchronization is disabled), two sender
+  addresses on distinct verified `tread-joy.com` subdomains, and monitored
   `RESEARCH_EMAIL_REPLY_TO=hello@tread-joy.com`. The management key belongs
   only in the contact-sync/broadcast job, not the ordinary web process.
-- The owner-scoped private development POC is a temporary exception: use
+- The owner-scoped private development POC is a temporary exception: set
+  `TREADJOY_PRIVATE_POC=true` only on its staging research service, use
   `ethan@tread-joy.com` for its operational/reply/error-mail destination,
   assign only the owner, and keep consumer marketing/broadcast disabled. This
-  exception does not relax the public deployment contract above.
+  exception permits the draft policy placeholders and single mailbox only for
+  that explicit staging profile; it does not relax the public deployment
+  contract above.
 - `SECURE_HSTS_SECONDS`, `SECURE_HSTS_INCLUDE_SUBDOMAINS`, and
   `SECURE_HSTS_PRELOAD`.
 
@@ -51,11 +59,18 @@ each deployment, and put only approved public media there.
 ## Cloudflare ingress contract
 
 `cloudflare-locked` allows Django to trust `X-Forwarded-Proto` and enable HTTPS
-redirects, secure cookies, and HSTS. It is an operator assertion, not evidence
-that the origin is protected. Before setting it in staging or production,
-configure Full (strict) TLS and prove that the origin accepts traffic only from
-the approved Cloudflare path, using an origin firewall, Authenticated Origin
-Pulls, or the selected managed-origin equivalent. Cloudflare must strip a
+redirects, secure cookies, and HSTS. In addition, the origin requires the
+secret `X-TreadJoy-Origin` header set by a Cloudflare Transform Rule. The rule
+must overwrite (not append to) any client-provided value, and the secret must
+remain only in the Cloudflare/Render secret stores. The generic health paths
+are the only direct-origin exemptions because Render's provider health check
+does not carry the header.
+
+This is an application boundary, not evidence by itself that the origin is
+protected. Before setting it in staging or production, configure Full (strict)
+TLS and prove that the origin accepts traffic only from the approved Cloudflare
+path, using the shared-header rule plus an origin firewall, Authenticated
+Origin Pulls, or the selected managed-origin equivalent. Cloudflare must strip a
 client-provided forwarded-protocol header and set the trusted one itself.
 
 The first live HSTS stage is `SECURE_HSTS_SECONDS=3600` with subdomains and

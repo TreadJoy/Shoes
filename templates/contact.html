@@ -11,15 +11,21 @@
 
         <h1>Get in Touch</h1>
 
-        <p>
-            Have a question about TreadJoy? We’d love to hear from you.
-        </p>
+        {% if is_commerce_mode %}
+            <p>Have a question about TreadJoy? We’d love to hear from you.</p>
+        {% else %}
+            <p>This private development preview has one contact destination.</p>
+        {% endif %}
     </section>
 
     <section class="content-card">
         <h2>Contact Information</h2>
 
-        <p>Email: hello@treadjoy.com</p>
+        {% if is_commerce_mode %}
+            <p>Email: hello@treadjoy.com</p>
+        {% else %}
+            <p>Email: <a href="mailto:{{ contact_email }}">{{ contact_email }}</a></p>
+        {% endif %}
 
         <a href="{% url 'core:home' %}" class="btn-secondary">
             Back to Home

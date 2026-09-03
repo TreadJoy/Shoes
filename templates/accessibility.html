@@ -1,0 +1,13 @@
+{% extends "base.html" %}
+{% block title %}Accessibility Placeholder | TreadJoy{% endblock %}
+{% block content %}
+<section class="content-page" aria-labelledby="accessibility-title">
+    <p class="eyebrow">Accessibility Placeholder</p>
+    <h1 id="accessibility-title">Accessibility</h1>
+    <div class="message" role="alert">
+        <strong>Working draft.</strong> This private development page records a future accessibility statement; it is not a completed conformance claim.
+    </div>
+    <p>Accessibility review is part of the development work. No conformance claim is made from this proof of concept.</p>
+    <p>Questions: <a href="mailto:{{ contact_email }}">{{ contact_email }}</a></p>
+</section>
+{% endblock %}

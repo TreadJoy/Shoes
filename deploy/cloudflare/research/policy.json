@@ -1,0 +1,199 @@
+{
+  "schema_version": 1,
+  "environment": "research-staging-private-poc",
+  "status": "review-before-apply",
+  "zone": "tread-joy.com",
+  "hostnames": {
+    "application": "research.tread-joy.com",
+    "media": "media.research.tread-joy.com"
+  },
+  "dns": {
+    "application": {
+      "name": "research",
+      "type": "CNAME",
+      "target_env": "RENDER_RESEARCH_ORIGIN_HOST",
+      "proxied": true,
+      "ttl": 1
+    },
+    "media": {
+      "name": "media.research",
+      "type": "R2_CUSTOM_DOMAIN",
+      "target": "managed-by-r2-custom-domain",
+      "proxied": true,
+      "ttl": 1
+    },
+    "forbidden": [
+      "r2.dev",
+      "r2.cloudflarestorage.com",
+      "direct-origin-records",
+      "unproxied-application-records"
+    ]
+  },
+  "tls": {
+    "zone_encryption_mode": "strict",
+    "always_use_https": true,
+    "minimum_tls_version": "1.2",
+    "tls_1_3": true,
+    "hsts": {
+      "max_age_seconds": 3600,
+      "include_subdomains": false,
+      "preload": false
+    },
+    "origin_certificate": {
+      "required": true,
+      "accepted_issuers": ["cloudflare-origin-ca", "publicly-trusted-ca"],
+      "hostname": "research.tread-joy.com",
+      "verification": "live-staging-gate"
+    }
+  },
+  "access": {
+    "application_type": "self-hosted",
+    "hostname": "research.tread-joy.com",
+    "session_duration": "24h",
+    "default_decision": "deny",
+    "allow_email": ["ethan@tread-joy.com"],
+    "scope": "all-paths-including-admin",
+    "media_poc_policy": {
+      "hostname": "media.research.tread-joy.com",
+      "default_decision": "deny",
+      "allow_email": ["ethan@tread-joy.com"]
+    }
+  },
+  "origin_lock": {
+    "header_name": "X-TreadJoy-Origin",
+    "secret_env": "TREADJOY_ORIGIN_SHARED_SECRET",
+    "cloudflare_action": "overwrite-request-header",
+    "direct_origin_expected_status": 403,
+    "health_exempt_paths": ["/health/live/", "/health/ready/"],
+    "notes": "The Render health checker is the only direct-origin exception; health bodies remain generic and no-store."
+  },
+  "security_headers": {
+    "application": {
+      "X-Content-Type-Options": "nosniff",
+      "X-Frame-Options": "DENY",
+      "Referrer-Policy": "same-origin",
+      "Permissions-Policy": "accelerometer=(), autoplay=(), camera=(), display-capture=(), encrypted-media=(), fullscreen=(), geolocation=(), gyroscope=(), magnetometer=(), microphone=(), midi=(), payment=(), picture-in-picture=(), publickey-credentials-get=(), screen-wake-lock=(), usb=(), web-share=(), xr-spatial-tracking=()",
+      "Strict-Transport-Security": "max-age=3600"
+    },
+    "r2_media": {
+      "X-Content-Type-Options": "nosniff",
+      "Referrer-Policy": "no-referrer",
+      "X-Frame-Options": "DENY",
+      "Strict-Transport-Security": "max-age=3600"
+    },
+    "source_of_truth": "django-origin-plus-cloudflare-response-header-verification",
+    "verification": "live-staging-gate"
+  },
+  "waf": {
+    "managed_ruleset": {
+      "phase": "http_request_firewall_managed",
+      "action": "execute",
+      "ruleset_id": "efb7b8c949ac4650a09736fc376e9aee",
+      "expression": "http.host eq \"research.tread-joy.com\" or http.host eq \"media.research.tread-joy.com\""
+    },
+    "admin_perimeter": {
+      "path_prefix": "/admin/",
+      "access_application": "research.tread-joy.com",
+      "cache": "bypass",
+      "django_authorization_remains_required": true
+    }
+  },
+  "rate_limiting": {
+    "phase": "http_ratelimit",
+    "characteristics": ["ip.src"],
+    "rollout": ["log", "validate-ordinary-traffic", "block"],
+    "plan_capability_gate": {
+      "minimum_rules": 2,
+      "required_period_seconds": [60],
+      "required_actions": ["log", "block"],
+      "note": "Confirm the zone plan supports two rules and log mode before apply; do not merge thresholds silently on a lower plan."
+    },
+    "rules": [
+      {
+        "name": "A2.2 waitlist POST guard",
+        "expression": "http.host eq \"research.tread-joy.com\" and http.request.method eq \"POST\" and http.request.uri.path in {\"/waitlist/join/\" \"/waitlist/join/homepage/\"}",
+        "requests_per_period": 5,
+        "period_seconds": 60,
+        "mitigation_timeout_seconds": 60,
+        "staging_action": "log",
+        "enforced_action": "block",
+        "count_cached_assets": false,
+        "application_authority": {
+          "requests": 5,
+          "period_seconds": 3600,
+          "source": "web/waitlist/views.py"
+        }
+      },
+      {
+        "name": "A2.2 survey step POST guard",
+        "expression": "http.host eq \"research.tread-joy.com\" and http.request.method eq \"POST\" and http.request.uri.path wildcard \"/survey/question/*\"",
+        "requests_per_period": 60,
+        "period_seconds": 60,
+        "mitigation_timeout_seconds": 60,
+        "staging_action": "log",
+        "enforced_action": "block",
+        "count_cached_assets": false,
+        "application_authority": {
+          "requests": 60,
+          "period_seconds": 3600,
+          "source": "web/survey/views.py"
+        }
+      }
+    ],
+    "cached_assets": "not-counted"
+  },
+  "cache": {
+    "default_html": "bypass",
+    "bypass_paths": [
+      "/admin/",
+      "/accounts/",
+      "/cart/",
+      "/orders/",
+      "/waitlist/",
+      "/survey/",
+      "/health/"
+    ],
+    "bypass_methods": ["POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+    "rules": [
+      {
+        "name": "versioned application static",
+        "hostname": "research.tread-joy.com",
+        "path_prefix": "/static/",
+        "methods": ["GET", "HEAD"],
+        "edge_ttl_seconds": 31536000,
+        "browser_ttl": "respect-origin",
+        "cache_key_query_string": "include"
+      },
+      {
+        "name": "approved public R2 media",
+        "hostname": "media.research.tread-joy.com",
+        "path_prefix": "/media/",
+        "methods": ["GET", "HEAD"],
+        "edge_ttl_seconds": 31536000,
+        "browser_ttl": "respect-origin",
+        "cache_key_query_string": "include"
+      }
+    ],
+    "never_cache": ["dynamic-html", "session-bearing-responses", "admin", "webhooks", "private-r2-objects"]
+  },
+  "r2": {
+    "bucket_name": "treadjoy-research-media",
+    "location_hint": "enam",
+    "custom_domain": "media.research.tread-joy.com",
+    "public_access": "custom-domain-only",
+    "public_development_url": false,
+    "allowed_prefixes": ["media/"],
+    "poc_object_count": 0,
+    "separate_from_commerce": true,
+    "credentials": "mode-scoped-secret-store-only",
+    "location_review": "confirm-before-create"
+  },
+  "verification": {
+    "ordinary_paths": ["/", "/products/", "/how-it-works/", "/survey/", "/waitlist/join/"],
+    "blocked_origin_paths": ["/", "/products/", "/admin/"],
+    "media_probe": "/media/nonexistent-synthetic-object.txt",
+    "required_headers": ["X-Content-Type-Options", "X-Frame-Options", "Referrer-Policy", "Strict-Transport-Security"],
+    "required_cache_headers": ["CF-Cache-Status", "Cache-Control"],
+    "synthetic_only": true
+  }
+}

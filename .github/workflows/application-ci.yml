@@ -32,6 +32,7 @@ jobs:
       TREADJOY_ENVIRONMENT: ci
       TREADJOY_MODE: commerce
       TREADJOY_INGRESS: direct
+      TREADJOY_ORIGIN_SHARED_SECRET: ci-origin-lock-secret-not-a-secret-0123456789-ABCDEFGHIJKLMNOPQRSTUVWXYZ
       SECRET_KEY: treadjoy-ci-public-synthetic-key-7Q2z-not-a-secret-for-checks-only
       DJANGO_DEBUG: "True"
       ALLOWED_HOSTS: ci.invalid,testserver,localhost
@@ -153,6 +154,7 @@ jobs:
       TREADJOY_ENVIRONMENT: ci
       TREADJOY_MODE: research
       TREADJOY_INGRESS: direct
+      TREADJOY_ORIGIN_SHARED_SECRET: ci-origin-lock-secret-not-a-secret-0123456789-ABCDEFGHIJKLMNOPQRSTUVWXYZ
       SECRET_KEY: treadjoy-ci-public-synthetic-key-7Q2z-not-a-secret-for-checks-only
       DJANGO_DEBUG: "True"
       ALLOWED_HOSTS: ci.invalid,testserver,localhost

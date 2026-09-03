@@ -1,0 +1,109 @@
+# Render Blueprint for the owner-scoped research staging POC.
+# Applying this file creates resources and may incur the approved Postgres
+# charge; review the current dashboard price before applying it. No secrets are
+# stored here. The production deployment must use a separately reviewed
+# environment/service and the same tested release commit.
+
+services:
+  - type: web
+    name: treadjoy-research-staging
+    runtime: python
+    plan: free
+    region: ohio
+    autoDeployTrigger: "off"
+    renderSubdomainPolicy: disabled
+    domains:
+      - research.tread-joy.com
+    buildCommand: ./scripts/render_build.sh
+    startCommand: ./scripts/render_start.sh
+    healthCheckPath: /health/ready/
+    numInstances: 1
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.12.14
+      - key: TREADJOY_ENVIRONMENT
+        value: staging
+      - key: TREADJOY_MODE
+        value: research
+      - key: TREADJOY_INGRESS
+        value: cloudflare-locked
+      - key: TREADJOY_ORIGIN_SHARED_SECRET
+        sync: false
+      - key: TREADJOY_PRIVATE_POC
+        value: "true"
+      - key: DJANGO_DEBUG
+        value: "false"
+      - key: SECRET_KEY
+        generateValue: true
+      - key: ALLOWED_HOSTS
+        sync: false
+      - key: CSRF_TRUSTED_ORIGINS
+        sync: false
+      - key: DATABASE_URL
+        sync: false
+      - key: DB_SSLMODE
+        value: require
+      - key: STATIC_ROOT
+        value: /opt/render/project/src/staticfiles
+      - key: R2_ACCOUNT_ID
+        sync: false
+      - key: R2_BUCKET_NAME
+        sync: false
+      - key: R2_ACCESS_KEY_ID
+        sync: false
+      - key: R2_SECRET_ACCESS_KEY
+        sync: false
+      - key: R2_MEDIA_CUSTOM_DOMAIN
+        sync: false
+      - key: EMAIL_HOST
+        sync: false
+      - key: EMAIL_PORT
+        value: "587"
+      - key: EMAIL_HOST_USER
+        sync: false
+      - key: EMAIL_HOST_PASSWORD
+        sync: false
+      - key: DEFAULT_FROM_EMAIL
+        value: ethan@tread-joy.com
+      - key: SERVER_EMAIL
+        value: ethan@tread-joy.com
+      - key: RESEARCH_PRIVACY_NOTICE_VERSION
+        sync: false
+      - key: RESEARCH_PRIVACY_NOTICE_BODY
+        sync: false
+      - key: RESEARCH_PRIVACY_NOTICE_SHA256
+        sync: false
+      - key: RESEARCH_IDENTITY_HMAC_KEY
+        generateValue: true
+      - key: RESEARCH_RESEND_SEND_API_KEY
+        sync: false
+      - key: RESEARCH_RESEND_WEBHOOK_SECRET
+        sync: false
+      - key: RESEARCH_RESEND_SEGMENT_ID
+        sync: false
+      - key: RESEARCH_EMAIL_TRANSACTIONAL_FROM
+        value: TreadJoy Research <ethan@tread-joy.com>
+      - key: RESEARCH_EMAIL_MARKETING_FROM
+        value: TreadJoy <ethan@tread-joy.com>
+      - key: RESEARCH_EMAIL_REPLY_TO
+        value: ethan@tread-joy.com
+      - key: RESEARCH_RETENTION_POLICY_VERSION
+        sync: false
+      - key: SECURE_HSTS_SECONDS
+        value: "3600"
+      - key: SECURE_HSTS_INCLUDE_SUBDOMAINS
+        value: "false"
+      - key: SECURE_HSTS_PRELOAD
+        value: "false"
+      - key: WEB_CONCURRENCY
+        value: "2"
+
+databases:
+  - name: treadjoy-research-staging-db
+    plan: 0.1c-256mb
+    region: ohio
+    postgresMajorVersion: "17"
+    databaseName: treadjoy_research
+    user: treadjoy_research_owner
+    diskSizeGB: 1
+    ipAllowList: []

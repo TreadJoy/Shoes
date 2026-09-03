@@ -6,6 +6,19 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>{% block title %}TreadJoy{% endblock %}</title>
+    <meta name="description" content="{{ meta_description }}">
+    <meta name="robots" content="{{ robots_directive }}">
+    {% if canonical_url %}
+        <link rel="canonical" href="{{ canonical_url }}">
+        <meta property="og:type" content="website">
+        <meta property="og:site_name" content="TreadJoy">
+        <meta property="og:title" content="{{ meta_title }}">
+        <meta property="og:description" content="{{ meta_description }}">
+        <meta property="og:url" content="{{ canonical_url }}">
+        <meta name="twitter:card" content="summary">
+        <meta name="twitter:title" content="{{ meta_title }}">
+        <meta name="twitter:description" content="{{ meta_description }}">
+    {% endif %}
 
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -36,6 +49,13 @@
                             {{ message }}
                         </div>
                     {% endfor %}
+                </div>
+            {% endif %}
+
+            {% if private_poc %}
+                <div class="private-poc-banner" role="status" aria-label="Private development preview">
+                    <strong>Private development preview.</strong>
+                    For the TreadJoy development team only. Media and policy pages are placeholders; no public product claims or offers are made here.
                 </div>
             {% endif %}
 

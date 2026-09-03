@@ -1,0 +1,546 @@
+name: Research Release
+
+on:
+  workflow_run:
+    workflows:
+      - Application CI
+    types:
+      - completed
+    branches:
+      - main
+  workflow_dispatch:
+    inputs:
+      release_sha:
+        description: Exact 40-character commit SHA to validate and promote
+        required: true
+        type: string
+      target:
+        description: Validate only, promote through staging, or roll back
+        required: true
+        default: validate
+        type: choice
+        options:
+          - validate
+          - staging
+          - production
+          - rollback-staging
+          - rollback-production
+      rollback_deploy_id:
+        description: Prior Render deploy ID for a rollback target
+        required: false
+        type: string
+
+permissions:
+  contents: read
+  checks: read
+  actions: read
+  deployments: write
+
+concurrency:
+  group: treadjoy-research-release-${{ github.event_name == 'workflow_run' && github.event.workflow_run.head_sha || inputs.release_sha }}
+  cancel-in-progress: false
+
+env:
+  PYTHON_VERSION: "3.12.14"
+  RELEASE_SHA: ${{ github.event_name == 'workflow_run' && github.event.workflow_run.head_sha || inputs.release_sha }}
+
+jobs:
+  build-and-verify:
+    name: Build and verify immutable research release
+    if: github.event_name == 'workflow_run' && github.event.workflow_run.conclusion == 'success' || github.event_name == 'workflow_dispatch' && (inputs.target == 'validate' || inputs.target == 'staging' || inputs.target == 'production')
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    outputs:
+      release_sha: ${{ steps.identity.outputs.release_sha }}
+      artifact_name: ${{ steps.identity.outputs.artifact_name }}
+    env:
+      DJANGO_SETTINGS_MODULE: Shoes.ci_settings
+      TREADJOY_CI: "true"
+      TREADJOY_ENVIRONMENT: ci
+      TREADJOY_MODE: research
+      TREADJOY_INGRESS: direct
+      SECRET_KEY: treadjoy-release-ci-key-0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz
+      DJANGO_DEBUG: "True"
+      ALLOWED_HOSTS: ci.invalid,testserver,localhost
+      DB_NAME: treadjoy_release
+      DB_USER: treadjoy_release
+      DB_PASSWORD: treadjoy-release-database-password-not-secret
+      DB_HOST: 127.0.0.1
+      DB_PORT: "5432"
+      CI_DB_TEST_NAME: treadjoy_release_test
+      DB_SSLMODE: require
+      CI_STATIC_ROOT: /tmp/treadjoy-static
+      RESEARCH_PRIVACY_NOTICE_VERSION: ci-approved-notice-v1
+      RESEARCH_PRIVACY_NOTICE_BODY: Synthetic CI research privacy notice.
+      RESEARCH_PRIVACY_NOTICE_SHA256: 7f9862d185c863a44aecce5c100391d98888738d7d47a1b802dff54b8ea1f205
+      RESEARCH_IDENTITY_HMAC_KEY: ci-research-identity-hmac-key-not-a-secret-0123456789-ABCDEFGHIJKLMNOPQRSTUVWXYZ
+      RESEARCH_RETENTION_POLICY_VERSION: ci-retention-v1
+    services:
+      postgres:
+        image: postgres:17.11-bookworm@sha256:051f7b7b3abdd564d5d1bd1e8c4b9c1b6e77087d1dd22020ede611c096a272e0
+        env:
+          POSTGRES_DB: treadjoy_release
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: treadjoy-release-bootstrap-password-not-secret
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready --username postgres --dbname treadjoy_release"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+
+    steps:
+      - name: Check out the exact release commit
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          ref: ${{ env.RELEASE_SHA }}
+          persist-credentials: false
+
+      - name: Set up Python
+        uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6.2.0
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: pip
+          cache-dependency-path: requirements.txt
+
+      - name: Verify commit identity
+        id: identity
+        env:
+          ARTIFACT_NAME: treadjoy-research-${{ env.RELEASE_SHA }}
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "$RELEASE_SHA"
+          python - "$RELEASE_SHA" <<'PY'
+          import re
+          import sys
+
+          if not re.fullmatch(r"[0-9a-f]{40}", sys.argv[1]):
+              raise SystemExit("release SHA must be a full lowercase commit SHA")
+          PY
+          echo "release_sha=$RELEASE_SHA" >> "$GITHUB_OUTPUT"
+          echo "artifact_name=$ARTIFACT_NAME" >> "$GITHUB_OUTPUT"
+          echo "Release source: $RELEASE_SHA"
+
+      - name: Verify manually selected commit has green Application CI
+        if: github.event_name == 'workflow_dispatch'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          gh api --header 'Accept: application/vnd.github+json' \
+            "/repos/${GITHUB_REPOSITORY}/commits/${RELEASE_SHA}/check-runs?per_page=100" \
+            > "$RUNNER_TEMP/release-check-runs.json"
+          python - "$RUNNER_TEMP/release-check-runs.json" <<'PY'
+          import json
+          import sys
+
+          required = {
+              "Application / Commerce PostgreSQL",
+              "Application / Research PostgreSQL",
+          }
+          payload = json.load(open(sys.argv[1], encoding="utf-8"))
+          successful = {
+              run.get("name")
+              for run in payload.get("check_runs", [])
+              if run.get("workflow_name") == "Application CI"
+              and run.get("conclusion") == "success"
+          }
+          missing = sorted(required - successful)
+          if missing:
+              raise SystemExit(
+                  "Selected commit does not have successful Application CI checks: "
+                  + ", ".join(missing)
+              )
+          print("Application CI is green for the selected commit.")
+          PY
+
+      - name: Reject every STRIPE_* environment variable
+        run: |
+          set -euo pipefail
+          stripe_names="$(env | sed -n 's/^\(STRIPE_[^=]*\)=.*/\1/p')"
+          if [ -n "$stripe_names" ]; then
+            echo "Research release contains forbidden Stripe environment variable(s): $stripe_names" >&2
+            exit 1
+          fi
+
+      - name: Install hash-locked runtime dependencies
+        run: |
+          python -m pip install --require-hashes --requirement requirements.txt
+          python -m pip check
+
+      - name: Bootstrap restricted PostgreSQL database
+        env:
+          POSTGRES_CONTAINER_ID: ${{ job.services.postgres.id }}
+        run: |
+          docker exec "$POSTGRES_CONTAINER_ID" psql --username postgres --dbname postgres --set ON_ERROR_STOP=1 --command "CREATE ROLE treadjoy_release LOGIN PASSWORD 'treadjoy-release-database-password-not-secret' NOSUPERUSER NOCREATEDB NOCREATEROLE NOINHERIT NOREPLICATION;"
+          docker exec "$POSTGRES_CONTAINER_ID" psql --username postgres --dbname postgres --set ON_ERROR_STOP=1 --command "ALTER DATABASE treadjoy_release OWNER TO treadjoy_release;"
+          docker exec "$POSTGRES_CONTAINER_ID" psql --username postgres --dbname postgres --set ON_ERROR_STOP=1 --command "CREATE DATABASE treadjoy_release_test OWNER treadjoy_release;"
+          docker exec --env PGPASSWORD="$DB_PASSWORD" "$POSTGRES_CONTAINER_ID" psql --host 127.0.0.1 --username "$DB_USER" --dbname "$CI_DB_TEST_NAME" --set ON_ERROR_STOP=1 --command "SELECT current_database(), current_user;"
+
+      - name: Run migration, research-boundary, and engagement gates
+        run: |
+          python manage.py migrate --noinput
+          python manage.py migrate --check
+          python manage.py makemigrations --check --dry-run
+          python manage.py check
+          python manage.py check_research_boundary
+          python manage.py check_research_engagement
+          python manage.py check_release_content
+
+      - name: Run public-like settings and manifest static checks
+        env:
+          PUBLIC_DJANGO_SETTINGS_MODULE: Shoes.settings
+          PUBLIC_TREADJOY_ENVIRONMENT: staging
+          PUBLIC_TREADJOY_MODE: research
+          PUBLIC_TREADJOY_INGRESS: cloudflare-locked
+          PUBLIC_TREADJOY_ORIGIN_SHARED_SECRET: treadjoy-release-origin-lock-secret-not-a-secret-0123456789-ABCDEFGHIJKLMNOPQRSTUVWXYZ
+          PUBLIC_DJANGO_DEBUG: "false"
+          PUBLIC_SECRET_KEY: treadjoy-release-public-check-key-0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz
+          PUBLIC_ALLOWED_HOSTS: research.ci.invalid
+          PUBLIC_CSRF_TRUSTED_ORIGINS: https://research.ci.invalid
+          PUBLIC_DB_NAME: treadjoy_release
+          PUBLIC_DB_USER: treadjoy_release
+          PUBLIC_DB_PASSWORD: treadjoy-release-database-password-not-secret
+          PUBLIC_DB_HOST: 127.0.0.1
+          PUBLIC_DB_PORT: "5432"
+          PUBLIC_DB_SSLMODE: require
+          PUBLIC_STATIC_ROOT: /tmp/treadjoy-public-static
+          PUBLIC_R2_ACCOUNT_ID: ci-r2-account
+          PUBLIC_R2_BUCKET_NAME: treadjoy-public-check
+          PUBLIC_R2_ACCESS_KEY_ID: ci-r2-access-key-not-a-secret
+          PUBLIC_R2_SECRET_ACCESS_KEY: ci-r2-secret-not-a-secret
+          PUBLIC_R2_MEDIA_CUSTOM_DOMAIN: media.ci.invalid
+          PUBLIC_EMAIL_HOST: smtp.ci.invalid
+          PUBLIC_EMAIL_PORT: "587"
+          PUBLIC_EMAIL_HOST_USER: ci-public-user
+          PUBLIC_EMAIL_HOST_PASSWORD: ci-public-email-password-not-a-secret
+          PUBLIC_DEFAULT_FROM_EMAIL: errors@ci.invalid
+          PUBLIC_SERVER_EMAIL: errors@ci.invalid
+          PUBLIC_RESEARCH_PRIVACY_NOTICE_VERSION: ci-approved-notice-v1
+          PUBLIC_RESEARCH_PRIVACY_NOTICE_BODY: Synthetic CI research privacy notice.
+          PUBLIC_RESEARCH_PRIVACY_NOTICE_SHA256: 7f9862d185c863a44aecce5c100391d98888738d7d47a1b802dff54b8ea1f205
+          PUBLIC_RESEARCH_IDENTITY_HMAC_KEY: ci-research-identity-hmac-key-not-a-secret-0123456789-ABCDEFGHIJKLMNOPQRSTUVWXYZ
+          PUBLIC_RESEARCH_RESEND_SEND_API_KEY: ci-resend-send-key-not-a-provider-key
+          PUBLIC_RESEARCH_RESEND_MANAGEMENT_API_KEY: ci-resend-management-key-not-a-provider-key
+          PUBLIC_RESEARCH_RESEND_WEBHOOK_SECRET: ci-resend-webhook-secret-not-a-provider-secret
+          PUBLIC_RESEARCH_RESEND_SEGMENT_ID: ci-resend-segment
+          PUBLIC_RESEARCH_EMAIL_TRANSACTIONAL_FROM: TreadJoy Research <confirm@confirm.tread-joy.com>
+          PUBLIC_RESEARCH_EMAIL_MARKETING_FROM: TreadJoy <updates@updates.tread-joy.com>
+          PUBLIC_RESEARCH_EMAIL_REPLY_TO: hello@tread-joy.com
+          PUBLIC_RESEARCH_RETENTION_POLICY_VERSION: ci-retention-v1
+          PUBLIC_SECURE_HSTS_SECONDS: "3600"
+          PUBLIC_SECURE_HSTS_INCLUDE_SUBDOMAINS: "false"
+          PUBLIC_SECURE_HSTS_PRELOAD: "false"
+        run: |
+          set -euo pipefail
+          env \
+            DJANGO_SETTINGS_MODULE="$PUBLIC_DJANGO_SETTINGS_MODULE" \
+            TREADJOY_ENVIRONMENT="$PUBLIC_TREADJOY_ENVIRONMENT" \
+            TREADJOY_MODE="$PUBLIC_TREADJOY_MODE" \
+            TREADJOY_INGRESS="$PUBLIC_TREADJOY_INGRESS" \
+            TREADJOY_ORIGIN_SHARED_SECRET="$PUBLIC_TREADJOY_ORIGIN_SHARED_SECRET" \
+            DJANGO_DEBUG="$PUBLIC_DJANGO_DEBUG" \
+            SECRET_KEY="$PUBLIC_SECRET_KEY" \
+            ALLOWED_HOSTS="$PUBLIC_ALLOWED_HOSTS" \
+            CSRF_TRUSTED_ORIGINS="$PUBLIC_CSRF_TRUSTED_ORIGINS" \
+            DB_NAME="$PUBLIC_DB_NAME" DB_USER="$PUBLIC_DB_USER" DB_PASSWORD="$PUBLIC_DB_PASSWORD" \
+            DB_HOST="$PUBLIC_DB_HOST" DB_PORT="$PUBLIC_DB_PORT" DB_SSLMODE="$PUBLIC_DB_SSLMODE" \
+            STATIC_ROOT="$PUBLIC_STATIC_ROOT" \
+            R2_ACCOUNT_ID="$PUBLIC_R2_ACCOUNT_ID" R2_BUCKET_NAME="$PUBLIC_R2_BUCKET_NAME" \
+            R2_ACCESS_KEY_ID="$PUBLIC_R2_ACCESS_KEY_ID" R2_SECRET_ACCESS_KEY="$PUBLIC_R2_SECRET_ACCESS_KEY" \
+            R2_MEDIA_CUSTOM_DOMAIN="$PUBLIC_R2_MEDIA_CUSTOM_DOMAIN" \
+            EMAIL_HOST="$PUBLIC_EMAIL_HOST" EMAIL_PORT="$PUBLIC_EMAIL_PORT" \
+            EMAIL_HOST_USER="$PUBLIC_EMAIL_HOST_USER" EMAIL_HOST_PASSWORD="$PUBLIC_EMAIL_HOST_PASSWORD" \
+            DEFAULT_FROM_EMAIL="$PUBLIC_DEFAULT_FROM_EMAIL" SERVER_EMAIL="$PUBLIC_SERVER_EMAIL" \
+            RESEARCH_PRIVACY_NOTICE_VERSION="$PUBLIC_RESEARCH_PRIVACY_NOTICE_VERSION" \
+            RESEARCH_PRIVACY_NOTICE_BODY="$PUBLIC_RESEARCH_PRIVACY_NOTICE_BODY" \
+            RESEARCH_PRIVACY_NOTICE_SHA256="$PUBLIC_RESEARCH_PRIVACY_NOTICE_SHA256" \
+            RESEARCH_IDENTITY_HMAC_KEY="$PUBLIC_RESEARCH_IDENTITY_HMAC_KEY" \
+            RESEARCH_RESEND_SEND_API_KEY="$PUBLIC_RESEARCH_RESEND_SEND_API_KEY" \
+            RESEARCH_RESEND_MANAGEMENT_API_KEY="$PUBLIC_RESEARCH_RESEND_MANAGEMENT_API_KEY" \
+            RESEARCH_RESEND_WEBHOOK_SECRET="$PUBLIC_RESEARCH_RESEND_WEBHOOK_SECRET" \
+            RESEARCH_RESEND_SEGMENT_ID="$PUBLIC_RESEARCH_RESEND_SEGMENT_ID" \
+            RESEARCH_EMAIL_TRANSACTIONAL_FROM="$PUBLIC_RESEARCH_EMAIL_TRANSACTIONAL_FROM" \
+            RESEARCH_EMAIL_MARKETING_FROM="$PUBLIC_RESEARCH_EMAIL_MARKETING_FROM" \
+            RESEARCH_EMAIL_REPLY_TO="$PUBLIC_RESEARCH_EMAIL_REPLY_TO" \
+            RESEARCH_RETENTION_POLICY_VERSION="$PUBLIC_RESEARCH_RETENTION_POLICY_VERSION" \
+            SECURE_HSTS_SECONDS="$PUBLIC_SECURE_HSTS_SECONDS" \
+            SECURE_HSTS_INCLUDE_SUBDOMAINS="$PUBLIC_SECURE_HSTS_INCLUDE_SUBDOMAINS" \
+            SECURE_HSTS_PRELOAD="$PUBLIC_SECURE_HSTS_PRELOAD" \
+            python manage.py check --deploy --fail-level WARNING
+          env \
+            DJANGO_SETTINGS_MODULE="$PUBLIC_DJANGO_SETTINGS_MODULE" \
+            TREADJOY_ENVIRONMENT="$PUBLIC_TREADJOY_ENVIRONMENT" \
+            TREADJOY_MODE="$PUBLIC_TREADJOY_MODE" \
+            TREADJOY_INGRESS="$PUBLIC_TREADJOY_INGRESS" \
+            TREADJOY_ORIGIN_SHARED_SECRET="$PUBLIC_TREADJOY_ORIGIN_SHARED_SECRET" \
+            DJANGO_DEBUG="$PUBLIC_DJANGO_DEBUG" \
+            SECRET_KEY="$PUBLIC_SECRET_KEY" \
+            ALLOWED_HOSTS="$PUBLIC_ALLOWED_HOSTS" \
+            CSRF_TRUSTED_ORIGINS="$PUBLIC_CSRF_TRUSTED_ORIGINS" \
+            DB_NAME="$PUBLIC_DB_NAME" DB_USER="$PUBLIC_DB_USER" DB_PASSWORD="$PUBLIC_DB_PASSWORD" \
+            DB_HOST="$PUBLIC_DB_HOST" DB_PORT="$PUBLIC_DB_PORT" DB_SSLMODE="$PUBLIC_DB_SSLMODE" \
+            STATIC_ROOT="$PUBLIC_STATIC_ROOT" \
+            R2_ACCOUNT_ID="$PUBLIC_R2_ACCOUNT_ID" R2_BUCKET_NAME="$PUBLIC_R2_BUCKET_NAME" \
+            R2_ACCESS_KEY_ID="$PUBLIC_R2_ACCESS_KEY_ID" R2_SECRET_ACCESS_KEY="$PUBLIC_R2_SECRET_ACCESS_KEY" \
+            R2_MEDIA_CUSTOM_DOMAIN="$PUBLIC_R2_MEDIA_CUSTOM_DOMAIN" \
+            EMAIL_HOST="$PUBLIC_EMAIL_HOST" EMAIL_PORT="$PUBLIC_EMAIL_PORT" \
+            EMAIL_HOST_USER="$PUBLIC_EMAIL_HOST_USER" EMAIL_HOST_PASSWORD="$PUBLIC_EMAIL_HOST_PASSWORD" \
+            DEFAULT_FROM_EMAIL="$PUBLIC_DEFAULT_FROM_EMAIL" SERVER_EMAIL="$PUBLIC_SERVER_EMAIL" \
+            RESEARCH_PRIVACY_NOTICE_VERSION="$PUBLIC_RESEARCH_PRIVACY_NOTICE_VERSION" \
+            RESEARCH_PRIVACY_NOTICE_BODY="$PUBLIC_RESEARCH_PRIVACY_NOTICE_BODY" \
+            RESEARCH_PRIVACY_NOTICE_SHA256="$PUBLIC_RESEARCH_PRIVACY_NOTICE_SHA256" \
+            RESEARCH_IDENTITY_HMAC_KEY="$PUBLIC_RESEARCH_IDENTITY_HMAC_KEY" \
+            RESEARCH_RESEND_SEND_API_KEY="$PUBLIC_RESEARCH_RESEND_SEND_API_KEY" \
+            RESEARCH_RESEND_MANAGEMENT_API_KEY="$PUBLIC_RESEARCH_RESEND_MANAGEMENT_API_KEY" \
+            RESEARCH_RESEND_WEBHOOK_SECRET="$PUBLIC_RESEARCH_RESEND_WEBHOOK_SECRET" \
+            RESEARCH_RESEND_SEGMENT_ID="$PUBLIC_RESEARCH_RESEND_SEGMENT_ID" \
+            RESEARCH_EMAIL_TRANSACTIONAL_FROM="$PUBLIC_RESEARCH_EMAIL_TRANSACTIONAL_FROM" \
+            RESEARCH_EMAIL_MARKETING_FROM="$PUBLIC_RESEARCH_EMAIL_MARKETING_FROM" \
+            RESEARCH_EMAIL_REPLY_TO="$PUBLIC_RESEARCH_EMAIL_REPLY_TO" \
+            RESEARCH_RETENTION_POLICY_VERSION="$PUBLIC_RESEARCH_RETENTION_POLICY_VERSION" \
+            SECURE_HSTS_SECONDS="$PUBLIC_SECURE_HSTS_SECONDS" \
+            SECURE_HSTS_INCLUDE_SUBDOMAINS="$PUBLIC_SECURE_HSTS_INCLUDE_SUBDOMAINS" \
+            SECURE_HSTS_PRELOAD="$PUBLIC_SECURE_HSTS_PRELOAD" \
+            python manage.py collectstatic --noinput --clear
+          test -f "$PUBLIC_STATIC_ROOT/css/style.css"
+          test -f "$PUBLIC_STATIC_ROOT/js/navigation.js"
+
+      - name: Create release manifest and archive
+        env:
+          ARTIFACT_NAME: treadjoy-research-${{ env.RELEASE_SHA }}
+          WORKFLOW_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          set -euo pipefail
+          mkdir -p release
+          git show -s --format='%cI' HEAD > release/commit-timestamp.txt
+          python - <<'PY'
+          import hashlib
+          import json
+          import os
+          from pathlib import Path
+
+          manifest = {
+              "artifact_name": os.environ["ARTIFACT_NAME"],
+              "commit_sha": os.environ["RELEASE_SHA"],
+              "commit_timestamp": Path("release/commit-timestamp.txt").read_text().strip(),
+              "requirements_sha256": hashlib.sha256(Path("requirements.txt").read_bytes()).hexdigest(),
+              "workflow_url": os.environ["WORKFLOW_URL"],
+              "checks": [
+                  "migrate",
+                  "migrate--check",
+                  "makemigrations--check--dry-run",
+                  "check",
+                  "check_research_boundary",
+                  "check_research_engagement",
+                  "check_release_content",
+                  "check--deploy",
+                  "collectstatic",
+              ],
+          }
+          Path("release/release-manifest.json").write_text(
+              json.dumps(manifest, indent=2, sort_keys=True) + "\n",
+              encoding="utf-8",
+          )
+          PY
+          tar --exclude='.git' --exclude='.venv' --exclude='.env' --exclude='db.sqlite3' --exclude='media/*' --exclude='release' -czf "release/${ARTIFACT_NAME}.tar.gz" .
+          ( cd release && sha256sum "${ARTIFACT_NAME}.tar.gz" > "${ARTIFACT_NAME}.tar.gz.sha256" )
+
+      - name: Upload immutable release artifact
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: ${{ steps.identity.outputs.artifact_name }}
+          path: release/*
+          if-no-files-found: error
+          retention-days: 35
+
+  promote-staging:
+    name: Promote exact release to staging
+    if: github.event_name == 'workflow_dispatch' && (inputs.target == 'staging' || inputs.target == 'production')
+    needs: build-and-verify
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    environment:
+      name: research-staging
+      url: https://research.tread-joy.com
+    env:
+      RELEASE_SHA: ${{ needs.build-and-verify.outputs.release_sha }}
+      ARTIFACT_NAME: ${{ needs.build-and-verify.outputs.artifact_name }}
+      RENDER_API_KEY: ${{ secrets.RENDER_API_KEY }}
+      RENDER_SERVICE_ID: ${{ secrets.RENDER_SERVICE_ID }}
+    steps:
+      - name: Check out the exact release commit
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          ref: ${{ env.RELEASE_SHA }}
+          persist-credentials: false
+
+      - name: Download and verify release artifact
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
+        with:
+          name: ${{ env.ARTIFACT_NAME }}
+          path: release-artifact
+
+      - name: Verify artifact identity
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "$RELEASE_SHA"
+          ( cd release-artifact && sha256sum -c "${ARTIFACT_NAME}.tar.gz.sha256" )
+          python - "$RELEASE_SHA" release-artifact/release-manifest.json <<'PY'
+          import json
+          import sys
+
+          expected = sys.argv[1]
+          manifest = json.load(open(sys.argv[2], encoding="utf-8"))
+          if manifest.get("commit_sha") != expected:
+              raise SystemExit("artifact commit identity does not match the release SHA")
+          print("Artifact identity verified.")
+          PY
+
+      - name: Promote via Render API and record rollback metadata
+        run: |
+          set -euo pipefail
+          test -n "$RENDER_API_KEY" || { echo "RENDER_API_KEY is missing from research-staging." >&2; exit 1; }
+          test -n "$RENDER_SERVICE_ID" || { echo "RENDER_SERVICE_ID is missing from research-staging." >&2; exit 1; }
+          python scripts/render_release.py promote --service-id "$RENDER_SERVICE_ID" --release-sha "$RELEASE_SHA" --target staging
+
+      - name: Retain promotion and rollback evidence
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: ${{ env.ARTIFACT_NAME }}-staging-promotion-${{ github.run_id }}
+          path: |
+            release-promotion.json
+            rollback-manifest.json
+          if-no-files-found: error
+          retention-days: 35
+
+  promote-production:
+    name: Promote exact release to production
+    if: github.event_name == 'workflow_dispatch' && inputs.target == 'production'
+    needs:
+      - build-and-verify
+      - promote-staging
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    environment:
+      name: research-production
+      url: https://research.tread-joy.com
+    env:
+      RELEASE_SHA: ${{ needs.build-and-verify.outputs.release_sha }}
+      ARTIFACT_NAME: ${{ needs.build-and-verify.outputs.artifact_name }}
+      RENDER_API_KEY: ${{ secrets.RENDER_API_KEY }}
+      RENDER_SERVICE_ID: ${{ secrets.RENDER_SERVICE_ID }}
+    steps:
+      - name: Check out the exact release commit
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          ref: ${{ env.RELEASE_SHA }}
+          persist-credentials: false
+
+      - name: Download and verify release artifact
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
+        with:
+          name: ${{ env.ARTIFACT_NAME }}
+          path: release-artifact
+
+      - name: Verify artifact identity
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "$RELEASE_SHA"
+          ( cd release-artifact && sha256sum -c "${ARTIFACT_NAME}.tar.gz.sha256" )
+          python - "$RELEASE_SHA" release-artifact/release-manifest.json <<'PY'
+          import json
+          import sys
+
+          expected = sys.argv[1]
+          manifest = json.load(open(sys.argv[2], encoding="utf-8"))
+          if manifest.get("commit_sha") != expected:
+              raise SystemExit("artifact commit identity does not match the release SHA")
+          print("Artifact identity verified.")
+          PY
+
+      - name: Promote via Render API and record rollback metadata
+        run: |
+          set -euo pipefail
+          test -n "$RENDER_API_KEY" || { echo "RENDER_API_KEY is missing from research-production." >&2; exit 1; }
+          test -n "$RENDER_SERVICE_ID" || { echo "RENDER_SERVICE_ID is missing from research-production." >&2; exit 1; }
+          python scripts/render_release.py promote --service-id "$RENDER_SERVICE_ID" --release-sha "$RELEASE_SHA" --target production
+
+      - name: Retain promotion and rollback evidence
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: ${{ env.ARTIFACT_NAME }}-production-promotion-${{ github.run_id }}
+          path: |
+            release-promotion.json
+            rollback-manifest.json
+          if-no-files-found: error
+          retention-days: 35
+
+  rollback-staging:
+    name: Roll back staging Render deploy
+    if: github.event_name == 'workflow_dispatch' && inputs.target == 'rollback-staging'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    environment:
+      name: research-staging
+      url: https://research.tread-joy.com
+    env:
+      RENDER_API_KEY: ${{ secrets.RENDER_API_KEY }}
+      RENDER_SERVICE_ID: ${{ secrets.RENDER_SERVICE_ID }}
+      ROLLBACK_DEPLOY_ID: ${{ inputs.rollback_deploy_id }}
+    steps:
+      - name: Check out release tooling
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          persist-credentials: false
+
+      - name: Roll back through Render API
+        run: |
+          set -euo pipefail
+          test -n "$RENDER_API_KEY" || { echo "RENDER_API_KEY is missing from research-staging." >&2; exit 1; }
+          test -n "$RENDER_SERVICE_ID" || { echo "RENDER_SERVICE_ID is missing from research-staging." >&2; exit 1; }
+          test -n "$ROLLBACK_DEPLOY_ID" || { echo "rollback_deploy_id is required." >&2; exit 1; }
+          python scripts/render_release.py rollback --service-id "$RENDER_SERVICE_ID" --deploy-id "$ROLLBACK_DEPLOY_ID" --target staging
+
+      - name: Retain rollback evidence
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: treadjoy-research-staging-rollback-${{ github.run_id }}
+          path: rollback-result.json
+          if-no-files-found: error
+          retention-days: 35
+
+  rollback-production:
+    name: Roll back production Render deploy
+    if: github.event_name == 'workflow_dispatch' && inputs.target == 'rollback-production'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    environment:
+      name: research-production
+      url: https://research.tread-joy.com
+    env:
+      RENDER_API_KEY: ${{ secrets.RENDER_API_KEY }}
+      RENDER_SERVICE_ID: ${{ secrets.RENDER_SERVICE_ID }}
+      ROLLBACK_DEPLOY_ID: ${{ inputs.rollback_deploy_id }}
+    steps:
+      - name: Check out release tooling
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          persist-credentials: false
+
+      - name: Roll back through Render API
+        run: |
+          set -euo pipefail
+          test -n "$RENDER_API_KEY" || { echo "RENDER_API_KEY is missing from research-production." >&2; exit 1; }
+          test -n "$RENDER_SERVICE_ID" || { echo "RENDER_SERVICE_ID is missing from research-production." >&2; exit 1; }
+          test -n "$ROLLBACK_DEPLOY_ID" || { echo "rollback_deploy_id is required." >&2; exit 1; }
+          python scripts/render_release.py rollback --service-id "$RENDER_SERVICE_ID" --deploy-id "$ROLLBACK_DEPLOY_ID" --target production
+
+      - name: Retain rollback evidence
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: treadjoy-research-production-rollback-${{ github.run_id }}
+          path: rollback-result.json
+          if-no-files-found: error
+          retention-days: 35

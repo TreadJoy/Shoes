@@ -1,5 +1,5 @@
 from django.conf import settings
-from django.http import HttpResponseNotAllowed
+from django.http import HttpResponse, HttpResponseNotAllowed
 from django.shortcuts import render
 
 from web.products.models import PartType
@@ -43,13 +43,48 @@ def contact(request):
     return render(request, "contact.html")
 
 
+def terms(request):
+    return render(request, "terms.html")
+
+
+def accessibility(request):
+    return render(request, "accessibility.html")
+
+
+def robots(request):
+    if settings.IS_PUBLIC_ENVIRONMENT and not settings.TREADJOY_PRIVATE_POC:
+        body = "\n".join(
+            (
+                "User-agent: *",
+                "Disallow: /admin/",
+                "Disallow: /accounts/",
+                "Disallow: /cart/",
+                "Disallow: /health/",
+                "Disallow: /orders/",
+                "Disallow: /survey/",
+                "Disallow: /waitlist/",
+                "Disallow: /media/",
+                "Disallow: /static/",
+                "",
+            )
+        )
+    else:
+        body = "User-agent: *\nDisallow: /\n"
+    response = HttpResponse(body, content_type="text/plain; charset=utf-8")
+    response["Cache-Control"] = "no-store"
+    return response
+
+
 def privacy(request):
     return render(
         request,
         "privacy.html",
         {
             "notice_version": settings.RESEARCH_PRIVACY_NOTICE_VERSION,
-            "notice_is_draft": settings.RESEARCH_PRIVACY_NOTICE_VERSION.endswith("draft"),
+            "notice_is_draft": settings.RESEARCH_PRIVACY_NOTICE_VERSION.endswith(
+                "draft"
+            ),
             "notice_body": settings.RESEARCH_PRIVACY_NOTICE_BODY,
+            "private_poc": settings.TREADJOY_PRIVATE_POC,
         },
     )

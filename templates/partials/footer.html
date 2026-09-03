@@ -3,11 +3,20 @@
 
         <div class="footer-brand">
             <h2>TreadJoy</h2>
-            <p>Fun, comfortable shoes built for everyday movement.</p>
-            <div class="footer-social-placeholder" aria-label="Social links pending approval">
-                <strong>Social</strong>
-                <span>Links pending approval.</span>
-            </div>
+            {% if is_commerce_mode %}
+                <p>Fun, comfortable shoes built for everyday movement.</p>
+                <div class="footer-social-placeholder" aria-label="Social links pending approval">
+                    <strong>Social</strong>
+                    <span>Links pending approval.</span>
+                </div>
+            {% else %}
+                <p>Private development preview for the TreadJoy team.</p>
+                <div class="footer-social-placeholder" aria-label="TreadJoy social destinations">
+                    <strong>TreadJoy social</strong>
+                    <span>X · YouTube · Instagram · TikTok</span>
+                    <span>Profile links will be added after handles are verified.</span>
+                </div>
+            {% endif %}
         </div>
 
         <div class="footer-links">
@@ -47,14 +56,20 @@
                     <a href="{% url 'account_signup' %}">Sign Up</a>
                 {% endif %}
             {% else %}
-                <h3>Privacy</h3>
-                <a href="{% url 'core:privacy' %}">Research Privacy Notice</a>
+                <h3>Policies</h3>
+                <a href="{% url 'core:privacy' %}">Research Privacy Placeholder</a>
+                <a href="{% url 'core:terms' %}">Terms Placeholder</a>
+                <a href="{% url 'core:accessibility' %}">Accessibility Placeholder</a>
             {% endif %}
         </div>
 
     </div>
 
     <div class="footer-bottom">
-        <p>&copy; 2026 TreadJoy. All rights reserved.</p>
+        {% if is_commerce_mode %}
+            <p>&copy; 2026 TreadJoy. All rights reserved.</p>
+        {% else %}
+            <p>Contact: <a href="mailto:{{ contact_email }}">{{ contact_email }}</a></p>
+        {% endif %}
     </div>
 </footer>

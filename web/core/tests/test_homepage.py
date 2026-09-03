@@ -155,3 +155,21 @@ class HomepageModeTests(TestCase):
 
         self.assertNotContains(response, "static/css/home.css")
         self.assertNotContains(response, "static/js/home.js")
+
+    def test_shared_brand_content_stays_mode_specific(self):
+        home = self.client.get(reverse("core:home"))
+        about = self.client.get(reverse("core:about"))
+        contact = self.client.get(reverse("core:contact"))
+
+        if settings.IS_COMMERCE_MODE:
+            self.assertContains(home, "Fun, comfortable shoes built for everyday movement.")
+            self.assertNotContains(home, "Private development preview for the TreadJoy team.")
+            self.assertContains(about, "focused on comfort, personality")
+            self.assertContains(contact, "hello@treadjoy.com")
+            self.assertNotContains(contact, "ethan@tread-joy.com")
+        else:
+            self.assertContains(home, "Private development preview for the TreadJoy team.")
+            self.assertNotContains(home, "Fun, comfortable shoes built for everyday movement.")
+            self.assertContains(about, "private development environment")
+            self.assertContains(contact, "mailto:ethan@tread-joy.com")
+            self.assertNotContains(contact, "hello@treadjoy.com")

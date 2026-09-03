@@ -1,5 +1,31 @@
 # Verification Limitations
 
+## 2026-09-03 — Research baseline review found cross-mode content leakage
+
+- The private-POC content pass had replaced shared About, Contact, and footer
+  copy without preserving the commerce variants.
+- Result: commerce still functioned, but it rendered research-only preview
+  language and the private contact address on shared pages.
+- Resolution: made those surfaces mode-specific, restored the existing
+  commerce content, and added a two-mode regression test. The complete
+  156-test research suite and 262-test commerce suite then passed.
+- Impact: repository templates and tests only; no provider, deployment,
+  customer, or persistent data was changed.
+
+## 2026-09-03 — Baseline dependency audit needed scoped network access
+
+- The first hash-locked runtime and development audits tried to prepare
+  isolated packaging tools behind the restricted network. Retrying with
+  dependency resolution disabled confirmed collection but still could not
+  reach PyPI's vulnerability service.
+- Resolution: reran the read-only audits through the approved dependency-audit
+  network boundary; both reported no known vulnerabilities. A separate clean
+  temporary Python 3.12 install verified every runtime hash and Gunicorn's MIT
+  package metadata because the developer virtualenv did not contain the
+  optional license-reporting command.
+- Impact: read-only network queries and a disposable `/private/tmp` virtualenv
+  only; no project environment, lock, provider, or external state was changed.
+
 ## 2026-09-02 — Holding-page dependency fetch needed scoped network access
 
 - Attempted to obtain the disposable npm 11 runner needed to create and verify
@@ -40,6 +66,43 @@
   zoom as a deployment-time manual gate in `docs/cloudflare-coming-soon.md`.
 - Impact: verification limitation only; no application or external state
   changed.
+
+## 2026-09-02 — Local PostgreSQL was unavailable for the Plan 5 database-backed suite
+
+- Attempted the Plan 5 settings and waitlist test bundle with the repository's
+  normal PostgreSQL configuration.
+- Result: no local PostgreSQL server was listening on `127.0.0.1:5432`, so
+  Django could not create its disposable test database. The failure happened
+  before application tests ran.
+- Resolution: reran the database-backed waitlist portion with the explicitly
+  supported disposable SQLite local profile (30 tests passed, one expected
+  skip) and reran the public-settings process suite separately (12 tests
+  passed). The repository's CI/Render workflow remains the PostgreSQL evidence
+  path.
+- Impact: no provider, database, credential, infrastructure, or application
+  state changed.
+
+## 2026-09-02 — First Plan 4 adapter probe used zsh's read-only `status` name
+
+- Attempted the repository-only fail-closed Render adapter probe with a shell
+  variable named `status`.
+- Result: zsh rejected the assignment because `status` is read-only; the
+  adapter itself was not reached and no repository or external state changed.
+- Resolution: reran the same probe with a task-scoped `rc` variable; the
+  adapter correctly exited nonzero when `RENDER_API_KEY` was absent.
+- Impact: no provider, credential, infrastructure, deployment, or application
+  state changed.
+
+## 2026-09-02 — Repository-wide test discovery mixed deployment modes
+
+- Attempted a repository-wide `manage.py test` run while validating the Plan 3
+  observability changes under research mode.
+- Result: Django imported commerce-only test modules under the research
+  configuration, producing the known mode-isolation and migration failures.
+- Resolution: ran the supported installed-app labels separately for research
+  and commerce; the focused Plan 3 tests and both mode-specific suites passed.
+- Impact: disposable test databases only; no provider, database, credential,
+  infrastructure, or application state changed.
 
 ## 2026-08-31 — Base-interpreter content check could not initialize PostgreSQL backend
 

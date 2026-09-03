@@ -32,3 +32,4 @@ staticfiles/
 # Node tooling
 node_modules/
 .wrangler/
+.pnpm-store/

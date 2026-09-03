@@ -53,8 +53,8 @@ The approved deployment architecture is one tested release commit deployed to se
 - Cancellation, return, exchange, inspection, and customer-initiated refund workflows do not yet represent the approved policy.
 - New Stripe event/payment/refund writes retain bounded audit fields instead of raw payloads. Legacy raw fields remain temporarily for expand/backfill/verify/backup/contract safety; production retention approval, alerting, and controlled replay tooling remain open.
 - The reviewed dependency inputs and hash-locked runtime/development manifests are reproducible; Phase 1 removed the Google/social extra and refreshed both locks and the license inventory.
-- GitHub runs separate commerce/research PostgreSQL jobs, a dependency audit, and full-history secret scanning. There is still no deployment pipeline or deployment-status check.
-- Production configuration includes `STATIC_ROOT`, manifest static storage, and an R2 media backend contract. No live hosting, DNS/TLS path, R2 resource, health/readiness endpoint, monitoring, analytics, backup/PITR procedure, restore drill, migration release process, or rollback runbook has been provisioned or verified.
+- GitHub runs separate commerce/research PostgreSQL jobs, a dependency audit, and full-history secret scanning. The repository now includes a SHA-pinned research release workflow with immutable artifact metadata, protected staging/production promotion jobs, and explicit rollback operations; no provider deployment-status evidence exists yet.
+- Production configuration includes `STATIC_ROOT`, manifest static storage, and an R2 media backend contract. Repository health/readiness, structured logging, redaction, alert definitions, and incident runbooks are now present, but no live hosting, DNS/TLS path, R2 resource, provider monitoring, analytics, backup/PITR procedure, restore drill, migration release process, or rollback runbook has been provisioned or verified.
 - The catalog has been quarantined to its safe empty state, while homepage and
   social sections remain explicitly labeled development placeholders that block
   release until approved factual replacements exist.
@@ -314,17 +314,18 @@ P1 storefront, email, accessibility, SEO, performance, monitoring, and admin-usa
 
 ### A1.3 — Establish logging, health, monitoring, and incident foundations
 
-- **Priority / status:** P0 — In progress; reopened by the owner for
-  implementation (2026-08-31).
+- **Priority / status:** P0 — In progress; repository foundation complete and
+  provider/staging evidence pending (reopened by the owner 2026-08-31).
 - **Objective:** Make service health and business-critical failures visible without exposing sensitive data.
 - **Why it matters:** Payment, reservation, inventory, email, and deployment failures cannot rely on console logs or customer reports.
-- **Current state:** Application logging is basic; there are no health/readiness endpoints, error monitor, alert routes, correlation IDs, runbooks, or provider-event failure dashboard.
+- **Current state:** The repository now has generic health/readiness endpoints, request correlation, allow-listed structured logging, redaction filters, provider-neutral alert events, initial alert definitions, and incident runbooks. No provider monitor, alert destination, dashboard, or staging delivery evidence is active yet.
 - **Required work:** Define structured log fields and redaction filters; add liveness and dependency-aware readiness endpoints with no sensitive detail; choose error monitoring and alert channels; correlate request/order/provider event identifiers; define alerts for payment reconciliation, reservation expiry backlog, inventory exception, email failure, database/storage outage, and elevated 5xx; write incident triage and credential-exposure runbooks.
 - **Dependencies:** A1.2. Provider-specific alerts can be completed with their later integrations.
 - **Affected areas:** Django logging/middleware, health URLs/views, monitoring configuration, operations documentation.
 - **Security considerations:** Health endpoints must not reveal versions/configuration; logs exclude secrets, tokens, session IDs, full addresses, and unnecessary payloads; monitoring access follows least privilege.
 - **Testing requirements:** Redaction tests, health dependency-failure tests, correlation propagation tests, synthetic error/alert delivery in staging, and runbook tabletop.
 - **Acceptance criteria:** Operators can distinguish alive, ready, and degraded states; a staged failure creates a redacted searchable event and reaches the approved responder; runbooks name owner, severity, and next action.
+- **Implementation evidence (2026-09-02):** Added `GET /health/live/` and `GET /health/ready/` with generic no-store responses, database dependency checking, and a deduplicable readiness alert. Added `Shoes.observability` request-ID validation/propagation, allow-listed JSON stdout events, secret/token/email/waitlist-token redaction, provider-neutral alert emission, alert definitions, and the owner-scoped incident runbooks in `docs/observability.md` and `docs/incident-runbooks.md`. Focused health/observability tests pass (11 tests); the supported research and commerce suites also pass. Provider monitor routing, synthetic staging delivery, escalation, and tabletop evidence remain open.
 
 ### A1.4 — Approve privacy, retention, and security operating policy
 
@@ -372,11 +373,12 @@ P1 storefront, email, accessibility, SEO, performance, monitoring, and admin-usa
 
 ### A2.3 — Provision, rehearse, and launch the research deployment
 
-- **Priority / status:** P0 — In progress; Plan 1 passed for a private
-  development-team-only POC, while public launch remains blocked (2026-08-31).
+- **Priority / status:** P0 — In progress; the follow-on private-preview
+  development baseline is complete locally, while its Plans 2–8, provider
+  staging, and public launch remain blocked (2026-09-03).
 - **Objective:** Deploy research mode through Cloudflare to a managed Django/PostgreSQL origin with repeatable release and recovery.
 - **Why it matters:** The research site is the first public validation surface and the production architecture rehearsal for commerce.
-- **Current state:** `tread-joy.com` has been purchased through Cloudflare as the intended base domain, but no research hostname allocation, DNS, TLS, managed origin, R2, managed database, deployment definition, backups, observability, or rollback process is configured.
+- **Current state:** `tread-joy.com` has been purchased through Cloudflare as the intended base domain. The repository now contains a release workflow, Render staging Blueprint, WSGI/build/start/migration/job/backup scripts, rollback adapter, and a review-gated Cloudflare/R2 policy, but no research hostname allocation, DNS/TLS, managed origin, R2, managed database, provider backup, live monitoring, or provider deployment is configured; repository health/observability foundations are documented under A1.3.
 - **Required work:** Select an approved research hostname plus managed origin/vendor/region; provision a separate research database and least-privilege roles; configure Cloudflare DNS, Full strict TLS, WAF/rate rules, origin lock-down, static/media caching, and an R2 custom domain; configure secrets, email, logs, health checks, migrations, backups/PITR, restore and rollback; publish approved research privacy/terms/accessibility/contact content and basic canonical/robots/social metadata; complete keyboard, WCAG 2.2 AA, responsive, and performance launch checks; deploy one immutable release artifact and run launch/rollback rehearsals.
 - **Dependencies:** A0.1–A0.3, A1.1–A1.4, A2.1, and A2.2.
 - **Affected areas:** Hosting/IaC or deployment config, Cloudflare, R2/storage, database, CI/CD, settings, operations docs.
@@ -395,6 +397,49 @@ P1 storefront, email, accessibility, SEO, performance, monitoring, and admin-usa
   more than 35 days, and the owner as responder. Exact charges must be shown
   before later provisioning. No provider, infrastructure, credential,
   database, DNS, R2, or deployment state was changed.
+- **Implementation evidence (2026-09-02):** A2.3 Plan 3 repository work is recorded in
+  `docs/observability.md` and `docs/incident-runbooks.md`; no provider monitor,
+  alert destination, infrastructure, database, DNS, R2, credential, or staging
+  deployment state was changed.
+- **Implementation evidence (2026-09-02):** A2.3 Plan 4 is recorded in
+  `docs/a2.3-release-pipeline.md` and `.github/workflows/research-release.yml`.
+  The workflow validates the exact green commit, hash-locked dependencies,
+  migrations, research boundary/engagement/content checks, public-like settings,
+  static collection, and the absence of all `STRIPE_*` variables before
+  uploading a 35-day release artifact. Protected Render staging/production
+  promotion and explicit rollback adapters are present but unconfigured; no
+  provider, infrastructure, credential, database, DNS, R2, or deployment state
+  was changed.
+- **Implementation evidence (2026-09-02):** A2.3 Plan 5 repository work is
+  recorded in `render.yaml`, `scripts/render_build.sh`,
+  `scripts/render_start.sh`, `scripts/render_migrate.sh`,
+  `scripts/provision_research_roles.sh`,
+  `scripts/backup_research_postgres.sh`,
+  `scripts/run_research_jobs.sh`, and `docs/a2.3-origin-provisioning.md`.
+  The Blueprint targets the approved Ohio Render research POC shape, disables
+  automatic deploys, keeps `DATABASE_URL` and provider credentials out of the
+  repository, and configures the owner-mailbox/private-POC exception. The
+  runtime uses Gunicorn with hash-locked dependencies; migrations use a
+  separately supplied migrator URL; backup and job scripts are bounded and
+  redacted. No provider resource, database, role, credential, email, scheduler,
+  DNS, R2, or staging deployment state was changed. Exact-charge review,
+  provider application, role execution, blank-database migration, and live
+  staging evidence remain open.
+- **Implementation evidence (2026-09-03):** A2.3 Plan 6 repository work is
+  recorded in `deploy/cloudflare/research/policy.json`,
+  `scripts/validate_cloudflare_research.py`,
+  `scripts/check_cloudflare_research.sh`, and
+  `docs/a2.3-cloudflare-edge.md`. The policy fixes the research and media
+  hostnames, proxied DNS shape, staged Full (strict) TLS/HSTS, owner-only
+  Cloudflare Access, managed WAF, the exact A2.2 waitlist/survey edge guards,
+  dynamic-path cache bypasses, versioned static/media caching, and a blank
+  custom-domain-only R2 bucket. Django now rejects public-origin requests
+  without the Cloudflare-set shared header, while keeping only generic health
+  paths available to Render's direct health checker. Local policy/shell and
+  focused settings checks pass. No Cloudflare account, DNS, TLS, Access, WAF,
+  R2, credential, cache, or staging state was changed; zone-plan capability,
+  exact origin hostname, live certificate, Access identity, and all provider
+  verification evidence remain open.
 - **Implementation evidence (2026-09-02):** Phase 1 of the separately approved
   temporary holding-page plan is recorded in
   `docs/cloudflare-coming-soon.md`. The asset-only `treadjoy-coming-soon`
@@ -405,6 +450,52 @@ P1 storefront, email, accessibility, SEO, performance, monitoring, and admin-usa
   Lighthouse targets passed subject to the documented native-zoom limitation.
   No Cloudflare account, GitHub permission, Worker, route, DNS record, custom
   domain, credential, database, binding, or public deployment state changed.
+- **Implementation evidence (2026-09-03):** A2.3 Plan 7 research-POC content and
+  metadata work is recorded in `templates/base.html`, the shared header/footer,
+  the research-facing content templates, `web/core/context_processors.py`,
+  `web/core/views.py`, `web/core/urls.py`, and
+  `web/core/tests/test_metadata.py`. The private preview now uses a fixed,
+  deployment-owned canonical origin, `noindex`/`nofollow` directives, safe
+  Open Graph/X metadata on non-sensitive routes, and a no-store `robots.txt`
+  that blocks private or session-bearing paths. Privacy, terms, and
+  accessibility pages are explicitly non-effective placeholders; the sole
+  contact is `ethan@tread-joy.com`; media remains blank; and social destinations
+  are named for TreadJoy without inventing unverified handles. Research copy
+  makes no public product, community, impact, or availability claim. Focused
+  Django tests and local 390px/1280px browser checks passed with no horizontal
+  overflow or console errors. The public release-content check still stops on
+  the documented development-media and unverified-social blockers, and a
+  Chrome DevTools performance trace was not available in this environment;
+  public content approval, verified social URLs, WCAG/performance evidence,
+  and provider staging remain open.
+- **Implementation evidence (2026-09-03):** A2.3 Plan 8 repository rehearsal
+  tooling is recorded in `scripts/rehearse_research_release.py`,
+  `scripts/tests/test_render_release.py`,
+  `web/core/tests/test_research_rehearsal.py`, and
+  `docs/a2.3-launch-rehearsal.md`. The local evidence run passed the policy
+  validator, Django check, 80-test research smoke/failure bundle, fake Render
+  promotion/rollback adapter, and whitespace check; the release-content gate
+  returned its expected private-POC blockers. The generated sanitized manifest
+  recorded the exact current commit, `promotable: false`, pending provider/
+  Cloudflare/PostgreSQL restore/rollback gates, and a `STOP` launch decision.
+  No provider, database, credential, DNS, R2, staging, rollback, or public
+  deployment state was changed; owner acceptance and all live recovery/edge
+  evidence remain open.
+- **Implementation evidence (2026-09-03):** Follow-on Research Mode Private
+  Preview Plan 1 reviewed the complete tracked and untracked A2.3 change set,
+  excluded `.pnpm-store/`, and found no credentials, databases, media, evidence
+  bundles, or unrelated generated files for inclusion. The review corrected
+  research-only copy that had leaked into shared commerce About, Contact, and
+  footer surfaces and added a two-mode regression assertion. The supported
+  installed-app research suite passed 156 tests with six expected skips; the
+  repository-wide commerce suite passed 262 tests with 39 expected skips.
+  Both modes passed Django checks and migration-drift checks; `pip check`, both
+  hash-locked vulnerability audits, an isolated clean runtime installation,
+  shell/Python/configuration validation, Git history and working-directory
+  secret scans, and the local release rehearsal passed. The public content
+  gate continues to return only its intentional development-media and
+  pending-social blockers. This reviewed baseline commit changes no provider,
+  credential, database, DNS, R2, email, staging, or public deployment state.
 
 ## Phase 3 — Commerce data integrity and identity
 
@@ -724,7 +815,11 @@ P1 storefront, email, accessibility, SEO, performance, monitoring, and admin-usa
 - **Priority / status:** P0 — Not started.
 - **Objective:** Release schema/code safely and recover the service or data within approved objectives.
 - **Why it matters:** A deployment is not production-ready if the team cannot detect failure, restore data, or roll back without improvisation.
-- **Current state:** There is no release pipeline, migration preflight, backup/PITR policy, restore drill, release record, rollback mechanism, or approved RTO/RPO.
+- **Current state:** The repository now has an immutable research release
+  pipeline, migration preflight, release manifest, protected promotion, and
+  explicit Render rollback adapter plus repository backup/restore scripts.
+  Provider backup/PITR policy, restore drill, live release evidence, and
+  approved RTO/RPO remain unverified.
 - **Required work:** Approve RTO/RPO/retention; build staged CI/CD promotion with artifact/commit identity and manual commerce gate; run predeploy checks and deploy-safe migrations before traffic switch; separate irreversible cleanup; back up PostgreSQL and required R2/configuration; automate integrity checks; restore to isolated environment; document rollback for code, schema, secrets, Cloudflare, and provider configuration; maintain a release checklist/change log.
 - **Dependencies:** A9.1 and migration discipline from A3–A6.
 - **Affected areas:** CI/CD, hosting, PostgreSQL, R2, Cloudflare, migrations, operations/runbooks.

@@ -29,7 +29,10 @@ class Command(BaseCommand):
         )
         required = {
             "privacy_notice": bool(settings.RESEARCH_PRIVACY_NOTICE_VERSION)
-            and "draft" not in settings.RESEARCH_PRIVACY_NOTICE_VERSION.casefold(),
+            and (
+                settings.TREADJOY_PRIVATE_POC
+                or "draft" not in settings.RESEARCH_PRIVACY_NOTICE_VERSION.casefold()
+            ),
             "privacy_notice_body": bool(settings.RESEARCH_PRIVACY_NOTICE_BODY),
             "privacy_notice_digest": hmac.compare_digest(
                 hashlib.sha256(settings.RESEARCH_PRIVACY_NOTICE_BODY.encode()).hexdigest(),
@@ -38,10 +41,21 @@ class Command(BaseCommand):
             "identity_hmac": bool(settings.RESEARCH_IDENTITY_HMAC_KEY),
             "send_key": settings.RESEARCH_EMAIL_PROVIDER == "fake" or bool(settings.RESEARCH_RESEND_SEND_API_KEY),
             "webhook_secret": settings.RESEARCH_EMAIL_PROVIDER == "fake" or bool(settings.RESEARCH_RESEND_WEBHOOK_SECRET),
-            "segment": settings.RESEARCH_EMAIL_PROVIDER == "fake" or bool(settings.RESEARCH_RESEND_SEGMENT_ID),
-            "management_key": settings.RESEARCH_EMAIL_PROVIDER == "fake" or bool(settings.RESEARCH_RESEND_MANAGEMENT_API_KEY),
+            "segment": (
+                settings.RESEARCH_EMAIL_PROVIDER == "fake"
+                or settings.TREADJOY_PRIVATE_POC
+                or bool(settings.RESEARCH_RESEND_SEGMENT_ID)
+            ),
+            "management_key": (
+                settings.RESEARCH_EMAIL_PROVIDER == "fake"
+                or settings.TREADJOY_PRIVATE_POC
+                or bool(settings.RESEARCH_RESEND_MANAGEMENT_API_KEY)
+            ),
             "retention_policy": bool(settings.RESEARCH_RETENTION_POLICY_VERSION)
-            and "draft" not in settings.RESEARCH_RETENTION_POLICY_VERSION.casefold(),
+            and (
+                settings.TREADJOY_PRIVATE_POC
+                or "draft" not in settings.RESEARCH_RETENTION_POLICY_VERSION.casefold()
+            ),
             "staff_roles": analyst_permissions
             == {"view_surveyresponse", "export_surveyresponse"}
             and manager_permissions

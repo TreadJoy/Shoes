@@ -5,6 +5,7 @@ import hmac
 import os
 from email.utils import parseaddr
 from pathlib import Path
+from urllib.parse import unquote, urlsplit
 
 from django.core.exceptions import ImproperlyConfigured
 
@@ -17,6 +18,7 @@ _VALID_TREADJOY_MODES = {"commerce", "research"}
 _VALID_ENVIRONMENTS = {"local", "ci", "staging", "production"}
 _VALID_INGRESS = {"direct", "cloudflare-locked"}
 _VALID_DB_SSLMODES = {"require", "verify-ca", "verify-full"}
+_PRIVATE_POC_OWNER_EMAIL = "ethan@tread-joy.com"
 
 TREADJOY_ENVIRONMENT = environment.choice(
     "TREADJOY_ENVIRONMENT", _VALID_ENVIRONMENTS
@@ -33,6 +35,19 @@ if (
 
 TREADJOY_MODE = environment.choice("TREADJOY_MODE", _VALID_TREADJOY_MODES)
 IS_COMMERCE_MODE = TREADJOY_MODE == "commerce"
+TREADJOY_PRIVATE_POC = environment.boolean("TREADJOY_PRIVATE_POC", default=False)
+TREADJOY_CONTACT_EMAIL = _PRIVATE_POC_OWNER_EMAIL
+TREADJOY_CANONICAL_ORIGIN = (
+    "https://tread-joy.com"
+    if IS_COMMERCE_MODE
+    else "https://research.tread-joy.com"
+)
+if TREADJOY_PRIVATE_POC and not (
+    TREADJOY_ENVIRONMENT == "staging" and not IS_COMMERCE_MODE
+):
+    raise ImproperlyConfigured(
+        "TREADJOY_PRIVATE_POC is allowed only for the staging research deployment."
+    )
 
 _STRIPE_SETTING_NAMES = (
     "STRIPE_SECRET_KEY",
@@ -125,6 +140,15 @@ if not IS_PUBLIC_ENVIRONMENT and TREADJOY_INGRESS != "direct":
         "TREADJOY_INGRESS must be direct in local and ci environments."
     )
 
+if IS_PUBLIC_ENVIRONMENT:
+    # Cloudflare sets this header with a Transform Rule before forwarding to
+    # Render. The value never belongs in source control or ordinary logs.
+    TREADJOY_ORIGIN_SHARED_SECRET = environment.strong_secret(
+        "TREADJOY_ORIGIN_SHARED_SECRET"
+    )
+else:
+    TREADJOY_ORIGIN_SHARED_SECRET = ""
+
 
 INSTALLED_APPS = [
     "django.contrib.admin",
@@ -150,6 +174,8 @@ if IS_COMMERCE_MODE:
 
 
 MIDDLEWARE = [
+    "Shoes.observability.RequestCorrelationMiddleware",
+    "Shoes.middleware.CloudflareOriginLockMiddleware",
     "django.middleware.security.SecurityMiddleware",
     "Shoes.middleware.ContentSecurityPolicyMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
@@ -197,18 +223,78 @@ if _use_bare_runserver_sqlite:
         }
     }
 else:
+    _database_url = environment.string("DATABASE_URL", default="")
+
+    def _database_from_url(value: str) -> dict[str, str]:
+        """Parse a provider connection string without logging its secret."""
+        parsed = urlsplit(value)
+        try:
+            port = parsed.port
+        except ValueError:
+            raise ImproperlyConfigured(
+                "Invalid configuration for DATABASE_URL: the port is invalid."
+            ) from None
+        database_name = parsed.path.removeprefix("/")
+        if (
+            parsed.scheme not in {"postgres", "postgresql"}
+            or not parsed.hostname
+            or not parsed.username
+            or parsed.password is None
+            or not port
+            or not database_name
+            or parsed.query
+            or parsed.fragment
+        ):
+            raise ImproperlyConfigured(
+                "Invalid configuration for DATABASE_URL: expected a PostgreSQL "
+                "connection string without query or fragment parameters."
+            )
+        return {
+            "DB_NAME": unquote(database_name),
+            "DB_USER": unquote(parsed.username),
+            "DB_PASSWORD": unquote(parsed.password),
+            "DB_HOST": parsed.hostname,
+            "DB_PORT": str(port),
+        }
+
+    if _database_url:
+        _database_config = _database_from_url(_database_url)
+        _db_name = environment.string("DB_NAME", default=_database_config["DB_NAME"])
+        _db_user = environment.string("DB_USER", default=_database_config["DB_USER"])
+        _db_password = environment.string(
+            "DB_PASSWORD", default=_database_config["DB_PASSWORD"]
+        )
+        _db_host = environment.string("DB_HOST", default=_database_config["DB_HOST"])
+        _db_port = environment.integer(
+            "DB_PORT",
+            minimum=1,
+            maximum=65535,
+            default=int(_database_config["DB_PORT"]),
+        )
+    else:
+        _db_name = environment.string("DB_NAME", required=True)
+        _db_user = environment.string("DB_USER", required=True)
+        _db_password = environment.string("DB_PASSWORD", required=True)
+        _db_host = environment.string("DB_HOST", default="127.0.0.1", required=True)
+        _db_port = environment.integer(
+            "DB_PORT", minimum=1, maximum=65535, default=5432
+        )
     DATABASES = {
         "default": {
             "ENGINE": "django.db.backends.postgresql",
-            "NAME": environment.string("DB_NAME", required=True),
-            "USER": environment.string("DB_USER", required=True),
-            "PASSWORD": environment.string("DB_PASSWORD", required=True),
-            "HOST": environment.string("DB_HOST", default="127.0.0.1", required=True),
-            "PORT": environment.integer("DB_PORT", minimum=1, maximum=65535, default=5432),
+            "NAME": _db_name,
+            "USER": _db_user,
+            "PASSWORD": _db_password,
+            "HOST": _db_host,
+            "PORT": _db_port,
         }
     }
 if IS_PUBLIC_ENVIRONMENT:
-    _db_sslmode = environment.choice("DB_SSLMODE", _VALID_DB_SSLMODES)
+    _db_sslmode = environment.choice(
+        "DB_SSLMODE",
+        _VALID_DB_SSLMODES,
+        default="require" if _database_url else None,
+    )
     DATABASES["default"]["OPTIONS"] = {"sslmode": _db_sslmode}
     if _db_sslmode in {"verify-ca", "verify-full"}:
         DATABASES["default"]["OPTIONS"]["sslrootcert"] = str(
@@ -387,7 +473,7 @@ RESEARCH_RESEND_WEBHOOK_SECRET = environment.string(
 RESEARCH_RESEND_SEGMENT_ID = environment.string(
     "RESEARCH_RESEND_SEGMENT_ID",
     default="",
-    required=IS_PUBLIC_ENVIRONMENT and not IS_COMMERCE_MODE,
+    required=IS_PUBLIC_ENVIRONMENT and not IS_COMMERCE_MODE and not TREADJOY_PRIVATE_POC,
 )
 RESEARCH_EMAIL_TRANSACTIONAL_FROM = environment.string(
     "RESEARCH_EMAIL_TRANSACTIONAL_FROM",
@@ -412,11 +498,11 @@ RESEARCH_RETENTION_POLICY_VERSION = environment.string(
 RESEARCH_EMAIL_PROVIDER = "resend" if IS_PUBLIC_ENVIRONMENT else "fake"
 
 if IS_PUBLIC_ENVIRONMENT and not IS_COMMERCE_MODE:
-    if "draft" in RESEARCH_PRIVACY_NOTICE_VERSION.casefold():
+    if not TREADJOY_PRIVATE_POC and "draft" in RESEARCH_PRIVACY_NOTICE_VERSION.casefold():
         raise ImproperlyConfigured(
             "RESEARCH_PRIVACY_NOTICE_VERSION must identify an approved notice."
         )
-    if "draft" in RESEARCH_RETENTION_POLICY_VERSION.casefold():
+    if not TREADJOY_PRIVATE_POC and "draft" in RESEARCH_RETENTION_POLICY_VERSION.casefold():
         raise ImproperlyConfigured(
             "RESEARCH_RETENTION_POLICY_VERSION must identify an effective policy."
         )
@@ -427,26 +513,40 @@ if IS_PUBLIC_ENVIRONMENT and not IS_COMMERCE_MODE:
         raise ImproperlyConfigured(
             "RESEARCH_PRIVACY_NOTICE_SHA256 must match the approved notice body."
         )
-    if RESEARCH_EMAIL_REPLY_TO.lower() != "hello@tread-joy.com":
-        raise ImproperlyConfigured(
-            "RESEARCH_EMAIL_REPLY_TO must be the monitored hello@tread-joy.com mailbox."
-        )
     _transactional_address = parseaddr(RESEARCH_EMAIL_TRANSACTIONAL_FROM)[1].lower()
     _marketing_address = parseaddr(RESEARCH_EMAIL_MARKETING_FROM)[1].lower()
-    _sender_domains = {
-        _transactional_address.rpartition("@")[2],
-        _marketing_address.rpartition("@")[2],
-    }
-    if (
-        not _transactional_address
-        or not _marketing_address
-        or len(_sender_domains) != 2
-        or not all(domain.endswith(".tread-joy.com") for domain in _sender_domains)
-    ):
-        raise ImproperlyConfigured(
-            "Research transactional and marketing senders must use two distinct "
-            "verified tread-joy.com subdomains."
-        )
+    if TREADJOY_PRIVATE_POC:
+        if any(
+            address != _PRIVATE_POC_OWNER_EMAIL
+            for address in (
+                RESEARCH_EMAIL_REPLY_TO.lower(),
+                _transactional_address,
+                _marketing_address,
+            )
+        ):
+            raise ImproperlyConfigured(
+                "The private research POC must route every research email to "
+                f"{_PRIVATE_POC_OWNER_EMAIL}."
+            )
+    else:
+        if RESEARCH_EMAIL_REPLY_TO.lower() != "hello@tread-joy.com":
+            raise ImproperlyConfigured(
+                "RESEARCH_EMAIL_REPLY_TO must be the monitored hello@tread-joy.com mailbox."
+            )
+        _sender_domains = {
+            _transactional_address.rpartition("@")[2],
+            _marketing_address.rpartition("@")[2],
+        }
+        if (
+            not _transactional_address
+            or not _marketing_address
+            or len(_sender_domains) != 2
+            or not all(domain.endswith(".tread-joy.com") for domain in _sender_domains)
+        ):
+            raise ImproperlyConfigured(
+                "Research transactional and marketing senders must use two distinct "
+                "verified tread-joy.com subdomains."
+            )
 
 HOMEPAGE_YOUTUBE_VIDEO_ID = environment.string(
     "HOMEPAGE_YOUTUBE_VIDEO_ID", default=""
@@ -513,3 +613,32 @@ else:
     CSRF_COOKIE_HTTPONLY = False
 
 CONTENT_SECURITY_POLICY = "; ".join(_csp_directives)
+
+
+# Provider-neutral structured stdout logging. The managed origin can ingest
+# these JSON events into its monitor without adding a vendor SDK or exposing
+# request payloads. The filters inject correlation IDs and redact sensitive
+# values before the handler serializes an allow-listed event shape.
+LOGGING = {
+    "version": 1,
+    "disable_existing_loggers": False,
+    "filters": {
+        "request_context": {"()": "Shoes.observability.RequestContextFilter"},
+        "redact_sensitive": {"()": "Shoes.observability.RedactionFilter"},
+    },
+    "formatters": {
+        "json": {"()": "Shoes.observability.JsonFormatter"},
+    },
+    "handlers": {
+        "console": {
+            "class": "logging.StreamHandler",
+            "filters": ["request_context", "redact_sensitive"],
+            "formatter": "json",
+        },
+    },
+    "loggers": {
+        "Shoes": {"handlers": ["console"], "level": "INFO", "propagate": False},
+        "web": {"handlers": ["console"], "level": "INFO", "propagate": False},
+        "django": {"handlers": ["console"], "level": "INFO", "propagate": False},
+    },
+}

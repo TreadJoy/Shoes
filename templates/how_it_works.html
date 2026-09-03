@@ -7,23 +7,38 @@
     <section class="brand-hero">
         <p class="eyebrow">The Modular System</p>
         <h1>Change the Parts. Keep the Shoe.</h1>
-        <p>
-            TreadJoy is developing a modular shoe system built around
-            compatible, interchangeable components.
-        </p>
+        {% if is_commerce_mode %}
+            <p>
+                TreadJoy is developing a modular shoe system built around
+                compatible, interchangeable components.
+            </p>
+        {% else %}
+            <p>
+                This private preview contains an unapproved concept outline.
+                It is not a product description or availability statement.
+            </p>
+        {% endif %}
     </section>
 
     <section class="content-card">
         <h2>The Product Concept</h2>
-        <p>
-            Start with a TreadJoy shoe, choose components made for its
-            compatibility group, and change approved parts as your style or
-            needs change.
-        </p>
-        <p>
-            Final component options and compatibility guidance will be shown
-            with each product as the system is validated.
-        </p>
+        {% if is_commerce_mode %}
+            <p>
+                Start with a TreadJoy shoe, choose components made for its
+                compatibility group, and change approved parts as your style or
+                needs change.
+            </p>
+            <p>
+                Final component options and compatibility guidance will be shown
+                with each product as the system is validated.
+            </p>
+        {% else %}
+            <p>
+                Compatibility details are intentionally withheld from this
+                private proof of concept.
+            </p>
+            <p>No public product claim is made on this page.</p>
+        {% endif %}
 
         {% if is_commerce_mode %}
             <a href="{% url 'products:product_list' %}" class="btn-primary">

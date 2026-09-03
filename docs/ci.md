@@ -17,6 +17,14 @@ also loads a synthetic staging profile with `Shoes.settings` and runs the
 warning-fatal Django deployment check; its R2, SMTP, database, and hostname
 values are non-secret placeholders and no provider network call is permitted.
 
+The separate `Research Release` workflow runs validation after a successful
+`Application CI` run for `main`, or accepts an owner-selected full SHA only
+after verifying the two Application CI PostgreSQL checks for that commit. It
+packages a 35-day immutable release artifact after the research/content gates;
+protected staging and production promotion are documented in
+`docs/a2.3-release-pipeline.md` and do not change the four required merge
+checks above.
+
 ## Isolation and credentials
 
 Each application job starts a fresh PostgreSQL service with two empty
@@ -125,8 +133,8 @@ env DJANGO_SETTINGS_MODULE=Shoes.settings \
 python manage.py collectstatic --noinput --clear
 ```
 
-The public-profile command relies on the remaining synthetic R2, SMTP,
-database, CSRF, and HSTS variables supplied by the workflow. For a local
+The public-profile command relies on the remaining synthetic origin-lock,
+R2, SMTP, database, CSRF, and HSTS variables supplied by the workflow. For a local
 reproduction, set the complete non-secret placeholder contract from
 `docs/production-configuration.md`; never substitute real provider credentials
 in a shared shell or committed file.

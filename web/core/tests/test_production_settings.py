@@ -9,7 +9,7 @@ from django.middleware.clickjacking import XFrameOptionsMiddleware
 from django.middleware.security import SecurityMiddleware
 from django.test import RequestFactory, SimpleTestCase, override_settings
 
-from Shoes.middleware import ContentSecurityPolicyMiddleware
+from Shoes.middleware import CloudflareOriginLockMiddleware, ContentSecurityPolicyMiddleware
 
 
 PUBLIC_SETUP_PROBE = r"""
@@ -77,7 +77,7 @@ class PublicSettingsProcessTests(SimpleTestCase):
     def environment_for(self, mode="research"):
         environment = os.environ.copy()
         for name in list(environment):
-            if name.startswith("STRIPE_"):
+            if name.startswith("STRIPE_") or name in {"DATABASE_URL", "TREADJOY_PRIVATE_POC"}:
                 environment.pop(name)
         environment.update(
             {
@@ -85,6 +85,7 @@ class PublicSettingsProcessTests(SimpleTestCase):
                 "TREADJOY_ENVIRONMENT": "staging",
                 "TREADJOY_MODE": mode,
                 "TREADJOY_INGRESS": "cloudflare-locked",
+                "TREADJOY_ORIGIN_SHARED_SECRET": "public-origin-lock-secret-0123456789-ABCDEFGHIJKLMNOPQRSTUVWXYZ",
                 "DJANGO_DEBUG": "false",
                 "SECRET_KEY": "public-settings-test-key-0123456789-ABCDEFGHIJKLMNOPQRSTUVWXYZ!",
                 "SECRET_KEY_FALLBACKS": "",
@@ -183,6 +184,7 @@ class PublicSettingsProcessTests(SimpleTestCase):
         required_names = (
             "ALLOWED_HOSTS",
             "CSRF_TRUSTED_ORIGINS",
+            "TREADJOY_ORIGIN_SHARED_SECRET",
             "DB_SSLMODE",
             "STATIC_ROOT",
             "R2_SECRET_ACCESS_KEY",
@@ -252,6 +254,63 @@ class PublicSettingsProcessTests(SimpleTestCase):
                 environment[name] = value
                 self.assert_setup_fails(environment, message)
 
+    def test_private_research_poc_accepts_owner_mailbox_and_draft_policy(self):
+        environment = self.environment_for("research")
+        environment.update(
+            {
+                "TREADJOY_PRIVATE_POC": "true",
+                "RESEARCH_PRIVACY_NOTICE_VERSION": "0.1-draft",
+                "RESEARCH_RETENTION_POLICY_VERSION": "0.1-draft",
+                "RESEARCH_EMAIL_TRANSACTIONAL_FROM": "TreadJoy Research <ethan@tread-joy.com>",
+                "RESEARCH_EMAIL_MARKETING_FROM": "TreadJoy <ethan@tread-joy.com>",
+                "RESEARCH_EMAIL_REPLY_TO": "ethan@tread-joy.com",
+            }
+        )
+        environment.pop("RESEARCH_RESEND_SEGMENT_ID", None)
+        result = self.run_setup(
+            environment,
+            """
+import django
+django.setup()
+from django.conf import settings
+assert settings.TREADJOY_PRIVATE_POC is True
+assert settings.RESEARCH_EMAIL_REPLY_TO == "ethan@tread-joy.com"
+""",
+        )
+        self.assertEqual(
+            result.returncode,
+            0,
+            msg=f"stdout:\n{result.stdout}\nstderr:\n{result.stderr}",
+        )
+
+    def test_render_database_url_supplies_postgresql_connection_values(self):
+        environment = self.environment_for("research")
+        for name in ("DB_NAME", "DB_USER", "DB_PASSWORD", "DB_HOST", "DB_PORT", "DB_SSLMODE"):
+            environment.pop(name, None)
+        environment["DATABASE_URL"] = (
+            "postgresql://url-user:url-pass@database.ci.invalid:5432/url-db"
+        )
+        result = self.run_setup(
+            environment,
+            """
+import django
+django.setup()
+from django.conf import settings
+database = settings.DATABASES["default"]
+assert database["NAME"] == "url-db"
+assert database["USER"] == "url-user"
+assert database["PASSWORD"] == "url-pass"
+assert database["HOST"] == "database.ci.invalid"
+assert database["PORT"] == 5432
+assert database["OPTIONS"] == {"sslmode": "require"}
+""",
+        )
+        self.assertEqual(
+            result.returncode,
+            0,
+            msg=f"stdout:\n{result.stdout}\nstderr:\n{result.stderr}",
+        )
+
     def test_public_profiles_reject_relaxed_or_inconsistent_security_values(self):
         cases = (
             ("DJANGO_DEBUG", "true", "DJANGO_DEBUG must be false"),
@@ -314,6 +373,26 @@ class SecurityHeaderTests(SimpleTestCase):
             )
         )
         return application(request)
+
+    @override_settings(
+        IS_PUBLIC_ENVIRONMENT=True,
+        TREADJOY_ORIGIN_SHARED_SECRET="origin-secret",
+    )
+    def test_public_origin_requires_cloudflare_header_except_health(self):
+        blocked = CloudflareOriginLockMiddleware(lambda request: HttpResponse("ok"))(
+            RequestFactory().get("/")
+        )
+        self.assertEqual(blocked.status_code, 403)
+
+        allowed = CloudflareOriginLockMiddleware(lambda request: HttpResponse("ok"))(
+            RequestFactory().get("/", HTTP_X_TREADJOY_ORIGIN="origin-secret")
+        )
+        self.assertEqual(allowed.status_code, 200)
+
+        health = CloudflareOriginLockMiddleware(lambda request: HttpResponse("ok"))(
+            RequestFactory().get("/health/live/")
+        )
+        self.assertEqual(health.status_code, 200)
 
     def test_csp_is_enforced_without_unsafe_inline_scripts(self):
         response = self.response_for()

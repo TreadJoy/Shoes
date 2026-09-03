@@ -398,6 +398,22 @@ class WaitlistFlowTests(TestCase):
 
     @skipIf(settings.IS_COMMERCE_MODE, "Research-only operational command")
     @override_settings(
+        TREADJOY_PRIVATE_POC=True,
+        RESEARCH_EMAIL_PROVIDER="resend",
+        RESEARCH_RESEND_SEND_API_KEY="synthetic-send-key",
+        RESEARCH_RESEND_WEBHOOK_SECRET="synthetic-webhook-secret",
+        RESEARCH_RESEND_MANAGEMENT_API_KEY="",
+        RESEARCH_RESEND_SEGMENT_ID="",
+        RESEARCH_PRIVACY_NOTICE_VERSION="0.1-draft",
+        RESEARCH_RETENTION_POLICY_VERSION="0.1-draft",
+    )
+    def test_private_poc_engagement_check_accepts_draft_policy_versions(self):
+        output = StringIO()
+        call_command("check_research_engagement", stdout=output)
+        self.assertIn("Research engagement boundary passed", output.getvalue())
+
+    @skipIf(settings.IS_COMMERCE_MODE, "Research-only operational command")
+    @override_settings(
         RESEARCH_EMAIL_PROVIDER="resend",
         RESEARCH_RESEND_MANAGEMENT_API_KEY="",
     )

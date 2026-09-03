@@ -11,13 +11,23 @@
 <div class="home-page{% if is_commerce_mode %} home-page-commerce{% else %} home-page-research{% endif %}">
     <section class="home-hero" aria-labelledby="home-hero-title">
         <div class="home-hero-copy">
-            <p class="eyebrow">The TreadJoy Modular System</p>
-            <h1 id="home-hero-title">A Shoe That Changes With You.</h1>
-            <p class="home-hero-intro">
-                TreadJoy is developing modular shoes built around compatible,
-                interchangeable components—so one pair can keep up with more
-                of your life.
-            </p>
+            {% if is_commerce_mode %}
+                <p class="eyebrow">The TreadJoy Modular System</p>
+                <h1 id="home-hero-title">A Shoe That Changes With You.</h1>
+                <p class="home-hero-intro">
+                    TreadJoy is developing modular shoes built around compatible,
+                    interchangeable components—so one pair can keep up with more
+                    of your life.
+                </p>
+            {% else %}
+                <p class="eyebrow">TreadJoy Research Preview</p>
+                <h1 id="home-hero-title">A Private Place to Test TreadJoy.</h1>
+                <p class="home-hero-intro">
+                    This development preview is for the TreadJoy team. Media,
+                    policy pages, and product language are still being reviewed;
+                    no public product claims or offers are made here.
+                </p>
+            {% endif %}
 
             <div class="home-hero-actions">
                 {% if is_commerce_mode %}
@@ -39,19 +49,33 @@
     </section>
 
     <section class="home-statement" aria-labelledby="why-treadjoy-title">
-        <p class="eyebrow">Why TreadJoy</p>
-        <h2 id="why-treadjoy-title">One Shoe. More Ways to Make It Yours.</h2>
-        <p>
-            The idea is simple: build around a compatible system instead of
-            treating every style change as a whole new shoe.
-        </p>
+        {% if is_commerce_mode %}
+            <p class="eyebrow">Why TreadJoy</p>
+            <h2 id="why-treadjoy-title">One Shoe. More Ways to Make It Yours.</h2>
+            <p>
+                The idea is simple: build around a compatible system instead of
+                treating every style change as a whole new shoe.
+            </p>
+        {% else %}
+            <p class="eyebrow">Research Preview</p>
+            <h2 id="why-treadjoy-title">Review the Flow Before Release.</h2>
+            <p>
+                This page is a private workbench for checking navigation,
+                research questions, and content structure.
+            </p>
+        {% endif %}
         <a href="{% url 'core:how_it_works' %}" class="editorial-link">How Compatibility Works →</a>
     </section>
 
     <section class="home-categories" aria-labelledby="home-categories-title">
         <div class="home-section-heading">
-            <p class="eyebrow">Find Your Starting Point</p>
-            <h2 id="home-categories-title">Choose Your Lane.</h2>
+            {% if is_commerce_mode %}
+                <p class="eyebrow">Find Your Starting Point</p>
+                <h2 id="home-categories-title">Choose Your Lane.</h2>
+            {% else %}
+                <p class="eyebrow">Navigation Preview</p>
+                <h2 id="home-categories-title">Review Category Links.</h2>
+            {% endif %}
         </div>
 
         <div class="category-entry-grid">
@@ -85,13 +109,25 @@
 
     <section class="home-modular-system" aria-labelledby="modular-system-title">
         <div class="modular-system-copy">
-            <p class="eyebrow">Built Around Compatibility</p>
-            <h2 id="modular-system-title">Start With the Shoe. Change the Parts.</h2>
-            <p>
-                Products identify the components designed for their
-                compatibility group, so people can understand what works
-                together before they choose.
-            </p>
+            {% if is_commerce_mode %}
+                <p class="eyebrow">Built Around Compatibility</p>
+                <h2 id="modular-system-title">Start With the Shoe. Change the Parts.</h2>
+            {% else %}
+                <p class="eyebrow">Internal Taxonomy Preview</p>
+                <h2 id="modular-system-title">Review Component Labels.</h2>
+            {% endif %}
+            {% if is_commerce_mode %}
+                <p>
+                    Products identify the components designed for their
+                    compatibility group, so people can understand what works
+                    together before they choose.
+                </p>
+            {% else %}
+                <p>
+                    The modular concept is being reviewed in this private
+                    preview. Compatibility details are not a public claim.
+                </p>
+            {% endif %}
             <a href="{% url 'core:how_it_works' %}" class="btn-secondary">See How It Works →</a>
         </div>
 
@@ -120,12 +156,21 @@
             <span>Approved media and final alt text required before launch.</span>
         </div>
         <div class="home-lifestyle-copy">
-            <p class="eyebrow">Made to Move</p>
-            <h2 id="lifestyle-title">More Life From Every Look.</h2>
-            <p>
-                TreadJoy is exploring a shoe system that can change with the
-                way people dress, move, and express themselves.
-            </p>
+            {% if is_commerce_mode %}
+                <p class="eyebrow">Made to Move</p>
+                <h2 id="lifestyle-title">More Life From Every Look.</h2>
+                <p>
+                    TreadJoy is exploring a shoe system that can change with the
+                    way people dress, move, and express themselves.
+                </p>
+            {% else %}
+                <p class="eyebrow">Media Placeholder</p>
+                <h2 id="lifestyle-title">Reserved for Future Review.</h2>
+                <p>
+                    This media and copy slot stays blank until approved assets
+                    and factual content are available.
+                </p>
+            {% endif %}
         </div>
     </section>
 
@@ -155,16 +200,26 @@
             </div>
         {% endif %}
         <div class="home-video-copy">
-            <p class="eyebrow">See It in Motion</p>
-            <h2 id="home-video-title">The Story Is Better in Motion.</h2>
-            <p>
-                An approved TreadJoy video or livestream can be added here
-                without changing the surrounding page structure.
-            </p>
-            <p class="placeholder-note">
-                Development placeholder — playback will require an intentional
-                user action once media is configured.
-            </p>
+            {% if is_commerce_mode %}
+                <p class="eyebrow">See It in Motion</p>
+                <h2 id="home-video-title">The Story Is Better in Motion.</h2>
+                <p>
+                    An approved TreadJoy video or livestream can be added here
+                    without changing the surrounding page structure.
+                </p>
+                <p class="placeholder-note">
+                    Development placeholder — playback will require an intentional
+                    user action once media is configured.
+                </p>
+            {% else %}
+                <p class="eyebrow">Video Placeholder</p>
+                <h2 id="home-video-title">Reserved for Approved Video.</h2>
+                <p>No video or livestream is represented in this preview.</p>
+                <p class="placeholder-note">
+                    Playback remains disabled until an approved source and title
+                    are supplied.
+                </p>
+            {% endif %}
         </div>
     </section>
 
@@ -176,26 +231,39 @@
             <span>Authentic activity media and final alt text required.</span>
         </div>
         <div class="home-community-copy">
-            <p class="eyebrow">Community</p>
-            <h2 id="community-title">Built With People, Not Just for Them.</h2>
-            <p>
-                This space will document real customer, creator, local, and
-                community relationships as they happen.
-            </p>
-            <p class="placeholder-note">
-                Development placeholder — no partnership, event, or community
-                accomplishment is being claimed.
-            </p>
+            {% if is_commerce_mode %}
+                <p class="eyebrow">Community</p>
+                <h2 id="community-title">Built With People, Not Just for Them.</h2>
+                <p>
+                    This space will document real customer, creator, local, and
+                    community relationships as they happen.
+                </p>
+                <p class="placeholder-note">
+                    Development placeholder — no partnership, event, or community
+                    accomplishment is being claimed.
+                </p>
+            {% else %}
+                <p class="eyebrow">Community Placeholder</p>
+                <h2 id="community-title">Reserved for Future Evidence.</h2>
+                <p>No community relationship, event, or activity is represented here.</p>
+                <p class="placeholder-note">No partnership or community claim is made.</p>
+            {% endif %}
         </div>
     </section>
 
     <section class="home-impact" aria-labelledby="impact-title">
-        <p class="eyebrow">Positive Impact</p>
-        <h2 id="impact-title">Show the Work.</h2>
-        <p>
-            This section is reserved for concrete actions, evidence, and
-            approved collaborators—not broad promises or unsupported metrics.
-        </p>
+        {% if is_commerce_mode %}
+            <p class="eyebrow">Positive Impact</p>
+            <h2 id="impact-title">Show the Work.</h2>
+            <p>
+                This section is reserved for concrete actions, evidence, and
+                approved collaborators—not broad promises or unsupported metrics.
+            </p>
+        {% else %}
+            <p class="eyebrow">Impact Placeholder</p>
+            <h2 id="impact-title">Reserved for Future Evidence.</h2>
+            <p>No impact, sustainability, partner, or outcome claim is made here.</p>
+        {% endif %}
         <div class="impact-placeholder">
             <span>Development placeholder — approved impact evidence required.</span>
         </div>
@@ -245,8 +313,8 @@
                 <p class="eyebrow">Stay in the Loop</p>
                 <h2 id="waitlist-title">Help Shape What Comes Next.</h2>
                 <p>
-                    Join the waitlist for approved product updates, then share
-                    what matters to you through the TreadJoy survey.
+                    Join the private test list, then share what matters to you
+                    through the TreadJoy survey.
                 </p>
                 <a href="{% url 'survey:survey_welcome' %}" class="editorial-link">Take the Survey →</a>
             </div>

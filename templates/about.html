@@ -11,28 +11,46 @@
 
         <h1>About TreadJoy</h1>
 
-        <p>
-            TreadJoy is a fun shoe brand focused on comfort, personality,
-            and everyday movement.
-        </p>
+        {% if is_commerce_mode %}
+            <p>
+                TreadJoy is a fun shoe brand focused on comfort, personality,
+                and everyday movement.
+            </p>
+        {% else %}
+            <p>
+                TreadJoy is being evaluated in a private development environment.
+                This page makes no public product or business claims.
+            </p>
+        {% endif %}
     </section>
 
     <section class="content-card">
         <h2>What We’re Building</h2>
 
-        <p>
-            Our goal is to create shoes that feel good, look unique,
-            and make people excited to wear them.
-        </p>
+        {% if is_commerce_mode %}
+            <p>
+                Our goal is to create shoes that feel good, look unique,
+                and make people excited to wear them.
+            </p>
 
-        <p>
-            We care about playful design, practical comfort, and building
-            a brand that people feel connected to.
-        </p>
+            <p>
+                We care about playful design, practical comfort, and building
+                a brand that people feel connected to.
+            </p>
+        {% else %}
+            <p>This is a working content surface for the development team.</p>
 
-        <a href="{% url 'products:product_list' %}" class="btn-primary">
-            Shop Products
-        </a>
+            <p>
+                Product language, media, and public-facing policies remain under
+                review for a later release.
+            </p>
+        {% endif %}
+
+        {% if is_commerce_mode %}
+            <a href="{% url 'products:product_list' %}" class="btn-primary">Shop Products</a>
+        {% else %}
+            <a href="{% url 'survey:survey_welcome' %}" class="btn-primary">Open Research Survey</a>
+        {% endif %}
     </section>
 
 </div>

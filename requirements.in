@@ -8,3 +8,4 @@ python-decouple>=3.8,<4
 resend>=2.42,<3
 stripe>=15.1,<16
 django-storages[s3]>=1.14.6,<2
+gunicorn>=26.2,<27
