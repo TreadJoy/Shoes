@@ -6,9 +6,12 @@ from pathlib import Path
 
 from django.conf import settings
 from django.core.management.base import BaseCommand, CommandError
+from django.http import HttpRequest
 from PIL import Image, UnidentifiedImageError
 
+from web.core.context_processors import deployment_mode
 from web.products.models import Product
+from web.products.models import ProductVariant
 
 
 INVENTORY_PATH = "docs/release-content-inventory.json"
@@ -30,6 +33,14 @@ APPROVAL_STATUSES = {"approved", "development-only", "blocked", "pending"}
 METADATA_STATUSES = {"clean", "not-applicable", "metadata-present"}
 ALT_TEXT_KINDS = {"meaningful", "decorative", "not-public"}
 EMBEDDED_METADATA_KEYS = {"exif", "xmp", "xml", "iptc", "comment"}
+PROFILE_CHOICES = ("public", "private-poc")
+PRIVATE_POC_ALLOWED_BLOCKED_SURFACES = {
+    "homepage-development-media",
+    "pending-social-links",
+    "research-privacy-placeholder",
+    "terms-placeholder",
+    "accessibility-placeholder",
+}
 
 
 def load_inventory():
@@ -151,11 +162,52 @@ def verify_asset_file(asset, path, stream, errors):
 class Command(BaseCommand):
     help = "Fail when development-only content or unapproved public assets remain."
 
+    def add_arguments(self, parser):
+        parser.add_argument(
+            "--profile",
+            choices=PROFILE_CHOICES,
+            default="public",
+            help=(
+                "Release content contract to enforce. The default public profile "
+                "is fail-closed; private-poc is staging-only."
+            ),
+        )
+
+    @staticmethod
+    def private_poc_configuration_errors():
+        errors = []
+        if settings.TREADJOY_ENVIRONMENT != "staging":
+            errors.append("private-poc-requires-staging")
+        if settings.TREADJOY_MODE != "research":
+            errors.append("private-poc-requires-research-mode")
+        if not settings.TREADJOY_PRIVATE_POC:
+            errors.append("private-poc-requires-TREADJOY_PRIVATE_POC=true")
+
+        request = HttpRequest()
+        request.method = "GET"
+        request.path = "/"
+        metadata = deployment_mode(request)
+        if metadata.get("robots_directive") != "noindex, nofollow, noarchive":
+            errors.append("private-poc-requires-noindex")
+
+        if Product.objects.filter(is_active=True).exists():
+            errors.append("private-poc-active-catalog-present")
+        if ProductVariant.objects.filter(
+            is_active=True,
+            product__is_active=True,
+        ).exists():
+            errors.append("private-poc-active-catalog-variant-present")
+        return errors
+
     def handle(self, *args, **options):
+        profile = options["profile"]
         inventory = load_inventory()
         errors = []
         assets = inventory.get("assets", [])
         assets_by_path = {}
+
+        if profile == "private-poc":
+            errors.extend(self.private_poc_configuration_errors())
 
         for asset in assets:
             validate_asset(asset, errors)
@@ -171,6 +223,10 @@ class Command(BaseCommand):
                 errors.append(f"unlisted-static-asset:{path}")
                 continue
 
+            if profile == "private-poc":
+                errors.append(f"private-poc-media-present:{path}")
+                continue
+
             errors.extend(public_asset_errors(asset, path, settings.TREADJOY_MODE))
             try:
                 with (Path(settings.BASE_DIR) / path).open("rb") as asset_file:
@@ -179,15 +235,33 @@ class Command(BaseCommand):
                 errors.append(f"static-asset-unreadable:{path}")
 
         for surface in inventory.get("content_surfaces", []):
-            if not surface.get("public_release", False):
-                surface_id = surface.get("id", "unknown-content-surface")
+            surface_id = surface.get("id", "unknown-content-surface")
+            if profile == "private-poc":
+                if surface_id not in PRIVATE_POC_ALLOWED_BLOCKED_SURFACES:
+                    errors.append(f"private-poc-unknown-content-surface:{surface_id}")
+                elif surface.get("public_release", False):
+                    errors.append(
+                        f"private-poc-content-surface-not-blocked:{surface_id}"
+                    )
+            elif not surface.get("public_release", False):
                 errors.append(f"blocked-content-surface:{surface_id}")
+
+        if profile == "private-poc":
+            for asset in assets:
+                if asset.get("public_release", False):
+                    errors.append(
+                        f"private-poc-public-asset:{asset.get('path', 'unknown-asset')}"
+                    )
 
         blocked_slugs = set(inventory.get("blocked_catalog_slugs", []))
         for product in Product.objects.filter(is_active=True).only(
             "slug",
             "image",
         ):
+            if profile == "private-poc":
+                if product.image:
+                    errors.append(f"private-poc-product-media-present:{product.slug}")
+                continue
             if product.slug in blocked_slugs:
                 errors.append(f"active-development-product:{product.slug}")
             if product.image:
@@ -211,4 +285,6 @@ class Command(BaseCommand):
                 self.stderr.write(error)
             raise CommandError(f"{len(set(errors))} release-content blocker(s) found.")
 
-        self.stdout.write(self.style.SUCCESS("release-content-check: passed"))
+        self.stdout.write(
+            self.style.SUCCESS(f"release-content-check: passed (profile={profile})")
+        )

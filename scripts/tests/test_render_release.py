@@ -91,3 +91,33 @@ class RenderReleaseAdapterTests(unittest.TestCase):
         with patch.dict(os.environ, {}, clear=True):
             with self.assertRaises(RuntimeError):
                 render_release.api_key()
+
+
+class ResearchReleaseWorkflowProfileTests(unittest.TestCase):
+    workflow = Path(__file__).resolve().parents[2] / ".github" / "workflows" / "research-release.yml"
+
+    def test_staging_is_the_only_private_poc_profile_target(self):
+        content = self.workflow.read_text(encoding="utf-8")
+
+        self.assertIn(
+            "RELEASE_CONTENT_PROFILE: ${{ github.event_name == 'workflow_dispatch' && inputs.target == 'staging' && 'private-poc' || 'public' }}",
+            content,
+        )
+        self.assertIn(
+            'python manage.py check_release_content --profile "$RELEASE_CONTENT_PROFILE"',
+            content,
+        )
+        self.assertIn('"content_profile": os.environ["RELEASE_CONTENT_PROFILE"]', content)
+
+    def test_promotions_verify_content_profile(self):
+        content = self.workflow.read_text(encoding="utf-8")
+
+        self.assertIn(
+            "EXPECTED_CONTENT_PROFILE: ${{ inputs.target == 'staging' && 'private-poc' || 'public' }}",
+            content,
+        )
+        self.assertIn("EXPECTED_CONTENT_PROFILE: public", content)
+        self.assertIn(
+            'artifact content profile does not match the promotion target',
+            content,
+        )

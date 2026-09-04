@@ -178,7 +178,7 @@ def main() -> int:
     results.append(
         command_result(
             "release content gate",
-            [str(python_bin), "manage.py", "check_release_content"],
+            [str(python_bin), "manage.py", "check_release_content", "--profile", "public"],
             environment=environment,
             output_dir=output_dir,
             expected_returncode=1,
@@ -219,6 +219,7 @@ def main() -> int:
         "working_tree_clean": working_tree_clean,
         "promotable": False,
         "deployment_mode": "research",
+        "content_profile": "public",
         "scope": "private development-team-only POC",
         "local_checks_passed": all_local_checks_passed,
         "checks": results,

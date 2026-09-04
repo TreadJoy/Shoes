@@ -12,7 +12,7 @@ from django.core.management.base import CommandError
 from django.test import TestCase, override_settings
 from PIL import Image
 
-from web.products.models import Product
+from web.products.models import Product, ProductVariant
 
 
 class DevelopmentLogoRenderingTests(TestCase):
@@ -93,10 +93,10 @@ class ReleaseContentCommandTests(TestCase):
             encoding="utf-8",
         )
 
-    def run_command(self):
+    def run_command(self, *arguments):
         output = io.StringIO()
         try:
-            call_command("check_release_content", stderr=output)
+            call_command("check_release_content", *arguments, stderr=output)
         except CommandError:
             return output.getvalue()
         return output.getvalue()
@@ -108,6 +108,158 @@ class ReleaseContentCommandTests(TestCase):
             call_command("check_release_content", stderr=output)
 
         self.assertIn("blocked-content-surface:homepage-development-media", output.getvalue())
+
+    def test_private_poc_profile_accepts_known_placeholder_surfaces(self):
+        with TemporaryDirectory() as temporary_directory:
+            base_dir = Path(temporary_directory)
+            self.write_inventory(
+                base_dir,
+                content_surfaces=[
+                    {"id": surface_id, "public_release": False}
+                    for surface_id in (
+                        "homepage-development-media",
+                        "pending-social-links",
+                        "research-privacy-placeholder",
+                        "terms-placeholder",
+                        "accessibility-placeholder",
+                    )
+                ],
+            )
+            with override_settings(
+                BASE_DIR=base_dir,
+                TREADJOY_ENVIRONMENT="staging",
+                TREADJOY_MODE="research",
+                IS_PUBLIC_ENVIRONMENT=True,
+                TREADJOY_PRIVATE_POC=True,
+            ):
+                output = io.StringIO()
+                call_command(
+                    "check_release_content",
+                    "--profile",
+                    "private-poc",
+                    stdout=output,
+                    stderr=output,
+                )
+
+        self.assertIn("release-content-check: passed (profile=private-poc)", output.getvalue())
+
+    def test_private_poc_profile_requires_staging_research_private_and_noindex(self):
+        cases = (
+            ({"TREADJOY_ENVIRONMENT": "local"}, "private-poc-requires-staging"),
+            ({"TREADJOY_ENVIRONMENT": "production"}, "private-poc-requires-staging"),
+            ({"TREADJOY_MODE": "commerce"}, "private-poc-requires-research-mode"),
+            ({"TREADJOY_PRIVATE_POC": False}, "private-poc-requires-TREADJOY_PRIVATE_POC=true"),
+            ({"TREADJOY_PRIVATE_POC": False, "IS_PUBLIC_ENVIRONMENT": True}, "private-poc-requires-noindex"),
+        )
+        for settings_override, expected in cases:
+            with self.subTest(expected=expected):
+                values = {
+                    "TREADJOY_ENVIRONMENT": "staging",
+                    "TREADJOY_MODE": "research",
+                    "IS_PUBLIC_ENVIRONMENT": True,
+                    "TREADJOY_PRIVATE_POC": True,
+                }
+                values.update(settings_override)
+                with override_settings(**values):
+                    output = self.run_command("--profile", "private-poc")
+                self.assertIn(expected, output)
+
+    def test_private_poc_profile_rejects_unknown_content_surface(self):
+        with TemporaryDirectory() as temporary_directory:
+            base_dir = Path(temporary_directory)
+            self.write_inventory(
+                base_dir,
+                content_surfaces=[
+                    {
+                        "id": "unapproved-placeholder",
+                        "public_release": False,
+                    }
+                ],
+            )
+            with override_settings(
+                BASE_DIR=base_dir,
+                TREADJOY_ENVIRONMENT="staging",
+                TREADJOY_MODE="research",
+                IS_PUBLIC_ENVIRONMENT=True,
+                TREADJOY_PRIVATE_POC=True,
+            ):
+                output = self.run_command("--profile", "private-poc")
+
+        self.assertIn("private-poc-unknown-content-surface:unapproved-placeholder", output)
+
+    def test_private_poc_profile_rejects_active_catalog_records(self):
+        product = Product.objects.create(
+            name="Private POC Fixture",
+            slug="private-poc-fixture",
+            price=Decimal("100.00"),
+            is_active=True,
+        )
+        ProductVariant.objects.create(
+            product=product,
+            sku="PRIVATE-POC-FIXTURE-090-BLK",
+            size="9",
+            color="Black",
+            stock_quantity=1,
+            is_active=True,
+        )
+
+        with override_settings(
+            TREADJOY_ENVIRONMENT="staging",
+            TREADJOY_MODE="research",
+            IS_PUBLIC_ENVIRONMENT=True,
+            TREADJOY_PRIVATE_POC=True,
+        ):
+            output = self.run_command("--profile", "private-poc")
+
+        self.assertIn("private-poc-active-catalog-present", output)
+        self.assertIn("private-poc-active-catalog-variant-present", output)
+
+    def test_private_poc_profile_rejects_media_even_if_inventory_approved(self):
+        with TemporaryDirectory() as temporary_directory:
+            base_dir = Path(temporary_directory)
+            image_path = base_dir / "static" / "images" / "approved.jpg"
+            image_path.parent.mkdir(parents=True)
+            content = self.image_bytes()
+            image_path.write_bytes(content)
+            self.write_inventory(
+                base_dir,
+                [self.inventory_asset("static/images/approved.jpg", content)],
+            )
+            with override_settings(
+                BASE_DIR=base_dir,
+                TREADJOY_ENVIRONMENT="staging",
+                TREADJOY_MODE="research",
+                IS_PUBLIC_ENVIRONMENT=True,
+                TREADJOY_PRIVATE_POC=True,
+            ):
+                output = self.run_command("--profile", "private-poc")
+
+        self.assertIn("private-poc-media-present:static/images/approved.jpg", output)
+
+    def test_private_poc_profile_cannot_be_selected_for_commerce(self):
+        with override_settings(
+            TREADJOY_ENVIRONMENT="staging",
+            TREADJOY_MODE="commerce",
+            IS_COMMERCE_MODE=True,
+            IS_PUBLIC_ENVIRONMENT=True,
+            TREADJOY_PRIVATE_POC=False,
+        ):
+            output = self.run_command("--profile", "private-poc")
+
+        self.assertIn("private-poc-requires-research-mode", output)
+        self.assertIn("private-poc-requires-TREADJOY_PRIVATE_POC=true", output)
+
+    def test_private_poc_profile_cannot_be_selected_for_production(self):
+        with override_settings(
+            TREADJOY_ENVIRONMENT="production",
+            TREADJOY_MODE="research",
+            IS_COMMERCE_MODE=False,
+            IS_PUBLIC_ENVIRONMENT=True,
+            TREADJOY_PRIVATE_POC=True,
+        ):
+            output = self.run_command("--profile", "private-poc")
+
+        self.assertIn("private-poc-requires-staging", output)
 
     def test_active_known_test_product_blocks_release(self):
         Product.objects.create(

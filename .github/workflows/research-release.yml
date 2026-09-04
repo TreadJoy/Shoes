@@ -43,6 +43,7 @@ concurrency:
 env:
   PYTHON_VERSION: "3.12.14"
   RELEASE_SHA: ${{ github.event_name == 'workflow_run' && github.event.workflow_run.head_sha || inputs.release_sha }}
+  RELEASE_CONTENT_PROFILE: ${{ github.event_name == 'workflow_dispatch' && inputs.target == 'staging' && 'private-poc' || 'public' }}
 
 jobs:
   build-and-verify:
@@ -53,6 +54,7 @@ jobs:
     outputs:
       release_sha: ${{ steps.identity.outputs.release_sha }}
       artifact_name: ${{ steps.identity.outputs.artifact_name }}
+      content_profile: ${{ steps.identity.outputs.content_profile }}
     env:
       DJANGO_SETTINGS_MODULE: Shoes.ci_settings
       TREADJOY_CI: "true"
@@ -120,7 +122,9 @@ jobs:
           PY
           echo "release_sha=$RELEASE_SHA" >> "$GITHUB_OUTPUT"
           echo "artifact_name=$ARTIFACT_NAME" >> "$GITHUB_OUTPUT"
+          echo "content_profile=$RELEASE_CONTENT_PROFILE" >> "$GITHUB_OUTPUT"
           echo "Release source: $RELEASE_SHA"
+          echo "Content profile: $RELEASE_CONTENT_PROFILE"
 
       - name: Verify manually selected commit has green Application CI
         if: github.event_name == 'workflow_dispatch'
@@ -186,7 +190,9 @@ jobs:
           python manage.py check
           python manage.py check_research_boundary
           python manage.py check_research_engagement
-          python manage.py check_release_content
+          if [ "$RELEASE_CONTENT_PROFILE" = "public" ]; then
+            python manage.py check_release_content --profile public
+          fi
 
       - name: Run public-like settings and manifest static checks
         env:
@@ -234,10 +240,25 @@ jobs:
           PUBLIC_SECURE_HSTS_PRELOAD: "false"
         run: |
           set -euo pipefail
+          private_poc=false
+          privacy_version="$PUBLIC_RESEARCH_PRIVACY_NOTICE_VERSION"
+          retention_version="$PUBLIC_RESEARCH_RETENTION_POLICY_VERSION"
+          transactional_from="$PUBLIC_RESEARCH_EMAIL_TRANSACTIONAL_FROM"
+          marketing_from="$PUBLIC_RESEARCH_EMAIL_MARKETING_FROM"
+          reply_to="$PUBLIC_RESEARCH_EMAIL_REPLY_TO"
+          if [ "$RELEASE_CONTENT_PROFILE" = "private-poc" ]; then
+            private_poc=true
+            privacy_version=0.1-draft
+            retention_version=0.1-draft
+            transactional_from="TreadJoy Research <ethan@tread-joy.com>"
+            marketing_from="TreadJoy <ethan@tread-joy.com>"
+            reply_to=ethan@tread-joy.com
+          fi
           env \
             DJANGO_SETTINGS_MODULE="$PUBLIC_DJANGO_SETTINGS_MODULE" \
             TREADJOY_ENVIRONMENT="$PUBLIC_TREADJOY_ENVIRONMENT" \
             TREADJOY_MODE="$PUBLIC_TREADJOY_MODE" \
+            TREADJOY_PRIVATE_POC="$private_poc" \
             TREADJOY_INGRESS="$PUBLIC_TREADJOY_INGRESS" \
             TREADJOY_ORIGIN_SHARED_SECRET="$PUBLIC_TREADJOY_ORIGIN_SHARED_SECRET" \
             DJANGO_DEBUG="$PUBLIC_DJANGO_DEBUG" \
@@ -253,7 +274,7 @@ jobs:
             EMAIL_HOST="$PUBLIC_EMAIL_HOST" EMAIL_PORT="$PUBLIC_EMAIL_PORT" \
             EMAIL_HOST_USER="$PUBLIC_EMAIL_HOST_USER" EMAIL_HOST_PASSWORD="$PUBLIC_EMAIL_HOST_PASSWORD" \
             DEFAULT_FROM_EMAIL="$PUBLIC_DEFAULT_FROM_EMAIL" SERVER_EMAIL="$PUBLIC_SERVER_EMAIL" \
-            RESEARCH_PRIVACY_NOTICE_VERSION="$PUBLIC_RESEARCH_PRIVACY_NOTICE_VERSION" \
+            RESEARCH_PRIVACY_NOTICE_VERSION="$privacy_version" \
             RESEARCH_PRIVACY_NOTICE_BODY="$PUBLIC_RESEARCH_PRIVACY_NOTICE_BODY" \
             RESEARCH_PRIVACY_NOTICE_SHA256="$PUBLIC_RESEARCH_PRIVACY_NOTICE_SHA256" \
             RESEARCH_IDENTITY_HMAC_KEY="$PUBLIC_RESEARCH_IDENTITY_HMAC_KEY" \
@@ -261,10 +282,10 @@ jobs:
             RESEARCH_RESEND_MANAGEMENT_API_KEY="$PUBLIC_RESEARCH_RESEND_MANAGEMENT_API_KEY" \
             RESEARCH_RESEND_WEBHOOK_SECRET="$PUBLIC_RESEARCH_RESEND_WEBHOOK_SECRET" \
             RESEARCH_RESEND_SEGMENT_ID="$PUBLIC_RESEARCH_RESEND_SEGMENT_ID" \
-            RESEARCH_EMAIL_TRANSACTIONAL_FROM="$PUBLIC_RESEARCH_EMAIL_TRANSACTIONAL_FROM" \
-            RESEARCH_EMAIL_MARKETING_FROM="$PUBLIC_RESEARCH_EMAIL_MARKETING_FROM" \
-            RESEARCH_EMAIL_REPLY_TO="$PUBLIC_RESEARCH_EMAIL_REPLY_TO" \
-            RESEARCH_RETENTION_POLICY_VERSION="$PUBLIC_RESEARCH_RETENTION_POLICY_VERSION" \
+            RESEARCH_EMAIL_TRANSACTIONAL_FROM="$transactional_from" \
+            RESEARCH_EMAIL_MARKETING_FROM="$marketing_from" \
+            RESEARCH_EMAIL_REPLY_TO="$reply_to" \
+            RESEARCH_RETENTION_POLICY_VERSION="$retention_version" \
             SECURE_HSTS_SECONDS="$PUBLIC_SECURE_HSTS_SECONDS" \
             SECURE_HSTS_INCLUDE_SUBDOMAINS="$PUBLIC_SECURE_HSTS_INCLUDE_SUBDOMAINS" \
             SECURE_HSTS_PRELOAD="$PUBLIC_SECURE_HSTS_PRELOAD" \
@@ -273,6 +294,7 @@ jobs:
             DJANGO_SETTINGS_MODULE="$PUBLIC_DJANGO_SETTINGS_MODULE" \
             TREADJOY_ENVIRONMENT="$PUBLIC_TREADJOY_ENVIRONMENT" \
             TREADJOY_MODE="$PUBLIC_TREADJOY_MODE" \
+            TREADJOY_PRIVATE_POC="$private_poc" \
             TREADJOY_INGRESS="$PUBLIC_TREADJOY_INGRESS" \
             TREADJOY_ORIGIN_SHARED_SECRET="$PUBLIC_TREADJOY_ORIGIN_SHARED_SECRET" \
             DJANGO_DEBUG="$PUBLIC_DJANGO_DEBUG" \
@@ -288,7 +310,7 @@ jobs:
             EMAIL_HOST="$PUBLIC_EMAIL_HOST" EMAIL_PORT="$PUBLIC_EMAIL_PORT" \
             EMAIL_HOST_USER="$PUBLIC_EMAIL_HOST_USER" EMAIL_HOST_PASSWORD="$PUBLIC_EMAIL_HOST_PASSWORD" \
             DEFAULT_FROM_EMAIL="$PUBLIC_DEFAULT_FROM_EMAIL" SERVER_EMAIL="$PUBLIC_SERVER_EMAIL" \
-            RESEARCH_PRIVACY_NOTICE_VERSION="$PUBLIC_RESEARCH_PRIVACY_NOTICE_VERSION" \
+            RESEARCH_PRIVACY_NOTICE_VERSION="$privacy_version" \
             RESEARCH_PRIVACY_NOTICE_BODY="$PUBLIC_RESEARCH_PRIVACY_NOTICE_BODY" \
             RESEARCH_PRIVACY_NOTICE_SHA256="$PUBLIC_RESEARCH_PRIVACY_NOTICE_SHA256" \
             RESEARCH_IDENTITY_HMAC_KEY="$PUBLIC_RESEARCH_IDENTITY_HMAC_KEY" \
@@ -296,10 +318,46 @@ jobs:
             RESEARCH_RESEND_MANAGEMENT_API_KEY="$PUBLIC_RESEARCH_RESEND_MANAGEMENT_API_KEY" \
             RESEARCH_RESEND_WEBHOOK_SECRET="$PUBLIC_RESEARCH_RESEND_WEBHOOK_SECRET" \
             RESEARCH_RESEND_SEGMENT_ID="$PUBLIC_RESEARCH_RESEND_SEGMENT_ID" \
-            RESEARCH_EMAIL_TRANSACTIONAL_FROM="$PUBLIC_RESEARCH_EMAIL_TRANSACTIONAL_FROM" \
-            RESEARCH_EMAIL_MARKETING_FROM="$PUBLIC_RESEARCH_EMAIL_MARKETING_FROM" \
-            RESEARCH_EMAIL_REPLY_TO="$PUBLIC_RESEARCH_EMAIL_REPLY_TO" \
-            RESEARCH_RETENTION_POLICY_VERSION="$PUBLIC_RESEARCH_RETENTION_POLICY_VERSION" \
+            RESEARCH_EMAIL_TRANSACTIONAL_FROM="$transactional_from" \
+            RESEARCH_EMAIL_MARKETING_FROM="$marketing_from" \
+            RESEARCH_EMAIL_REPLY_TO="$reply_to" \
+            RESEARCH_RETENTION_POLICY_VERSION="$retention_version" \
+            SECURE_HSTS_SECONDS="$PUBLIC_SECURE_HSTS_SECONDS" \
+            SECURE_HSTS_INCLUDE_SUBDOMAINS="$PUBLIC_SECURE_HSTS_INCLUDE_SUBDOMAINS" \
+            SECURE_HSTS_PRELOAD="$PUBLIC_SECURE_HSTS_PRELOAD" \
+            python manage.py check_release_content --profile "$RELEASE_CONTENT_PROFILE"
+          env \
+            DJANGO_SETTINGS_MODULE="$PUBLIC_DJANGO_SETTINGS_MODULE" \
+            TREADJOY_ENVIRONMENT="$PUBLIC_TREADJOY_ENVIRONMENT" \
+            TREADJOY_MODE="$PUBLIC_TREADJOY_MODE" \
+            TREADJOY_PRIVATE_POC="$private_poc" \
+            TREADJOY_INGRESS="$PUBLIC_TREADJOY_INGRESS" \
+            TREADJOY_ORIGIN_SHARED_SECRET="$PUBLIC_TREADJOY_ORIGIN_SHARED_SECRET" \
+            DJANGO_DEBUG="$PUBLIC_DJANGO_DEBUG" \
+            SECRET_KEY="$PUBLIC_SECRET_KEY" \
+            ALLOWED_HOSTS="$PUBLIC_ALLOWED_HOSTS" \
+            CSRF_TRUSTED_ORIGINS="$PUBLIC_CSRF_TRUSTED_ORIGINS" \
+            DB_NAME="$PUBLIC_DB_NAME" DB_USER="$PUBLIC_DB_USER" DB_PASSWORD="$PUBLIC_DB_PASSWORD" \
+            DB_HOST="$PUBLIC_DB_HOST" DB_PORT="$PUBLIC_DB_PORT" DB_SSLMODE="$PUBLIC_DB_SSLMODE" \
+            STATIC_ROOT="$PUBLIC_STATIC_ROOT" \
+            R2_ACCOUNT_ID="$PUBLIC_R2_ACCOUNT_ID" R2_BUCKET_NAME="$PUBLIC_R2_BUCKET_NAME" \
+            R2_ACCESS_KEY_ID="$PUBLIC_R2_ACCESS_KEY_ID" R2_SECRET_ACCESS_KEY="$PUBLIC_R2_SECRET_ACCESS_KEY" \
+            R2_MEDIA_CUSTOM_DOMAIN="$PUBLIC_R2_MEDIA_CUSTOM_DOMAIN" \
+            EMAIL_HOST="$PUBLIC_EMAIL_HOST" EMAIL_PORT="$PUBLIC_EMAIL_PORT" \
+            EMAIL_HOST_USER="$PUBLIC_EMAIL_HOST_USER" EMAIL_HOST_PASSWORD="$PUBLIC_EMAIL_HOST_PASSWORD" \
+            DEFAULT_FROM_EMAIL="$PUBLIC_DEFAULT_FROM_EMAIL" SERVER_EMAIL="$PUBLIC_SERVER_EMAIL" \
+            RESEARCH_PRIVACY_NOTICE_VERSION="$privacy_version" \
+            RESEARCH_PRIVACY_NOTICE_BODY="$PUBLIC_RESEARCH_PRIVACY_NOTICE_BODY" \
+            RESEARCH_PRIVACY_NOTICE_SHA256="$PUBLIC_RESEARCH_PRIVACY_NOTICE_SHA256" \
+            RESEARCH_IDENTITY_HMAC_KEY="$PUBLIC_RESEARCH_IDENTITY_HMAC_KEY" \
+            RESEARCH_RESEND_SEND_API_KEY="$PUBLIC_RESEARCH_RESEND_SEND_API_KEY" \
+            RESEARCH_RESEND_MANAGEMENT_API_KEY="$PUBLIC_RESEARCH_RESEND_MANAGEMENT_API_KEY" \
+            RESEARCH_RESEND_WEBHOOK_SECRET="$PUBLIC_RESEARCH_RESEND_WEBHOOK_SECRET" \
+            RESEARCH_RESEND_SEGMENT_ID="$PUBLIC_RESEARCH_RESEND_SEGMENT_ID" \
+            RESEARCH_EMAIL_TRANSACTIONAL_FROM="$transactional_from" \
+            RESEARCH_EMAIL_MARKETING_FROM="$marketing_from" \
+            RESEARCH_EMAIL_REPLY_TO="$reply_to" \
+            RESEARCH_RETENTION_POLICY_VERSION="$retention_version" \
             SECURE_HSTS_SECONDS="$PUBLIC_SECURE_HSTS_SECONDS" \
             SECURE_HSTS_INCLUDE_SUBDOMAINS="$PUBLIC_SECURE_HSTS_INCLUDE_SUBDOMAINS" \
             SECURE_HSTS_PRELOAD="$PUBLIC_SECURE_HSTS_PRELOAD" \
@@ -324,6 +382,7 @@ jobs:
           manifest = {
               "artifact_name": os.environ["ARTIFACT_NAME"],
               "commit_sha": os.environ["RELEASE_SHA"],
+              "content_profile": os.environ["RELEASE_CONTENT_PROFILE"],
               "commit_timestamp": Path("release/commit-timestamp.txt").read_text().strip(),
               "requirements_sha256": hashlib.sha256(Path("requirements.txt").read_bytes()).hexdigest(),
               "workflow_url": os.environ["WORKFLOW_URL"],
@@ -367,6 +426,8 @@ jobs:
     env:
       RELEASE_SHA: ${{ needs.build-and-verify.outputs.release_sha }}
       ARTIFACT_NAME: ${{ needs.build-and-verify.outputs.artifact_name }}
+      CONTENT_PROFILE: ${{ needs.build-and-verify.outputs.content_profile }}
+      EXPECTED_CONTENT_PROFILE: ${{ inputs.target == 'staging' && 'private-poc' || 'public' }}
       RENDER_API_KEY: ${{ secrets.RENDER_API_KEY }}
       RENDER_SERVICE_ID: ${{ secrets.RENDER_SERVICE_ID }}
     steps:
@@ -387,14 +448,17 @@ jobs:
           set -euo pipefail
           test "$(git rev-parse HEAD)" = "$RELEASE_SHA"
           ( cd release-artifact && sha256sum -c "${ARTIFACT_NAME}.tar.gz.sha256" )
-          python - "$RELEASE_SHA" release-artifact/release-manifest.json <<'PY'
+          python - "$RELEASE_SHA" "$EXPECTED_CONTENT_PROFILE" release-artifact/release-manifest.json <<'PY'
           import json
           import sys
 
           expected = sys.argv[1]
-          manifest = json.load(open(sys.argv[2], encoding="utf-8"))
+          expected_profile = sys.argv[2]
+          manifest = json.load(open(sys.argv[3], encoding="utf-8"))
           if manifest.get("commit_sha") != expected:
               raise SystemExit("artifact commit identity does not match the release SHA")
+          if manifest.get("content_profile") != expected_profile:
+              raise SystemExit("artifact content profile does not match the promotion target")
           print("Artifact identity verified.")
           PY
 
@@ -429,6 +493,8 @@ jobs:
     env:
       RELEASE_SHA: ${{ needs.build-and-verify.outputs.release_sha }}
       ARTIFACT_NAME: ${{ needs.build-and-verify.outputs.artifact_name }}
+      CONTENT_PROFILE: ${{ needs.build-and-verify.outputs.content_profile }}
+      EXPECTED_CONTENT_PROFILE: public
       RENDER_API_KEY: ${{ secrets.RENDER_API_KEY }}
       RENDER_SERVICE_ID: ${{ secrets.RENDER_SERVICE_ID }}
     steps:
@@ -449,14 +515,17 @@ jobs:
           set -euo pipefail
           test "$(git rev-parse HEAD)" = "$RELEASE_SHA"
           ( cd release-artifact && sha256sum -c "${ARTIFACT_NAME}.tar.gz.sha256" )
-          python - "$RELEASE_SHA" release-artifact/release-manifest.json <<'PY'
+          python - "$RELEASE_SHA" "$EXPECTED_CONTENT_PROFILE" release-artifact/release-manifest.json <<'PY'
           import json
           import sys
 
           expected = sys.argv[1]
-          manifest = json.load(open(sys.argv[2], encoding="utf-8"))
+          expected_profile = sys.argv[2]
+          manifest = json.load(open(sys.argv[3], encoding="utf-8"))
           if manifest.get("commit_sha") != expected:
               raise SystemExit("artifact commit identity does not match the release SHA")
+          if manifest.get("content_profile") != expected_profile:
+              raise SystemExit("artifact content profile does not match the promotion target")
           print("Artifact identity verified.")
           PY
 

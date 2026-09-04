@@ -1,5 +1,16 @@
 # Verification Limitations
 
+## 2026-09-04 — Workflow syntax lint helper was unavailable locally
+
+- Attempted to run `actionlint` against the private-preview release workflow.
+- Result: the helper is not installed in this workspace, so no actionlint
+  result can be claimed.
+- Resolution: parsed the workflow with the locked development PyYAML runtime,
+  exercised profile-routing assertions, and ran shell/Python compilation and
+  whitespace checks. GitHub-hosted workflow execution remains a CI gate.
+- Impact: read-only verification only; no workflow, provider, credential, or
+  deployment state changed.
+
 ## 2026-09-03 — Research baseline review found cross-mode content leakage
 
 - The private-POC content pass had replaced shared About, Contact, and footer

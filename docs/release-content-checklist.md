@@ -1,8 +1,9 @@
 # Release Content Checklist
 
-Run `python manage.py check_release_content` from each deployment-mode
-environment before approving a public release. A nonzero exit is a release
-blocker; do not suppress it.
+Run `python manage.py check_release_content --profile public` from each
+deployment-mode environment before approving a public release. A nonzero exit
+is a release blocker; do not suppress it. The public profile is the default and
+is intentionally fail-closed.
 
 For the research deployment, complete the A2.3 prerequisite gate in
 `docs/a2.3-prerequisite-gate.md` before provisioning or publishing any public
@@ -16,6 +17,12 @@ This exception does not relax the public-release check: verified social
 destination URLs, factual approved content, effective policy pages, and all
 named privacy/legal/accessibility evidence remain required before public
 traffic or consumer outreach.
+
+For a private staging POC, run
+`python manage.py check_release_content --profile private-poc`. This profile
+requires staging research mode with `TREADJOY_PRIVATE_POC=true`, noindex,
+zero active catalog records, no media, and only the known private placeholder
+surfaces. It must never be used for commerce or production.
 
 For a research release, also run `python manage.py check --deploy --fail-level
 WARNING`, `python manage.py check_research_boundary`, and `python manage.py

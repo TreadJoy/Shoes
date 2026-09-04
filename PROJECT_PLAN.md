@@ -374,7 +374,7 @@ P1 storefront, email, accessibility, SEO, performance, monitoring, and admin-usa
 ### A2.3 — Provision, rehearse, and launch the research deployment
 
 - **Priority / status:** P0 — In progress; the follow-on private-preview
-  development baseline is complete locally, while its Plans 2–8, provider
+  development Plans 1–2 are complete locally, while its Plans 3–8, provider
   staging, and public launch remain blocked (2026-09-03).
 - **Objective:** Deploy research mode through Cloudflare to a managed Django/PostgreSQL origin with repeatable release and recovery.
 - **Why it matters:** The research site is the first public validation surface and the production architecture rehearsal for commerce.
@@ -496,6 +496,23 @@ P1 storefront, email, accessibility, SEO, performance, monitoring, and admin-usa
   gate continues to return only its intentional development-media and
   pending-social blockers. This reviewed baseline commit changes no provider,
   credential, database, DNS, R2, email, staging, or public deployment state.
+- **Implementation evidence (2026-09-04):** Follow-on Private Preview Plan 2
+  added the explicit `check_release_content --profile private-poc` interface.
+  The public profile remains the fail-closed default; private POC validation
+  requires staging research mode, `TREADJOY_PRIVATE_POC=true`, the rendered
+  noindex contract, zero active products/variants, no media, and only the
+  documented development-media, pending-social, and labeled policy-placeholder
+  surfaces. Commerce and production selection are covered by rejection tests.
+  The release workflow selects `private-poc` only for a manual staging target,
+  keeps public/CI/production on the public profile, records `content_profile`
+  in the immutable artifact manifest, and verifies it during both promotion
+  paths. The 22-test release-content suite, 5-test adapter/workflow suite,
+  163-test research suite (6 expected skips), and 269-test commerce suite
+  (39 expected skips) pass; workflow YAML parsing, policy validation, shell/
+  Python compilation, whitespace, and working-directory secret scans pass.
+  `actionlint` is unavailable locally and remains a hosted-CI verification
+  gate. No provider, credential, database, DNS, R2, staging, or public
+  deployment state was changed.
 
 ## Phase 3 — Commerce data integrity and identity
 
