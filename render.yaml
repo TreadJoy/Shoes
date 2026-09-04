@@ -1,8 +1,9 @@
 # Render Blueprint for the owner-scoped research staging POC.
-# Applying this file creates resources and may incur the approved Postgres
-# charge; review the current dashboard price before applying it. No secrets are
-# stored here. The production deployment must use a separately reviewed
-# environment/service and the same tested release commit.
+# The current POC deliberately uses Render's Free Postgres tier: it is
+# disposable, expires after 30 days, and must contain only synthetic/owner test
+# data. Review the current dashboard before applying it. No secrets are stored
+# here. A durable research deployment must use a separately approved paid
+# database tier and the same tested release commit.
 
 services:
   - type: web
@@ -100,7 +101,7 @@ services:
 
 databases:
   - name: treadjoy-research-staging-db
-    plan: 0.1c-256mb
+    plan: free
     region: ohio
     postgresMajorVersion: "17"
     databaseName: treadjoy_research

@@ -392,10 +392,12 @@ P1 storefront, email, accessibility, SEO, performance, monitoring, and admin-usa
   `ethan@tread-joy.com`, blank media, no claims, and labeled policy
   placeholders. A1.3 is reopened; A1.4 remains non-effective for public use;
   A2.2 and public content/provider evidence remain launch blockers. Plan 2
-  selects Render in Ohio with a Free POC web service, the smallest paid
-  PostgreSQL tier, no marketing services, encrypted local exports retained no
-  more than 35 days, and the owner as responder. Exact charges must be shown
-  before later provisioning. No provider, infrastructure, credential,
+  selects Render in Ohio with a Free POC web service and the owner-approved
+  Free Postgres tier for disposable synthetic/owner test data, no marketing
+  services, optional encrypted local exports retained no more than 35 days,
+  and the owner as responder. The Free database expires after 30 days and has
+  no provider backups/PITR; a paid upgrade and recovery evidence are required
+  before durable research data. No provider, infrastructure, credential,
   database, DNS, R2, or deployment state was changed.
 - **Implementation evidence (2026-09-02):** A2.3 Plan 3 repository work is recorded in
   `docs/observability.md` and `docs/incident-runbooks.md`; no provider monitor,
