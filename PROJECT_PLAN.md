@@ -378,7 +378,7 @@ P1 storefront, email, accessibility, SEO, performance, monitoring, and admin-usa
   staging, and public launch remain blocked (2026-09-03).
 - **Objective:** Deploy research mode through Cloudflare to a managed Django/PostgreSQL origin with repeatable release and recovery.
 - **Why it matters:** The research site is the first public validation surface and the production architecture rehearsal for commerce.
-- **Current state:** `tread-joy.com` has been purchased through Cloudflare as the intended base domain. The repository now contains a release workflow, Render staging Blueprint, WSGI/build/start/migration/job/backup scripts, rollback adapter, and a review-gated Cloudflare/R2 policy, but no research hostname allocation, DNS/TLS, managed origin, R2, managed database, provider backup, live monitoring, or provider deployment is configured; repository health/observability foundations are documented under A1.3.
+- **Current state:** `tread-joy.com` has been purchased through Cloudflare as the intended base domain. The repository now contains a release workflow, Render staging Blueprint, WSGI/build/start/migration/job/backup scripts, rollback adapter, and a review-gated Cloudflare/R2 policy. A disposable Free Render Postgres 17 database is provisioned in Ohio with external access blocked; no research web service, hostname allocation, DNS/TLS, R2, provider backup, live monitoring, roles, migrations, or public deployment is configured. Repository health/observability foundations are documented under A1.3.
 - **Required work:** Select an approved research hostname plus managed origin/vendor/region; provision a separate research database and least-privilege roles; configure Cloudflare DNS, Full strict TLS, WAF/rate rules, origin lock-down, static/media caching, and an R2 custom domain; configure secrets, email, logs, health checks, migrations, backups/PITR, restore and rollback; publish approved research privacy/terms/accessibility/contact content and basic canonical/robots/social metadata; complete keyboard, WCAG 2.2 AA, responsive, and performance launch checks; deploy one immutable release artifact and run launch/rollback rehearsals.
 - **Dependencies:** A0.1–A0.3, A1.1–A1.4, A2.1, and A2.2.
 - **Affected areas:** Hosting/IaC or deployment config, Cloudflare, R2/storage, database, CI/CD, settings, operations docs.
@@ -427,6 +427,15 @@ P1 storefront, email, accessibility, SEO, performance, monitoring, and admin-usa
   DNS, R2, or staging deployment state was changed. Exact-charge review,
   provider application, role execution, blank-database migration, and live
   staging evidence remain open.
+- **Implementation evidence (2026-09-03):** The owner connected Render to the
+  `TreadJoy/Shoes` GitHub repository with access restricted to that repository.
+  The source Blueprint validates on `main`; its Free Postgres storage setting
+  was corrected to use Render's fixed one-GB Free capacity. The owner then
+  provisioned `treadjoy-research-staging-db` in Ohio on PostgreSQL 17 at
+  `$0/month`. The database expires October 3, 2026, has no provider backup or
+  PITR, and its database-level allowlist is empty; Render confirms external
+  traffic is blocked. No web service, application secret, database role,
+  migration, email, scheduler, DNS, R2, or public deployment was created.
 - **Implementation evidence (2026-09-03):** A2.3 Plan 6 repository work is
   recorded in `deploy/cloudflare/research/policy.json`,
   `scripts/validate_cloudflare_research.py`,
