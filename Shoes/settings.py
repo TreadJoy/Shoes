@@ -331,6 +331,7 @@ MEDIA_ROOT = BASE_DIR / "media"
 
 if IS_PUBLIC_ENVIRONMENT:
     STATIC_ROOT = environment.absolute_path("STATIC_ROOT")
+if IS_PUBLIC_ENVIRONMENT and not TREADJOY_PRIVATE_POC:
     _r2_account_id = environment.string("R2_ACCOUNT_ID", required=True)
     _r2_bucket_name = environment.string("R2_BUCKET_NAME", required=True)
     _r2_access_key_id = environment.string("R2_ACCESS_KEY_ID", required=True)
@@ -390,7 +391,7 @@ if IS_COMMERCE_MODE:
     STRIPE_WEBHOOK_SECRET = _required_commerce_setting("STRIPE_WEBHOOK_SECRET")
 
 
-if IS_PUBLIC_ENVIRONMENT:
+if IS_PUBLIC_ENVIRONMENT and not TREADJOY_PRIVATE_POC:
     EMAIL_BACKEND = "django.core.mail.backends.smtp.EmailBackend"
     EMAIL_HOST = environment.string("EMAIL_HOST", required=True)
     EMAIL_PORT = environment.integer("EMAIL_PORT", minimum=1, maximum=65535, required=True)
@@ -427,9 +428,9 @@ if IS_COMMERCE_MODE:
 RESEARCH_PRIVACY_NOTICE_VERSION = environment.string(
     "RESEARCH_PRIVACY_NOTICE_VERSION",
     default="0.1-draft"
-    if not IS_PUBLIC_ENVIRONMENT or IS_COMMERCE_MODE
+    if not IS_PUBLIC_ENVIRONMENT or IS_COMMERCE_MODE or TREADJOY_PRIVATE_POC
     else None,
-    required=IS_PUBLIC_ENVIRONMENT and not IS_COMMERCE_MODE,
+    required=IS_PUBLIC_ENVIRONMENT and not IS_COMMERCE_MODE and not TREADJOY_PRIVATE_POC,
 )
 RESEARCH_PRIVACY_NOTICE_BODY = environment.string(
     "RESEARCH_PRIVACY_NOTICE_BODY",
@@ -437,16 +438,16 @@ RESEARCH_PRIVACY_NOTICE_BODY = environment.string(
         "The research privacy notice is awaiting adviser and technical approval. "
         "Research participation is not open from this local preview."
     )
-    if not IS_PUBLIC_ENVIRONMENT or IS_COMMERCE_MODE
+    if not IS_PUBLIC_ENVIRONMENT or IS_COMMERCE_MODE or TREADJOY_PRIVATE_POC
     else None,
-    required=IS_PUBLIC_ENVIRONMENT and not IS_COMMERCE_MODE,
+    required=IS_PUBLIC_ENVIRONMENT and not IS_COMMERCE_MODE and not TREADJOY_PRIVATE_POC,
 )
 RESEARCH_PRIVACY_NOTICE_SHA256 = environment.string(
     "RESEARCH_PRIVACY_NOTICE_SHA256",
     default=hashlib.sha256(RESEARCH_PRIVACY_NOTICE_BODY.encode()).hexdigest()
-    if not IS_PUBLIC_ENVIRONMENT or IS_COMMERCE_MODE
+    if not IS_PUBLIC_ENVIRONMENT or IS_COMMERCE_MODE or TREADJOY_PRIVATE_POC
     else None,
-    required=IS_PUBLIC_ENVIRONMENT and not IS_COMMERCE_MODE,
+    required=IS_PUBLIC_ENVIRONMENT and not IS_COMMERCE_MODE and not TREADJOY_PRIVATE_POC,
 )
 if IS_PUBLIC_ENVIRONMENT and not IS_COMMERCE_MODE:
     RESEARCH_IDENTITY_HMAC_KEY = environment.strong_secret(
@@ -460,7 +461,7 @@ else:
 RESEARCH_RESEND_SEND_API_KEY = environment.string(
     "RESEARCH_RESEND_SEND_API_KEY",
     default="",
-    required=IS_PUBLIC_ENVIRONMENT and not IS_COMMERCE_MODE,
+    required=IS_PUBLIC_ENVIRONMENT and not IS_COMMERCE_MODE and not TREADJOY_PRIVATE_POC,
 )
 RESEARCH_RESEND_MANAGEMENT_API_KEY = environment.string(
     "RESEARCH_RESEND_MANAGEMENT_API_KEY", default=""
@@ -468,7 +469,7 @@ RESEARCH_RESEND_MANAGEMENT_API_KEY = environment.string(
 RESEARCH_RESEND_WEBHOOK_SECRET = environment.string(
     "RESEARCH_RESEND_WEBHOOK_SECRET",
     default="",
-    required=IS_PUBLIC_ENVIRONMENT and not IS_COMMERCE_MODE,
+    required=IS_PUBLIC_ENVIRONMENT and not IS_COMMERCE_MODE and not TREADJOY_PRIVATE_POC,
 )
 RESEARCH_RESEND_SEGMENT_ID = environment.string(
     "RESEARCH_RESEND_SEGMENT_ID",
@@ -477,25 +478,35 @@ RESEARCH_RESEND_SEGMENT_ID = environment.string(
 )
 RESEARCH_EMAIL_TRANSACTIONAL_FROM = environment.string(
     "RESEARCH_EMAIL_TRANSACTIONAL_FROM",
-    default="TreadJoy Research <confirm@confirm.localhost>",
-    required=IS_PUBLIC_ENVIRONMENT and not IS_COMMERCE_MODE,
+    default=(
+        "TreadJoy Research <ethan@tread-joy.com>"
+        if TREADJOY_PRIVATE_POC
+        else "TreadJoy Research <confirm@confirm.localhost>"
+    ),
+    required=IS_PUBLIC_ENVIRONMENT and not IS_COMMERCE_MODE and not TREADJOY_PRIVATE_POC,
 )
 RESEARCH_EMAIL_MARKETING_FROM = environment.string(
     "RESEARCH_EMAIL_MARKETING_FROM",
-    default="TreadJoy <updates@updates.localhost>",
-    required=IS_PUBLIC_ENVIRONMENT and not IS_COMMERCE_MODE,
+    default=(
+        "TreadJoy <ethan@tread-joy.com>"
+        if TREADJOY_PRIVATE_POC
+        else "TreadJoy <updates@updates.localhost>"
+    ),
+    required=IS_PUBLIC_ENVIRONMENT and not IS_COMMERCE_MODE and not TREADJOY_PRIVATE_POC,
 )
 RESEARCH_EMAIL_REPLY_TO = environment.string(
     "RESEARCH_EMAIL_REPLY_TO",
-    default="hello@tread-joy.com",
-    required=IS_PUBLIC_ENVIRONMENT and not IS_COMMERCE_MODE,
+    default="ethan@tread-joy.com" if TREADJOY_PRIVATE_POC else "hello@tread-joy.com",
+    required=IS_PUBLIC_ENVIRONMENT and not IS_COMMERCE_MODE and not TREADJOY_PRIVATE_POC,
 )
 RESEARCH_RETENTION_POLICY_VERSION = environment.string(
     "RESEARCH_RETENTION_POLICY_VERSION",
-    default="",
-    required=IS_PUBLIC_ENVIRONMENT and not IS_COMMERCE_MODE,
+    default="0.1-draft" if TREADJOY_PRIVATE_POC else "",
+    required=IS_PUBLIC_ENVIRONMENT and not IS_COMMERCE_MODE and not TREADJOY_PRIVATE_POC,
 )
-RESEARCH_EMAIL_PROVIDER = "resend" if IS_PUBLIC_ENVIRONMENT else "fake"
+RESEARCH_EMAIL_PROVIDER = (
+    "fake" if not IS_PUBLIC_ENVIRONMENT or TREADJOY_PRIVATE_POC else "resend"
+)
 
 if IS_PUBLIC_ENVIRONMENT and not IS_COMMERCE_MODE:
     if not TREADJOY_PRIVATE_POC and "draft" in RESEARCH_PRIVACY_NOTICE_VERSION.casefold():
@@ -602,7 +613,8 @@ if IS_PUBLIC_ENVIRONMENT:
         SILENCED_SYSTEM_CHECKS.append("security.W005")
     if not SECURE_HSTS_PRELOAD:
         SILENCED_SYSTEM_CHECKS.append("security.W021")
-    _csp_directives[8] = f"img-src 'self' data: https://{_r2_custom_domain}"
+    if not TREADJOY_PRIVATE_POC:
+        _csp_directives[8] = f"img-src 'self' data: https://{_r2_custom_domain}"
     _csp_directives.append("upgrade-insecure-requests")
 else:
     SECURE_SSL_REDIRECT = False

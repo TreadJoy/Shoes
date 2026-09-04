@@ -28,10 +28,11 @@ not a committed `.env` file:
   `DB_SSLMODE`. A provider URL defaults public environments to `require` TLS;
   `verify-ca` and `verify-full` additionally require an absolute
   `DB_SSLROOTCERT` path.
-- An absolute `STATIC_ROOT`; `R2_ACCOUNT_ID`, `R2_BUCKET_NAME`,
+- An absolute `STATIC_ROOT`; non-POC public services additionally require
+  `R2_ACCOUNT_ID`, `R2_BUCKET_NAME`,
   `R2_ACCESS_KEY_ID`, `R2_SECRET_ACCESS_KEY`, and
   `R2_MEDIA_CUSTOM_DOMAIN`.
-- Public commerce and research services require `EMAIL_HOST`, `EMAIL_PORT`,
+- Non-POC public commerce and research services require `EMAIL_HOST`, `EMAIL_PORT`,
   `EMAIL_HOST_USER`, `EMAIL_HOST_PASSWORD`, `DEFAULT_FROM_EMAIL`, and
   `SERVER_EMAIL`; Django uses SMTP with STARTTLS for operational mail. Research
   confirmation delivery additionally uses the Resend settings below.
@@ -47,8 +48,10 @@ not a committed `.env` file:
   `ethan@tread-joy.com` for its operational/reply/error-mail destination,
   assign only the owner, and keep consumer marketing/broadcast disabled. This
   exception permits the draft policy placeholders and single mailbox only for
-  that explicit staging profile; it does not relax the public deployment
-  contract above.
+  that explicit staging profile. It also deliberately uses local filesystem
+  media, Django's console email backend, and the deterministic fake research
+  email adapter until Plan 6 provisions R2 and Resend; it does not relax the
+  non-POC public deployment contract above.
 - `SECURE_HSTS_SECONDS`, `SECURE_HSTS_INCLUDE_SUBDOMAINS`, and
   `SECURE_HSTS_PRELOAD`.
 
