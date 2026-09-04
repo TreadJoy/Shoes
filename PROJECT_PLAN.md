@@ -434,8 +434,10 @@ P1 storefront, email, accessibility, SEO, performance, monitoring, and admin-usa
   provisioned `treadjoy-research-staging-db` in Ohio on PostgreSQL 17 at
   `$0/month`. The database expires October 3, 2026, has no provider backup or
   PITR, and its database-level allowlist is empty; Render confirms external
-  traffic is blocked. No web service, application secret, database role,
-  migration, email, scheduler, DNS, R2, or public deployment was created.
+  traffic is blocked. The three least-privilege research roles were then
+  provisioned and verified without retaining their generated passwords. No web
+  service, application secret, migration, email, scheduler, DNS, R2, or public
+  deployment was created.
 - **Implementation evidence (2026-09-03):** A2.3 Plan 6 repository work is
   recorded in `deploy/cloudflare/research/policy.json`,
   `scripts/validate_cloudflare_research.py`,
