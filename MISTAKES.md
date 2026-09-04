@@ -1,5 +1,16 @@
 # Verification Limitations
 
+## 2026-09-04 — Supporting-page regression caught accessibility placeholder wording
+
+- The first Plan 5 full research run failed because a new generic test expected
+  the privacy page's “Not yet effective” wording on the accessibility page,
+  which intentionally says “Working draft.”
+- Resolution: kept the existing, more specific accessibility placeholder copy
+  and made the regression assertion route-specific. The rerun passed all 171
+  installed research tests and the commerce suite passed 277 tests.
+- Impact: disposable local test databases only; no provider, credential,
+  deployment, or persistent customer state changed.
+
 ## 2026-09-04 — Survey upgrade caught stale template assumptions during verification
 
 - The first Plan 4 test pass exposed an error-path lookup using a Django field

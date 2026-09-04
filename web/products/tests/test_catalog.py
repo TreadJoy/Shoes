@@ -172,3 +172,17 @@ class ProductCatalogTests(TestCase):
         self.assertContains(response, "View Product Preview")
         self.assertNotContains(response, "product-badge product-badge-sale")
         self.assertNotContains(response, "Add to Cart")
+
+    @skipIf(settings.IS_COMMERCE_MODE, "Research empty-catalog behavior")
+    def test_research_empty_catalog_invites_survey_without_product_claims(self):
+        Product.objects.all().delete()
+
+        response = self.client.get(reverse("products:product_list"))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Product previews are being prepared.")
+        self.assertContains(response, "Tell us what belongs here")
+        self.assertContains(response, 'href="/survey/"')
+        self.assertNotContains(response, "No Matches Yet")
+        self.assertNotContains(response, "Add to Cart")
+        self.assertNotContains(response, "$80.00")

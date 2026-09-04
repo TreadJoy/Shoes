@@ -4,34 +4,52 @@
 
 {% block content %}
 
-<div class="contact-page">
-
-    <section class="brand-hero">
-        <p class="eyebrow">Contact</p>
-
-        <h1>Get in Touch</h1>
-
-        {% if is_commerce_mode %}
+<div class="contact-page{% if not is_commerce_mode %} research-editorial-page{% endif %}">
+    {% if is_commerce_mode %}
+        <section class="brand-hero">
+            <p class="eyebrow">Contact</p>
+            <h1>Get in Touch</h1>
             <p>Have a question about TreadJoy? We’d love to hear from you.</p>
-        {% else %}
-            <p>This private development preview has one contact destination.</p>
-        {% endif %}
-    </section>
+        </section>
 
-    <section class="content-card">
-        <h2>Contact Information</h2>
-
-        {% if is_commerce_mode %}
+        <section class="content-card">
+            <h2>Contact Information</h2>
             <p>Email: hello@treadjoy.com</p>
-        {% else %}
-            <p>Email: <a href="mailto:{{ contact_email }}">{{ contact_email }}</a></p>
-        {% endif %}
+            <a href="{% url 'core:home' %}" class="btn-secondary">
+                Back to Home
+            </a>
+        </section>
+    {% else %}
+        <section class="research-page-hero" aria-labelledby="research-contact-title">
+            <div class="research-page-hero-copy">
+                <p class="eyebrow">Contact / Research</p>
+                <h1 id="research-contact-title">One Contact, Kept Simple.</h1>
+                <p>
+                    This private development preview has one contact destination
+                    for questions, review notes, and access issues.
+                </p>
+            </div>
+            <div class="research-page-mark" aria-hidden="true">
+                <span class="research-page-mark-number">05</span>
+                <span class="research-page-mark-label">Owner / Contact</span>
+            </div>
+        </section>
 
-        <a href="{% url 'core:home' %}" class="btn-secondary">
-            Back to Home
-        </a>
-    </section>
-
+        <section class="research-page-section" aria-labelledby="research-contact-section-title">
+            <span class="research-page-section-marker" aria-hidden="true">06</span>
+            <div>
+                <p class="eyebrow">Contact Information</p>
+                <h2 id="research-contact-section-title">Send A Note.</h2>
+                <p>
+                    Email <a href="mailto:{{ contact_email }}">{{ contact_email }}</a>
+                    for development questions or preview feedback.
+                </p>
+                <a href="{% url 'core:home' %}" class="editorial-link">
+                    Back to Home <span aria-hidden="true">→</span>
+                </a>
+            </div>
+        </section>
+    {% endif %}
 </div>
 
 {% endblock %}

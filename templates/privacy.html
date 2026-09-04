@@ -1,3 +1,14 @@
 {% extends "base.html" %}
 {% block title %}Research Privacy Placeholder | TreadJoy{% endblock %}
-{% block content %}<section class="content-page" aria-labelledby="privacy-title"><p class="eyebrow">Research Privacy Placeholder</p><h1 id="privacy-title">Research Privacy Placeholder</h1><div class="message" role="alert"><strong>Not yet effective.</strong> This page is a private development placeholder and is not a consumer policy. Approval is required before any public research or outreach.</div><p>Version: {{ notice_version }}</p><div class="privacy-notice-body">{{ notice_body|linebreaks }}</div><p>Questions: <a href="mailto:{{ contact_email }}">{{ contact_email }}</a></p></section>{% endblock %}
+{% block content %}
+<section class="content-page{% if not is_commerce_mode %} research-editorial-page research-policy-page{% endif %}" aria-labelledby="privacy-title">
+    <p class="eyebrow">Research Privacy Placeholder</p>
+    <h1 id="privacy-title">Research Privacy Placeholder</h1>
+    <div class="message" role="alert">
+        <strong>Not yet effective.</strong> This page is a private development placeholder and is not a consumer policy. Approval is required before any public research or outreach.
+    </div>
+    <p>Version: {{ notice_version }}</p>
+    <div class="privacy-notice-body">{{ notice_body|linebreaks }}</div>
+    <p>Questions: <a href="mailto:{{ contact_email }}">{{ contact_email }}</a></p>
+</section>
+{% endblock %}

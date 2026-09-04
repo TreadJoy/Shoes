@@ -3,7 +3,7 @@
 {% block title %}{% if is_commerce_mode %}{{ catalog_heading }}{% else %}Product Preview{% endif %} | TreadJoy{% endblock %}
 
 {% block content %}
-<div class="catalog-page">
+<div class="catalog-page{% if not is_commerce_mode %} research-catalog-page{% endif %}">
     <header class="catalog-hero">
         <p class="eyebrow">{% if is_commerce_mode %}TreadJoy Shop{% else %}Product Research{% endif %}</p>
         <div class="catalog-hero-layout">
@@ -52,7 +52,11 @@
     </nav>
 
     <div class="catalog-results-heading" aria-live="polite">
-        <p>{{ catalog_items|length }} product{{ catalog_items|length|pluralize }}</p>
+        {% if is_commerce_mode %}
+            <p>{{ catalog_items|length }} product{{ catalog_items|length|pluralize }}</p>
+        {% else %}
+            <p>{{ catalog_items|length }} product preview{{ catalog_items|length|pluralize }}</p>
+        {% endif %}
         {% if search_query or active_audience or active_category or sale_only %}
             <a href="{% url 'products:product_list' %}" class="editorial-link">Clear Filter →</a>
         {% endif %}
@@ -146,12 +150,24 @@
         <div class="catalog-empty-state">
             <span class="catalog-empty-mark" aria-hidden="true">↗</span>
             <div>
-                <p class="eyebrow">Nothing Here Yet</p>
-                <h2>No Matches Yet</h2>
-                <p>Try another category or search term.</p>
-                <a href="{% url 'products:product_list' %}" class="btn-secondary">
-                    View All Products
-                </a>
+                {% if is_commerce_mode %}
+                    <p class="eyebrow">Nothing Here Yet</p>
+                    <h2>No Matches Yet</h2>
+                    <p>Try another category or search term.</p>
+                    <a href="{% url 'products:product_list' %}" class="btn-secondary">
+                        View All Products
+                    </a>
+                {% else %}
+                    <p class="eyebrow">Product Preview / Next Pass</p>
+                    <h2>Product previews are being prepared.</h2>
+                    <p>
+                        The catalog structure is ready for the next research pass.
+                        Tell us what belongs here before any product content is added.
+                    </p>
+                    <a href="{% url 'survey:survey_welcome' %}" class="btn-primary">
+                        Take the Survey <span aria-hidden="true">→</span>
+                    </a>
+                {% endif %}
             </div>
         </div>
     {% endif %}

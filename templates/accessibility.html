@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 {% block title %}Accessibility Placeholder | TreadJoy{% endblock %}
 {% block content %}
-<section class="content-page" aria-labelledby="accessibility-title">
+<section class="content-page{% if not is_commerce_mode %} research-editorial-page research-policy-page{% endif %}" aria-labelledby="accessibility-title">
     <p class="eyebrow">Accessibility Placeholder</p>
     <h1 id="accessibility-title">Accessibility</h1>
     <div class="message" role="alert">

@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 {% block title %}Terms Placeholder | TreadJoy{% endblock %}
 {% block content %}
-<section class="content-page" aria-labelledby="terms-title">
+<section class="content-page{% if not is_commerce_mode %} research-editorial-page research-policy-page{% endif %}" aria-labelledby="terms-title">
     <p class="eyebrow">Terms Placeholder</p>
     <h1 id="terms-title">Terms</h1>
     <div class="message" role="alert">

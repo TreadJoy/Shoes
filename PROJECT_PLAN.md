@@ -374,7 +374,7 @@ P1 storefront, email, accessibility, SEO, performance, monitoring, and admin-usa
 ### A2.3 — Provision, rehearse, and launch the research deployment
 
 - **Priority / status:** P0 — In progress; the follow-on private-preview
-  development Plans 1–4 are complete locally, while its Plans 5–8, provider
+  development Plans 1–5 are complete locally, while its Plans 6–8, provider
   staging, and public launch remain blocked (2026-09-03).
 - **Objective:** Deploy research mode through Cloudflare to a managed Django/PostgreSQL origin with repeatable release and recovery.
 - **Why it matters:** The research site is the first public validation surface and the production architecture rehearsal for commerce.
@@ -565,6 +565,24 @@ P1 storefront, email, accessibility, SEO, performance, monitoring, and admin-usa
   overflow. The local research release rehearsal passed its safe checks and
   retained the expected `STOP` decision; local provider/deployment state
   remains unchanged.
+- **Implementation evidence (2026-09-04):** Follow-on Private Preview Plan 5
+  keeps `/products/` as the filterable empty research catalog and replaces its
+  generic no-results copy with the deliberate “Product previews are being
+  prepared” state and a survey CTA. Research How It Works, Story, Waitlist,
+  Contact, and policy placeholder pages now use the shared editorial rhythm,
+  numbered registration marks, tokenized surfaces, and quiet conventional
+  forms while commerce branches retain their prior content and layout. The
+  owner mailbox remains the only research contact, social destinations remain
+  named but unlinked, and no product records, prices, imagery, availability,
+  claims, or commerce controls were added. The focused catalog/metadata checks,
+  full installed-app research suite (171 tests, 8 expected skips), and full
+  commerce suite (277 tests, 42 expected skips) pass. Both-mode checks,
+  migration drift, compilation, whitespace, and the strict premium UI audit
+  (0 findings) pass. Local browser checks at 390px and 1440px confirmed the
+  empty-state/filter shell, editorial page layouts, owner contact, no
+  horizontal overflow, and no console errors. The safe research rehearsal
+  passed and retained the expected `STOP` decision; no provider, credential,
+  database, DNS, R2, staging, or public deployment state changed.
 
 ## Phase 3 — Commerce data integrity and identity
 

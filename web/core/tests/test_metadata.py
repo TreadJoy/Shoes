@@ -101,6 +101,29 @@ class ResearchContentAndMetadataTests(TestCase):
         self.assertContains(response, "mailto:ethan@tread-joy.com")
         self.assertNotContains(response, "hello@treadjoy.com")
 
+    def test_research_supporting_pages_use_editorial_shell_and_owner_mailbox(self):
+        for route_name in (
+            "core:how_it_works",
+            "core:about",
+            "core:contact",
+            "waitlist:join_waitlist",
+        ):
+            with self.subTest(route_name=route_name):
+                response = self.client.get(reverse(route_name))
+                self.assertContains(response, "research-editorial-page")
+                self.assertContains(response, "research-page-mark")
+
+        for route_name, pending_copy in (
+            ("core:privacy", "Not yet effective"),
+            ("core:terms", "Not yet effective"),
+            ("core:accessibility", "Working draft"),
+        ):
+            with self.subTest(route_name=route_name):
+                response = self.client.get(reverse(route_name))
+                self.assertContains(response, "research-policy-page")
+                self.assertContains(response, pending_copy)
+                self.assertContains(response, "ethan@tread-joy.com")
+
     def test_social_destinations_are_named_without_unverified_links(self):
         response = self.client.get(reverse("core:home"))
 
