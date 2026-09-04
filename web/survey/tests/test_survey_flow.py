@@ -35,6 +35,59 @@ class SurveyFlowTests(TestCase):
             reverse("survey:survey_question", args=[1]),
         )
 
+    def test_choice_steps_render_prompt_radio_cards_and_progress(self):
+        prompts = (
+            "Which style direction feels most like you?",
+            "How important is all-day comfort when you choose shoes?",
+            "What price range feels right for a pair?",
+        )
+
+        for number, prompt in enumerate(prompts, start=1):
+            for prior_number, field_name, value in self.steps[: number - 1]:
+                self.post_step(prior_number, field_name, value)
+            response = self.client.get(
+                reverse("survey:survey_question", args=[number])
+            )
+            self.assertEqual(response.status_code, 200)
+            self.assertContains(response, prompt)
+            self.assertContains(response, 'type="radio"')
+            self.assertContains(response, 'class="survey-choice-card"')
+            self.assertContains(response, f"Step {number} of 5")
+            self.assertContains(response, 'role="progressbar"')
+            self.assertNotContains(response, "<select")
+
+    def test_optional_steps_show_optional_label_and_feedback_guidance(self):
+        self.post_step(1, "style_preference", "athletic")
+        self.post_step(2, "comfort_importance", "very_important")
+        self.post_step(3, "price_range", "100_150")
+
+        response = self.client.get(reverse("survey:survey_question", args=[4]))
+        self.assertContains(response, "Is there a shoe or apparel brand you return to?")
+        self.assertContains(response, "Your answer")
+        self.assertContains(response, "Optional")
+
+        self.post_step(4, "favorite_brand", "Favorite Brand")
+        response = self.client.get(reverse("survey:survey_question", args=[5]))
+        self.assertContains(response, "Anything else you want us to know?")
+        self.assertContains(response, "Your feedback")
+        self.assertContains(response, "Optional")
+        self.assertContains(response, "Do not include names")
+
+    def test_back_preserves_valid_answer_and_returns_to_previous_step(self):
+        self.post_step(1, "style_preference", "athletic")
+        self.post_step(2, "comfort_importance", "very_important")
+
+        response = self.client.post(
+            reverse("survey:survey_question", args=[3]),
+            {"price_range": "100_150", "navigation": "back"},
+        )
+        self.assertRedirects(
+            response,
+            reverse("survey:survey_question", args=[2]),
+        )
+        response = self.client.get(reverse("survey:survey_question", args=[3]))
+        self.assertContains(response, 'value="100_150"')
+
     def test_each_valid_step_redirects_to_next_and_keeps_session_draft(self):
         for number, field_name, value in self.steps[:-1]:
             response = self.post_step(number, field_name, value)
@@ -55,6 +108,8 @@ class SurveyFlowTests(TestCase):
         self.assertContains(response, "Select a valid choice")
         self.assertContains(response, "autofocus")
         self.assertContains(response, 'aria-invalid="true"')
+        self.assertContains(response, 'id="id_style_preference_error"')
+        self.assertContains(response, "Choose an answer")
         self.assertNotIn("style_preference", self.client.session.get(
             "survey_draft", {}
         ))
@@ -93,6 +148,13 @@ class SurveyFlowTests(TestCase):
             "More color choices, please.",
         )
         self.assertNotIn("survey_draft", self.client.session)
+
+    def test_thank_you_links_home_and_waitlist(self):
+        response = self.client.get(reverse("survey:survey_thank_you"))
+
+        self.assertContains(response, reverse("core:home"))
+        self.assertContains(response, reverse("waitlist:join_waitlist"))
+        self.assertContains(response, "Join the Waitlist")
 
     def test_additional_feedback_is_capped_and_warns_against_personal_information(self):
         for number, field_name, value in self.steps[:-1]:

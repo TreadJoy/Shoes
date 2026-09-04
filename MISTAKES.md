@@ -1,5 +1,19 @@
 # Verification Limitations
 
+## 2026-09-04 — Survey upgrade caught stale template assumptions during verification
+
+- The first Plan 4 test pass exposed an error-path lookup using a Django field
+  object where a bound field was required for its generated `auto_id`. A
+  browser preview also showed the radio-group legend duplicated the visible
+  question heading.
+- Resolution: derive error IDs from the bound field, keep the native legend
+  available to assistive technology with a standard visually-hidden utility,
+  and separate free-text prompt copy from its visible answer label. Added
+  regression coverage for prompts, radio cards, progress, optional labels,
+  Back retention, error linkage, and completion links.
+- Impact: disposable local test databases and localhost browser sessions only;
+  no provider, credential, deployment, or persistent customer state changed.
+
 ## 2026-09-03 — Research-shell verification needed explicit mode and origin fixtures
 
 - The first Plan 3 test invocation used the system interpreter, which lacked

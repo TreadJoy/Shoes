@@ -6,7 +6,7 @@
 
 <div class="survey-page">
 
-    <div class="survey-card">
+    <div class="survey-card survey-complete-card">
         <div class="success-icon">✓</div>
 
         <h1>Thank You!</h1>
@@ -16,9 +16,10 @@
             Your feedback helps shape the brand.
         </p>
 
-        <a href="{% url 'core:home' %}" class="btn-primary">
-            Back to Home
-        </a>
+        <div class="survey-completion-actions">
+            <a href="{% url 'core:home' %}" class="btn-primary">Back to Home</a>
+            <a href="{% url 'waitlist:join_waitlist' %}" class="btn-secondary">Join the Waitlist</a>
+        </div>
     </div>
 
 </div>

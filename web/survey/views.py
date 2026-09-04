@@ -7,7 +7,7 @@ from django.utils import timezone
 from web.core.rate_limits import completed_within, consume_session_limit, record_abuse_metric, throttled_response
 from web.core.forms import focus_first_error
 
-from .forms import SURVEY_STEPS
+from .forms import SURVEY_PROMPTS, SURVEY_STEPS
 from .models import SurveyResponse
 
 
@@ -50,6 +50,20 @@ def survey_question(request, question_number):
     initial = {field_name: draft[field_name]} if field_name in draft else None
     form = form_class(request.POST or None, initial=initial)
 
+    if request.method == "POST" and request.POST.get("navigation") == "back":
+        if form.is_valid():
+            if form.cleaned_data["company_website"]:
+                record_abuse_metric(action="survey", kind="honeypot")
+                request.session.pop(SURVEY_DRAFT_SESSION_KEY, None)
+                return redirect("survey:survey_thank_you")
+            draft[field_name] = form.cleaned_data[field_name]
+            request.session[SURVEY_DRAFT_SESSION_KEY] = draft
+            request.session.modified = True
+
+        if question_number == 1:
+            return redirect("survey:survey_welcome")
+        return redirect("survey:survey_question", question_number - 1)
+
     if request.method == "POST" and form.is_valid():
         if form.cleaned_data["company_website"]:
             record_abuse_metric(action="survey", kind="honeypot")
@@ -70,11 +84,27 @@ def survey_question(request, question_number):
 
     if request.method == "POST":
         focus_first_error(form)
+        for error_field_name in form.errors:
+            bound_error_field = form[error_field_name]
+            error_field = bound_error_field.field
+            if error_field.widget.is_hidden:
+                continue
+            described_by = error_field.widget.attrs.get("aria-describedby", "").split()
+            error_id = f"{bound_error_field.auto_id}_error"
+            if error_id not in described_by:
+                described_by.append(error_id)
+            error_field.widget.attrs["aria-describedby"] = " ".join(described_by)
 
     return render(
         request,
         "survey/survey_question.html",
-        {"form": form, "question_number": question_number, "total_questions": len(SURVEY_STEPS)},
+        {
+            "form": form,
+            "question_number": question_number,
+            "total_questions": len(SURVEY_STEPS),
+            "progress_percent": question_number * 100 // len(SURVEY_STEPS),
+            "question_prompt": SURVEY_PROMPTS[field_name],
+        },
     )
 
 

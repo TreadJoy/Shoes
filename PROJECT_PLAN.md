@@ -374,7 +374,7 @@ P1 storefront, email, accessibility, SEO, performance, monitoring, and admin-usa
 ### A2.3 — Provision, rehearse, and launch the research deployment
 
 - **Priority / status:** P0 — In progress; the follow-on private-preview
-  development Plans 1–3 are complete locally, while its Plans 4–8, provider
+  development Plans 1–4 are complete locally, while its Plans 5–8, provider
   staging, and public launch remain blocked (2026-09-03).
 - **Objective:** Deploy research mode through Cloudflare to a managed Django/PostgreSQL origin with repeatable release and recovery.
 - **Why it matters:** The research site is the first public validation surface and the production architecture rehearsal for commerce.
@@ -535,6 +535,27 @@ P1 storefront, email, accessibility, SEO, performance, monitoring, and admin-usa
   DNS, R2, staging, or public deployment state was changed. The local research
   release rehearsal also passed its safe checks and correctly retained the
   expected `STOP` decision pending external staging gates and owner acceptance.
+- **Implementation evidence (2026-09-04):** Follow-on Private Preview Plan 4
+  upgrades the existing five-step anonymous survey without a schema change.
+  The first three choice steps now use native accessible radio-card groups;
+  each step has its approved question prompt, visible progress meter, and
+  Back/Next navigation. Draft answers remain session-backed, Back preserves a
+  valid current answer, free-text steps identify optional fields, and the
+  existing PII warning, honeypot, throttles, and stored choice values remain
+  intact. Validation now links persistent field errors to their controls and
+  focuses the first invalid field after a failed POST. Completion offers the
+  homepage as the primary destination and the waitlist as a secondary action.
+  Changes are in `web/survey/forms.py`, `web/survey/views.py`, the survey
+  templates, and shared survey styles; no database migration was generated.
+  The focused survey flow passed 14 tests, the full research suite passed 169
+  tests (8 expected skips), and the full commerce suite passed 275 tests (40
+  expected skips). Both modes passed Django checks and migration-drift checks,
+  compilation, whitespace validation, and the strict UI audit (0 findings).
+  Browser checks at 390px and 1440px confirmed responsive radio cards,
+  optional-field hierarchy, prompt/progress semantics, and no horizontal
+  overflow. The local research release rehearsal passed its safe checks and
+  retained the expected `STOP` decision; local provider/deployment state
+  remains unchanged.
 
 ## Phase 3 — Commerce data integrity and identity
 
