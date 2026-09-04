@@ -106,5 +106,4 @@ databases:
     postgresMajorVersion: "17"
     databaseName: treadjoy_research
     user: treadjoy_research_owner
-    diskSizeGB: 1
     ipAllowList: []
