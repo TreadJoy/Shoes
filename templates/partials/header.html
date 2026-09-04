@@ -106,15 +106,15 @@
                 >How It Works</a>
             {% else %}
                 <a
-                    class="desktop-nav-link"
+                    class="desktop-nav-link research-nav-primary"
                     href="{% url 'survey:survey_welcome' %}"
                     {% if request.resolver_match.namespace == "survey" %}aria-current="page"{% endif %}
                 >Survey</a>
                 <a
                     class="desktop-nav-link"
-                    href="{% url 'waitlist:join_waitlist' %}"
-                    {% if request.resolver_match.namespace == "waitlist" %}aria-current="page"{% endif %}
-                >Waitlist</a>
+                    href="{% url 'products:product_list' %}"
+                    {% if request.resolver_match.namespace == "products" %}aria-current="page"{% endif %}
+                >Product Preview</a>
                 <a
                     class="desktop-nav-link"
                     href="{% url 'core:how_it_works' %}"
@@ -125,6 +125,11 @@
                     href="{% url 'core:about' %}"
                     {% if request.resolver_match.url_name == "about" %}aria-current="page"{% endif %}
                 >Story</a>
+                <a
+                    class="desktop-nav-link"
+                    href="{% url 'waitlist:join_waitlist' %}"
+                    {% if request.resolver_match.namespace == "waitlist" %}aria-current="page"{% endif %}
+                >Waitlist</a>
             {% endif %}
         </nav>
 
@@ -233,10 +238,11 @@
                 <a class="mobile-nav-link" href="{% url 'products:product_list' %}?sale=1">Sale</a>
                 <a class="mobile-nav-link" href="{% url 'core:how_it_works' %}">How It Works</a>
             {% else %}
-                <a class="mobile-nav-link" href="{% url 'survey:survey_welcome' %}">Survey</a>
-                <a class="mobile-nav-link" href="{% url 'waitlist:join_waitlist' %}">Waitlist</a>
+                <a class="mobile-nav-link research-nav-primary" href="{% url 'survey:survey_welcome' %}">Survey</a>
+                <a class="mobile-nav-link" href="{% url 'products:product_list' %}">Product Preview</a>
                 <a class="mobile-nav-link" href="{% url 'core:how_it_works' %}">How It Works</a>
                 <a class="mobile-nav-link" href="{% url 'core:about' %}">Story</a>
+                <a class="mobile-nav-link" href="{% url 'waitlist:join_waitlist' %}">Waitlist</a>
             {% endif %}
 
             <div class="mobile-social-placeholder" aria-label="TreadJoy social destinations">

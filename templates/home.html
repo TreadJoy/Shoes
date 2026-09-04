@@ -8,7 +8,8 @@
 {% endblock %}
 
 {% block content %}
-<div class="home-page{% if is_commerce_mode %} home-page-commerce{% else %} home-page-research{% endif %}">
+{% if is_commerce_mode %}
+<div class="home-page home-page-commerce">
     <section class="home-hero" aria-labelledby="home-hero-title">
         <div class="home-hero-copy">
             {% if is_commerce_mode %}
@@ -343,6 +344,139 @@
         </section>
     {% endif %}
 </div>
+{% else %}
+<div class="home-page home-page-research research-home">
+    <section class="research-hero" aria-labelledby="research-hero-title">
+        <div class="research-hero-copy">
+            <p class="eyebrow">TreadJoy Research Preview</p>
+            <h1 id="research-hero-title">Help Shape What TreadJoy Becomes.</h1>
+            <p class="research-hero-intro">
+                A short, private way to test the flow, the questions, and the idea
+                of modular footwear before release.
+            </p>
+            <div class="research-hero-actions">
+                <a href="{% url 'survey:survey_welcome' %}" class="btn-primary research-primary-action">Take the Survey <span aria-hidden="true">→</span></a>
+                <a href="{% url 'products:product_list' %}" class="btn-secondary">See Product Preview <span aria-hidden="true">→</span></a>
+            </div>
+        </div>
+        <div class="research-hero-mark" aria-hidden="true">
+            <span class="registration-mark registration-mark-large">00</span>
+            <span class="registration-label">Research / 01</span>
+            <span class="registration-cross registration-cross-horizontal"></span>
+            <span class="registration-cross registration-cross-vertical"></span>
+        </div>
+    </section>
+
+    <section class="research-section research-exploring" aria-labelledby="research-exploring-title">
+        <div class="research-section-marker" aria-hidden="true">01</div>
+        <div class="research-section-heading">
+            <p class="eyebrow">The Concept</p>
+            <h2 id="research-exploring-title">What We’re Exploring</h2>
+        </div>
+        <div class="research-section-copy">
+            <p>
+                We’re exploring a modular shoe system: a starting point with
+                pieces that can be tested together, changed, and refined.
+            </p>
+            <p>
+                This preview keeps the idea deliberately simple so feedback can
+                stay focused on what feels useful.
+            </p>
+        </div>
+    </section>
+
+    <section class="research-preview-teaser" aria-labelledby="research-preview-title">
+        <div class="research-preview-teaser-copy">
+            <p class="eyebrow">02 / Product Preview</p>
+            <h2 id="research-preview-title">A Catalog Shell, Ready for the Next Pass.</h2>
+            <p>
+                Product previews are being prepared. Browse the empty catalog
+                structure, then use the survey to tell us what belongs in it.
+            </p>
+            <a href="{% url 'products:product_list' %}" class="editorial-link">Open Product Preview <span aria-hidden="true">→</span></a>
+        </div>
+        <div class="research-preview-teaser-mark" aria-hidden="true">
+            <span class="registration-mark">02</span>
+            <span class="registration-ring"></span>
+        </div>
+    </section>
+
+    <section class="research-section research-learning" aria-labelledby="research-learning-title">
+        <div class="research-section-marker" aria-hidden="true">03</div>
+        <div class="research-section-heading">
+            <p class="eyebrow">The Questions</p>
+            <h2 id="research-learning-title">What We Need to Learn</h2>
+        </div>
+        <div class="research-learning-grid">
+            <article>
+                <span class="research-card-index">A</span>
+                <h3>Style</h3>
+                <p>Which visual directions feel worth another look?</p>
+            </article>
+            <article>
+                <span class="research-card-index">B</span>
+                <h3>Comfort</h3>
+                <p>What should a good everyday fit feel like?</p>
+            </article>
+            <article>
+                <span class="research-card-index">C</span>
+                <h3>Price</h3>
+                <p>What range feels reasonable for the idea?</p>
+            </article>
+        </div>
+    </section>
+
+    <section class="research-story" aria-labelledby="research-story-title">
+        <div class="research-story-mark" aria-hidden="true">
+            <span class="registration-mark">04</span>
+            <span class="registration-label">Test / Learn / Refine</span>
+        </div>
+        <div class="research-story-copy">
+            <p class="eyebrow">Why Test First</p>
+            <h2 id="research-story-title">A Better Release Starts With Better Questions.</h2>
+            <p>
+                TreadJoy is testing the experience before release: checking the
+                language, the flow, and the questions with the development team
+                first.
+            </p>
+            <a href="{% url 'core:about' %}" class="editorial-link">Read the Story <span aria-hidden="true">→</span></a>
+        </div>
+    </section>
+
+    <section class="research-waitlist home-waitlist" id="home-waitlist" aria-labelledby="research-waitlist-title" tabindex="-1">
+        <div class="home-waitlist-copy">
+            <p class="eyebrow">A Secondary Invitation</p>
+            <h2 id="research-waitlist-title">Keep Involved.</h2>
+            <p>
+                Join the private test list if you want a note when the next
+                research pass is ready.
+            </p>
+        </div>
+
+        <form method="post" action="{% url 'waitlist:join_homepage' %}" class="home-waitlist-form waitlist-form" novalidate>
+            {% csrf_token %}
+            {{ waitlist_form.non_field_errors }}
+
+            <div class="form-group">
+                {{ waitlist_form.email.label_tag }}
+                {{ waitlist_form.email }}
+                {{ waitlist_form.email.errors }}
+            </div>
+
+            <div class="form-group consent-field">
+                {{ waitlist_form.consent }}
+                {{ waitlist_form.consent.label_tag }}
+                {{ waitlist_form.consent.errors }}
+            </div>
+            {{ waitlist_form.company_website }}
+
+            <p class="form-help">Read the <a href="{% url 'core:privacy' %}">research privacy notice</a> before joining.</p>
+
+            <button type="submit" class="btn-primary" data-waitlist-submit>Join the Waitlist</button>
+        </form>
+    </section>
+</div>
+{% endif %}
 {% endblock %}
 
 {% block extra_scripts %}

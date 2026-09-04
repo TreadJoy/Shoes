@@ -9,9 +9,10 @@ from unittest.mock import patch
 from django.conf import settings
 from django.core.management import call_command
 from django.core.management.base import CommandError
-from django.test import TestCase, override_settings
+from django.test import RequestFactory, TestCase, override_settings
 from PIL import Image
 
+from web.core.context_processors import deployment_mode
 from web.products.models import Product, ProductVariant
 
 
@@ -30,10 +31,22 @@ class DevelopmentLogoRenderingTests(TestCase):
             logo_path.parent.mkdir()
             logo_path.write_bytes(b"development-only-logo")
 
-            with override_settings(DEBUG=True, MEDIA_ROOT=media_root):
-                response = self.client.get("/")
+            with override_settings(DEBUG=True, IS_COMMERCE_MODE=True, MEDIA_ROOT=media_root):
+                context = deployment_mode(RequestFactory().get("/"))
 
-        self.assertContains(response, 'src="/media/development/treadjoy-ai-logo.png"')
+        self.assertEqual(context["development_logo_url"], "/media/development/treadjoy-ai-logo.png")
+
+    def test_debug_research_header_never_uses_local_development_logo(self):
+        with TemporaryDirectory() as temporary_media_root:
+            media_root = Path(temporary_media_root)
+            logo_path = media_root / "development" / "treadjoy-ai-logo.png"
+            logo_path.parent.mkdir()
+            logo_path.write_bytes(b"development-only-logo")
+
+            with override_settings(DEBUG=True, IS_COMMERCE_MODE=False, MEDIA_ROOT=media_root):
+                context = deployment_mode(RequestFactory().get("/"))
+
+        self.assertEqual(context["development_logo_url"], "")
 
     def test_debug_header_falls_back_to_wordmark_without_local_logo(self):
         with TemporaryDirectory() as temporary_media_root:

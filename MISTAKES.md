@@ -1,5 +1,21 @@
 # Verification Limitations
 
+## 2026-09-03 — Research-shell verification needed explicit mode and origin fixtures
+
+- The first Plan 3 test invocation used the system interpreter, which lacked
+  the locked PostgreSQL driver. The locked virtualenv then correctly refused
+  to connect to the unavailable local PostgreSQL service.
+- The first focused run also surfaced stale assertions for the retired
+  research homepage sections, a private-staging request without its expected
+  Cloudflare origin header, and a commerce logo test that tried to reverse
+  commerce-only URLs while the test URL configuration was research-only.
+- Resolution: used the documented SQLite convenience override for disposable
+  tests, updated assertions to the approved six-section research shell, added
+  the synthetic origin header, and tested logo selection through the context
+  processor. Research and commerce focused suites then passed.
+- Impact: disposable test databases and local browser servers only; no
+  provider, credential, deployment, or persistent customer state changed.
+
 ## 2026-09-04 — Workflow syntax lint helper was unavailable locally
 
 - Attempted to run `actionlint` against the private-preview release workflow.

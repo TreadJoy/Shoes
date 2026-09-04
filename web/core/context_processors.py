@@ -64,8 +64,14 @@ def deployment_mode(request):
         "is_commerce_mode": settings.IS_COMMERCE_MODE,
         "development_logo_url": (
             f"{settings.MEDIA_URL}development/treadjoy-ai-logo.png"
-            if settings.DEBUG and development_logo_path.is_file()
+            if settings.IS_COMMERCE_MODE
+            and settings.DEBUG
+            and development_logo_path.is_file()
             else ""
+        ),
+        "research_preview_notice": (
+            not settings.IS_COMMERCE_MODE
+            and (not settings.IS_PUBLIC_ENVIRONMENT or settings.TREADJOY_PRIVATE_POC)
         ),
     }
     context.update(_metadata(request))

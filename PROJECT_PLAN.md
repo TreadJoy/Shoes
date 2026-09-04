@@ -374,7 +374,7 @@ P1 storefront, email, accessibility, SEO, performance, monitoring, and admin-usa
 ### A2.3 — Provision, rehearse, and launch the research deployment
 
 - **Priority / status:** P0 — In progress; the follow-on private-preview
-  development Plans 1–2 are complete locally, while its Plans 3–8, provider
+  development Plans 1–3 are complete locally, while its Plans 4–8, provider
   staging, and public launch remain blocked (2026-09-03).
 - **Objective:** Deploy research mode through Cloudflare to a managed Django/PostgreSQL origin with repeatable release and recovery.
 - **Why it matters:** The research site is the first public validation surface and the production architecture rehearsal for commerce.
@@ -515,6 +515,26 @@ P1 storefront, email, accessibility, SEO, performance, monitoring, and admin-usa
   `actionlint` is unavailable locally and remains a hosted-CI verification
   gate. No provider, credential, database, DNS, R2, staging, or public
   deployment state was changed.
+- **Implementation evidence (2026-09-03):** Follow-on Private Preview Plan 3
+  now gives research mode its own six-section survey-first homepage in
+  `templates/home.html`, with a styled text-only wordmark, one shared compact
+  preview banner in `templates/base.html`, reordered research navigation in
+  `templates/partials/header.html`, and code-drawn numbered registration marks
+  composed in `static/css/home.css`. Men/Women gateways and the research-only
+  lifestyle, video, community, impact, and roadmap placeholders are absent;
+  the commerce homepage markup and local development logo path remain intact.
+  `web/core/context_processors.py` now suppresses the development logo outside
+  commerce mode and enables the notice for local research and private staging.
+  The focused research and commerce suites each passed 35 tests (with the
+  expected mode-specific skips), the full installed research suite passed 165
+  tests (8 expected skips), and the full commerce suite passed 271 tests (40
+  expected skips). Browser checks at 390, 768, 1024, 1440, and 1536 pixels
+  reported no horizontal overflow, and mobile navigation preserved focus
+  containment/body scroll lock while exposing Survey, Product Preview, How It
+  Works, Story, and Waitlist in that order. No provider, credential, database,
+  DNS, R2, staging, or public deployment state was changed. The local research
+  release rehearsal also passed its safe checks and correctly retained the
+  expected `STOP` decision pending external staging gates and owner acceptance.
 
 ## Phase 3 — Commerce data integrity and identity
 
