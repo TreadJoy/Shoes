@@ -1243,3 +1243,30 @@
   credentials were installed merely to inspect it.
 - Impact: none; the failed command did not reach GitHub or change local or
   provider state.
+
+## 2026-09-05 — Research PostgreSQL CI exposed a nullable-row lock query
+
+- The first current-commit Application CI run passed commerce and dependency
+  checks but failed the research PostgreSQL suite in the research email delivery
+  command. Reproducing the suite against disposable PostgreSQL logged
+  `FOR UPDATE cannot be applied to the nullable side of an outer join` for the
+  nullable `ResearchOutboundEmail.subscription` relation.
+- Resolution: changed the command to use `select_for_update(of=("self",))`,
+  locking only the authoritative outbox row while retaining the joined
+  subscription data. The complete 181-test research suite now passes against
+  PostgreSQL and the 287-test commerce suite passes against SQLite.
+- Impact: only disposable local PostgreSQL/SQLite test data was used; no
+  provider, credential, customer, or deployment state changed.
+
+## 2026-09-05 — Local research boundary checks first used the wrong profile
+
+- A boundary probe accidentally used the populated development SQLite database,
+  so the research capability check reported the expected commerce tables. A
+  clean local PostgreSQL probe then passed the capability boundary, while the
+  engagement check correctly refused draft privacy/retention settings and a
+  synthetic privacy-notice digest that did not match its body.
+- Resolution: reran the checks on a fresh disposable PostgreSQL database with
+  the CI-approved synthetic notice and retention values. Boundary, engagement,
+  Cloudflare-policy, and whitespace checks passed.
+- Impact: no application, provider, credential, or persistent database state
+  was changed; only disposable local databases were created.

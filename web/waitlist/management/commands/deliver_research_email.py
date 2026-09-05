@@ -33,7 +33,17 @@ class Command(BaseCommand):
         delivered = failed = canceled = 0
         for pk in ids:
             with transaction.atomic():
-                outbound = ResearchOutboundEmail.objects.select_for_update().select_related("subscription").get(pk=pk)
+                # ``subscription`` is nullable because retention may redact it.  On
+                # PostgreSQL, locking a queryset that includes that nullable
+                # ``select_related`` join fails with ``FOR UPDATE cannot be
+                # applied to the nullable side of an outer join``.  Lock only
+                # the outbox row; the joined subscription data is still loaded
+                # for the decision below.
+                outbound = (
+                    ResearchOutboundEmail.objects.select_for_update(of=("self",))
+                    .select_related("subscription")
+                    .get(pk=pk)
+                )
                 outbound.attempt_count += 1
                 if not outbound.subscription or not outbound.subscription.email:
                     outbound.status = ResearchOutboundEmail.Status.CANCELED
