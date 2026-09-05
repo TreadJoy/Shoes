@@ -1,5 +1,37 @@
 # Verification Limitations
 
+## 2026-09-04 — Plan 6 rehearsal used the wrong local CLI option on its first attempt
+
+- The first rehearsal invocation passed `--python-bin`, but the script's
+  supported option is `--python`.
+- Resolution: reran with the documented option; the complete local rehearsal
+  passed, including the expected public-content blockers and STOP decision.
+- Impact: one local command failed before any checks ran; no provider,
+  credential, database, deployment, or persistent project state changed.
+
+## 2026-09-04 — Commerce regression setup initially omitted required local Stripe fixtures
+
+- The first disposable commerce-mode test command intentionally supplied no
+  Stripe settings and Django failed closed before test discovery, as required
+  for commerce configuration.
+- Resolution: reran with clearly synthetic, non-provider Stripe fixture values;
+  the 22-test commerce homepage/research-boundary subset passed with the
+  expected SQLite skips.
+- Impact: local configuration failure only; no Stripe request or external
+  state was contacted.
+
+## 2026-09-04 — Plan 6 review found the checked-in edge limits drifted from A2.2
+
+- The existing Cloudflare policy described 5/60 requests per minute and a
+  blocking action, while the approved A2.2 edge contract is managed challenge
+  above 10 waitlist POSTs/IP/10 minutes and above 60 survey POSTs/IP/10
+  minutes, staged in log mode first.
+- Resolution: corrected the policy, validator, documentation, and regression
+  tests; the probe now requires the fixed research/media hostnames and can be
+  made to fail when a requested direct-origin check is omitted.
+- Impact: repository-only policy and test changes; no Cloudflare, R2, DNS,
+  credential, or deployment state changed.
+
 ## 2026-09-04 — Supporting-page regression caught accessibility placeholder wording
 
 - The first Plan 5 full research run failed because a new generic test expected

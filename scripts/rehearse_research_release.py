@@ -163,11 +163,12 @@ def main() -> int:
     )
     results.append(
         command_result(
-            "render promotion and rollback adapter rehearsal",
+            "deployment policy and render adapter tests",
             [
                 str(python_bin),
                 "-m",
                 "unittest",
+                "scripts.tests.test_cloudflare_policy",
                 "scripts.tests.test_render_release",
                 "-v",
             ],

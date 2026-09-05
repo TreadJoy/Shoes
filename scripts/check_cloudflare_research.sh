@@ -14,13 +14,18 @@ set -euo pipefail
 }
 
 case "$RESEARCH_URL" in
-  https://*) ;;
-  *) echo "RESEARCH_URL must use HTTPS" >&2; exit 2 ;;
+  https://research.tread-joy.com|https://research.tread-joy.com/*) ;;
+  *) echo "RESEARCH_URL must be the HTTPS research.tread-joy.com hostname" >&2; exit 2 ;;
 esac
 case "$MEDIA_URL" in
-  https://*) ;;
-  *) echo "MEDIA_URL must use HTTPS" >&2; exit 2 ;;
+  https://media.research.tread-joy.com|https://media.research.tread-joy.com/*) ;;
+  *) echo "MEDIA_URL must be the HTTPS media.research.tread-joy.com hostname" >&2; exit 2 ;;
 esac
+
+if [[ "${REQUIRE_ORIGIN_CHECK:-false}" == "true" && -z "${ORIGIN_URL:-}" ]]; then
+  echo "REQUIRE_ORIGIN_CHECK=true requires ORIGIN_URL" >&2
+  exit 2
+fi
 
 umask 077
 work_dir="$(mktemp -d "${TMPDIR:-/tmp}/treadjoy-cloudflare-check.XXXXXX")"
@@ -92,6 +97,10 @@ grep --ignore-case --fixed-strings "CF-Cache-Status:" "$static_headers" >/dev/nu
   echo "research static probe is missing CF-Cache-Status" >&2
   exit 1
 }
+grep --ignore-case --fixed-strings "Cache-Control:" "$static_headers" >/dev/null || {
+  echo "research static probe is missing Cache-Control" >&2
+  exit 1
+}
 echo "research static probe: HTTP $static_status with edge cache status"
 
 media_headers="$work_dir/media.headers"
@@ -106,6 +115,14 @@ header_contains "$media_headers" "X-Content-Type-Options" "nosniff" || {
 }
 grep --ignore-case --fixed-strings "CF-Cache-Status:" "$media_headers" >/dev/null || {
   echo "media probe is missing CF-Cache-Status" >&2
+  exit 1
+}
+grep --ignore-case --fixed-strings "Cache-Control:" "$media_headers" >/dev/null || {
+  echo "media probe is missing Cache-Control" >&2
+  exit 1
+}
+header_contains "$media_headers" "Strict-Transport-Security" "max-age=3600" || {
+  echo "media probe is missing staged HSTS" >&2
   exit 1
 }
 echo "blank media probe: HTTP $media_status with edge cache status"

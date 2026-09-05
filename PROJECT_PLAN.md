@@ -374,8 +374,8 @@ P1 storefront, email, accessibility, SEO, performance, monitoring, and admin-usa
 ### A2.3 — Provision, rehearse, and launch the research deployment
 
 - **Priority / status:** P0 — In progress; the follow-on private-preview
-  development Plans 1–5 are complete locally, while its Plans 6–8, provider
-  staging, and public launch remain blocked (2026-09-03).
+  development Plans 1–6 are complete locally, while Plans 7–8, provider
+  staging, and public launch remain blocked (2026-09-04).
 - **Objective:** Deploy research mode through Cloudflare to a managed Django/PostgreSQL origin with repeatable release and recovery.
 - **Why it matters:** The research site is the first public validation surface and the production architecture rehearsal for commerce.
 - **Current state:** `tread-joy.com` has been purchased through Cloudflare as the intended base domain. The repository now contains a release workflow, Render staging Blueprint, WSGI/build/start/migration/job/backup scripts, rollback adapter, and a review-gated Cloudflare/R2 policy. A disposable Free Render Postgres 17 database is provisioned in Ohio with external access blocked; no research web service, hostname allocation, DNS/TLS, R2, provider backup, live monitoring, roles, migrations, or public deployment is configured. Repository health/observability foundations are documented under A1.3.
@@ -453,6 +453,20 @@ P1 storefront, email, accessibility, SEO, performance, monitoring, and admin-usa
   R2, credential, cache, or staging state was changed; zone-plan capability,
   exact origin hostname, live certificate, Access identity, and all provider
   verification evidence remain open.
+- **Implementation evidence (2026-09-04):** Follow-on Private Preview Plan 6
+  verification found and corrected drift between the checked-in Cloudflare
+  policy and the approved A2.2 edge contract. Waitlist and survey guards now
+  express managed challenge above 10 and 60 POSTs per IP per 10 minutes,
+  respectively, with `log` as the staging action and `managed_challenge` as
+  the owner-approved enforcement action; their exact paths and application
+  session-hour limits are validated by `scripts/validate_cloudflare_research.py`
+  and `scripts/tests/test_cloudflare_policy.py`. The synthetic probe now
+  accepts only the fixed research/media hostnames, verifies cache headers and
+  media HSTS, and can require an explicit direct-origin URL. The policy
+  validator, ten deployment-policy/release tests, shell syntax, and whitespace
+  checks passed. No Cloudflare account, DNS, TLS, Access, WAF, R2, credential,
+  cache, or staging state was changed; live edge and provider evidence remain
+  open.
 - **Implementation evidence (2026-09-02):** Phase 1 of the separately approved
   temporary holding-page plan is recorded in
   `docs/cloudflare-coming-soon.md`. The asset-only `treadjoy-coming-soon`

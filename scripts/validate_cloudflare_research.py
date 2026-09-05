@@ -96,21 +96,38 @@ def validate(policy: dict) -> None:
     rate = policy["rate_limiting"]
     require(rate["phase"] == "http_ratelimit", "rate-limit phase changed")
     require(rate["characteristics"] == ["ip.src"], "rate-limit characteristic changed")
-    require(rate["rollout"] == ["log", "validate-ordinary-traffic", "block"], "rate rollout must start in log mode")
-    require(rate["plan_capability_gate"]["minimum_rules"] == 2, "both A2.2 edge rules must remain explicit")
+    require(rate["rollout"] == ["log", "validate-ordinary-traffic", "managed_challenge"], "rate rollout must start in log mode")
+    require(rate["plan_capability_gate"] == {
+        "minimum_rules": 2,
+        "required_period_seconds": [600],
+        "required_actions": ["log", "managed_challenge"],
+        "note": "Confirm the zone plan supports two rules and log mode before apply; do not merge thresholds silently on a lower plan.",
+    }, "rate-limit plan capability gate changed")
     rules = rate["rules"]
     require(len(rules) == 2, "exactly two A2.2 edge rules are required")
     waitlist, survey = rules
-    require(waitlist["requests_per_period"] == 5 and waitlist["period_seconds"] == 60, "waitlist edge guard changed")
+    require(waitlist["requests_per_period"] == 10 and waitlist["period_seconds"] == 600, "waitlist edge guard changed")
     require(waitlist["application_authority"] == {"requests": 5, "period_seconds": 3600, "source": "web/waitlist/views.py"}, "waitlist application limit changed")
-    require(survey["requests_per_period"] == 60 and survey["period_seconds"] == 60, "survey edge guard changed")
+    require(survey["requests_per_period"] == 60 and survey["period_seconds"] == 600, "survey edge guard changed")
     require(survey["application_authority"] == {"requests": 60, "period_seconds": 3600, "source": "web/survey/views.py"}, "survey application limit changed")
     for rule in rules:
-        require(rule["mitigation_timeout_seconds"] == 60, f"{rule['name']} mitigation timeout changed")
-        require(rule["staging_action"] == "log" and rule["enforced_action"] == "block", f"{rule['name']} rollout action changed")
+        require(rule["mitigation_timeout_seconds"] == 600, f"{rule['name']} mitigation timeout changed")
+        require(rule["staging_action"] == "log" and rule["enforced_action"] == "managed_challenge", f"{rule['name']} rollout action changed")
         require(rule["count_cached_assets"] is False, f"{rule['name']} must not count cached assets")
         require("http.host eq \"research.tread-joy.com\"" in rule["expression"], f"{rule['name']} host scope missing")
         require("http.request.method eq \"POST\"" in rule["expression"], f"{rule['name']} must count POST only")
+    require(
+        waitlist["expression"]
+        == 'http.host eq "research.tread-joy.com" and http.request.method eq "POST" '
+        'and http.request.uri.path in {"/waitlist/join/" "/waitlist/join/homepage/"}',
+        "waitlist edge guard must cover only the two approved POST paths",
+    )
+    require(
+        survey["expression"]
+        == 'http.host eq "research.tread-joy.com" and http.request.method eq "POST" '
+        'and http.request.uri.path wildcard "/survey/question/*/"',
+        "survey edge guard must cover only survey question POST paths",
+    )
 
     cache = policy["cache"]
     required_bypasses = {"/admin/", "/accounts/", "/cart/", "/orders/", "/waitlist/", "/survey/", "/health/"}

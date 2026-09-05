@@ -101,22 +101,22 @@
   "rate_limiting": {
     "phase": "http_ratelimit",
     "characteristics": ["ip.src"],
-    "rollout": ["log", "validate-ordinary-traffic", "block"],
+    "rollout": ["log", "validate-ordinary-traffic", "managed_challenge"],
     "plan_capability_gate": {
       "minimum_rules": 2,
-      "required_period_seconds": [60],
-      "required_actions": ["log", "block"],
+      "required_period_seconds": [600],
+      "required_actions": ["log", "managed_challenge"],
       "note": "Confirm the zone plan supports two rules and log mode before apply; do not merge thresholds silently on a lower plan."
     },
     "rules": [
       {
         "name": "A2.2 waitlist POST guard",
         "expression": "http.host eq \"research.tread-joy.com\" and http.request.method eq \"POST\" and http.request.uri.path in {\"/waitlist/join/\" \"/waitlist/join/homepage/\"}",
-        "requests_per_period": 5,
-        "period_seconds": 60,
-        "mitigation_timeout_seconds": 60,
+        "requests_per_period": 10,
+        "period_seconds": 600,
+        "mitigation_timeout_seconds": 600,
         "staging_action": "log",
-        "enforced_action": "block",
+        "enforced_action": "managed_challenge",
         "count_cached_assets": false,
         "application_authority": {
           "requests": 5,
@@ -126,12 +126,12 @@
       },
       {
         "name": "A2.2 survey step POST guard",
-        "expression": "http.host eq \"research.tread-joy.com\" and http.request.method eq \"POST\" and http.request.uri.path wildcard \"/survey/question/*\"",
+        "expression": "http.host eq \"research.tread-joy.com\" and http.request.method eq \"POST\" and http.request.uri.path wildcard \"/survey/question/*/\"",
         "requests_per_period": 60,
-        "period_seconds": 60,
-        "mitigation_timeout_seconds": 60,
+        "period_seconds": 600,
+        "mitigation_timeout_seconds": 600,
         "staging_action": "log",
-        "enforced_action": "block",
+        "enforced_action": "managed_challenge",
         "count_cached_assets": false,
         "application_authority": {
           "requests": 60,
