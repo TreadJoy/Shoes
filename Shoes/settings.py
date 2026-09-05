@@ -234,6 +234,10 @@ else:
             raise ImproperlyConfigured(
                 "Invalid configuration for DATABASE_URL: the port is invalid."
             ) from None
+        # Render's internal PostgreSQL URL omits the conventional port. Keep
+        # the URL strict while accepting that provider form explicitly.
+        if port is None and parsed.scheme in {"postgres", "postgresql"}:
+            port = 5432
         database_name = parsed.path.removeprefix("/")
         if (
             parsed.scheme not in {"postgres", "postgresql"}

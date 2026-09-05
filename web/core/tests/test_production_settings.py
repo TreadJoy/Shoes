@@ -311,6 +311,26 @@ assert database["OPTIONS"] == {"sslmode": "require"}
             msg=f"stdout:\n{result.stdout}\nstderr:\n{result.stderr}",
         )
 
+    def test_render_internal_database_url_defaults_postgresql_port(self):
+        environment = self.environment_for("research")
+        for name in ("DB_NAME", "DB_USER", "DB_PASSWORD", "DB_HOST", "DB_PORT", "DB_SSLMODE"):
+            environment.pop(name, None)
+        environment["DATABASE_URL"] = "postgresql://url-user:url-pass@database.ci.invalid/url-db"
+        result = self.run_setup(
+            environment,
+            """
+import django
+django.setup()
+from django.conf import settings
+assert settings.DATABASES["default"]["PORT"] == 5432
+""",
+        )
+        self.assertEqual(
+            result.returncode,
+            0,
+            msg=f"stdout:\n{result.stdout}\nstderr:\n{result.stderr}",
+        )
+
     def test_public_profiles_reject_relaxed_or_inconsistent_security_values(self):
         cases = (
             ("DJANGO_DEBUG", "true", "DJANGO_DEBUG must be false"),
