@@ -1394,3 +1394,27 @@
 - Impact: the value must be treated as exposed until both provider settings use
   a newly generated replacement. Access remains enabled, the Render-provided
   subdomain remains disabled, and no database credential was involved.
+
+## 2026-09-05 — Origin-lock rotation did not restore the authenticated path
+
+- After rotating the shared value in both provider dashboards and redeploying
+  Render, the authenticated research request still returned `403`.
+- Resolution: added an allow-listed diagnostic shape containing only header
+  presence, header length, and whether the server-side secret is configured.
+  The next live event showed the forwarded header was absent (`length=0`) while
+  the secret was configured; no secret value was logged.
+- Impact: the remaining fault is Cloudflare-to-origin header delivery or rule
+  ordering, not a credential mismatch. Access and the disabled provider
+  subdomain remain intact.
+
+## 2026-09-05 — Research Release workflow remains blocked by content gates
+
+- The release workflow for the diagnostic commit stopped before promotion
+  because its existing public-like content gate found
+  `homepage-development-media` and `pending-social-links`.
+- Resolution: treated this as a pre-existing release-policy blocker, while the
+  required Application CI and Secret Scan checks passed. No content gate was
+  bypassed and no public promotion was attempted.
+- Impact: staging verification used the approved manual Render deployment after
+  required checks passed; the immutable Research Release workflow remains
+  unavailable until those separate content gates are resolved.

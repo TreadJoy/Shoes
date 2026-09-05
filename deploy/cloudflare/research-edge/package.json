@@ -1,0 +1,17 @@
+{
+  "name": "treadjoy-research-edge",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Cloudflare edge Worker that forwards Access-authenticated research traffic with an origin lock.",
+  "type": "module",
+  "engines": {
+    "node": ">=24 <25"
+  },
+  "scripts": {
+    "test": "node --test",
+    "check": "npm test && wrangler deploy --dry-run"
+  },
+  "devDependencies": {
+    "wrangler": "4.128.0"
+  }
+}

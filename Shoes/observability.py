@@ -146,6 +146,9 @@ class JsonFormatter(logging.Formatter):
         "summary",
         "dedupe_key",
         "synthetic",
+        "origin_header_present",
+        "origin_header_length",
+        "origin_secret_configured",
     )
 
     def format(self, record: logging.LogRecord) -> str:

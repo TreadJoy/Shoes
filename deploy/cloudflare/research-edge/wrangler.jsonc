@@ -1,0 +1,13 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "treadjoy-research-edge",
+  "main": "src/index.js",
+  "compatibility_date": "2026-09-05",
+  "workers_dev": false,
+  "routes": [
+    {
+      "pattern": "research.tread-joy.com/*",
+      "zone_name": "tread-joy.com"
+    }
+  ]
+}
