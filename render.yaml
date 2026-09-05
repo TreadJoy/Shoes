@@ -32,6 +32,12 @@ services:
         value: cloudflare-locked
       - key: TREADJOY_ORIGIN_SHARED_SECRET
         sync: false
+      - key: CLOUDFLARE_ACCESS_TEAM_DOMAIN
+        # Account-specific issuer URL; set after the Access application exists.
+        sync: false
+      - key: CLOUDFLARE_ACCESS_AUD
+        # Application-specific audience tag; never guess or reuse another app's.
+        sync: false
       - key: TREADJOY_PRIVATE_POC
         value: "true"
       - key: DJANGO_DEBUG

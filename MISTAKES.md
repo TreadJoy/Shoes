@@ -1214,3 +1214,21 @@
   replacing the valid records.
 - Impact: no DNS record was created, deleted, or modified. The only external
   actions were two Workspace verification attempts.
+
+## 2026-09-05 — Access verification checks needed isolated local settings
+
+- The first combined focused Django test command inherited the ignored local
+  PostgreSQL configuration and could not reach `127.0.0.1:5432` inside the
+  filesystem sandbox. A mocked missing-token test also initially returned the
+  mock's default success value instead of exercising the verifier's fail-closed
+  branch.
+- The first attempt to restore the documented lock-generation flags ran inside
+  the sandbox and could not write pip-tools' user cache.
+- Resolution: corrected the test mock to reject an empty token, ran the
+  database-free suites separately, ran the broader research regression suite
+  against a disposable SQLite database with explicit local settings, and
+  regenerated both locks through the approved pip-tools boundary using the
+  exact documented commands. All resulting tests, lock installs, secret scan,
+  and dependency audit passed.
+- Impact: disposable local test data and dependency caches only; no provider,
+  DNS, Access policy, public route, or live deployment was changed.

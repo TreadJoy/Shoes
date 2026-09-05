@@ -23,6 +23,11 @@ not a committed `.env` file:
   `TREADJOY_ORIGIN_SHARED_SECRET`, `DJANGO_DEBUG=false`, a generated
   `SECRET_KEY`, exact non-wildcard `ALLOWED_HOSTS`, and HTTPS-only
   `CSRF_TRUSTED_ORIGINS` whose hosts are listed in `ALLOWED_HOSTS`.
+- The private research POC additionally requires the exact
+  `CLOUDFLARE_ACCESS_TEAM_DOMAIN` issuer and application-specific
+  `CLOUDFLARE_ACCESS_AUD` copied from its self-hosted Access application.
+  Django accepts only RS256 application tokens for that issuer/audience and
+  the fixed owner email; do not reuse another application's audience tag.
 - Either a provider `DATABASE_URL` PostgreSQL connection string or the explicit
   `DB_NAME`, `DB_USER`, `DB_PASSWORD`, `DB_HOST`, and `DB_PORT` values, plus
   `DB_SSLMODE`. A provider URL defaults public environments to `require` TLS;
@@ -67,7 +72,11 @@ secret `X-TreadJoy-Origin` header set by a Cloudflare Transform Rule. The rule
 must overwrite (not append to) any client-provided value, and the secret must
 remain only in the Cloudflare/Render secret stores. The generic health paths
 are the only direct-origin exemptions because Render's provider health check
-does not carry the header.
+does not carry the header. The private research POC also verifies the signed
+`Cf-Access-Jwt-Assertion` at Django using Cloudflare's rotating public keys,
+the exact team issuer, the application audience, token lifetime, token type,
+and owner email. Missing, forged, expired, or cross-application tokens fail
+closed; a signing-key retrieval outage returns a no-store 503.
 
 This is an application boundary, not evidence by itself that the origin is
 protected. Before setting it in staging or production, configure Full (strict)

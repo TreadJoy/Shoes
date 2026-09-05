@@ -53,6 +53,15 @@
     "default_decision": "deny",
     "allow_email": ["ethan@tread-joy.com"],
     "scope": "all-paths-including-admin",
+    "origin_jwt_validation": {
+      "required": true,
+      "header_name": "Cf-Access-Jwt-Assertion",
+      "issuer_env": "CLOUDFLARE_ACCESS_TEAM_DOMAIN",
+      "audience_env": "CLOUDFLARE_ACCESS_AUD",
+      "algorithms": ["RS256"],
+      "allowed_email": "ethan@tread-joy.com",
+      "health_exempt_paths": ["/health/live/", "/health/ready/"]
+    },
     "media_poc_policy": {
       "hostname": "media.research.tread-joy.com",
       "default_decision": "deny",

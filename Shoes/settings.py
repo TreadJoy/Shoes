@@ -149,6 +149,23 @@ if IS_PUBLIC_ENVIRONMENT:
 else:
     TREADJOY_ORIGIN_SHARED_SECRET = ""
 
+CLOUDFLARE_ACCESS_REQUIRED = IS_PUBLIC_ENVIRONMENT and TREADJOY_PRIVATE_POC
+if CLOUDFLARE_ACCESS_REQUIRED:
+    CLOUDFLARE_ACCESS_TEAM_DOMAIN = environment.https_origin(
+        "CLOUDFLARE_ACCESS_TEAM_DOMAIN",
+        required=True,
+        hostname_suffix="cloudflareaccess.com",
+    )
+    CLOUDFLARE_ACCESS_AUD = environment.opaque_identifier(
+        "CLOUDFLARE_ACCESS_AUD",
+        required=True,
+    )
+    CLOUDFLARE_ACCESS_ALLOWED_EMAIL = _PRIVATE_POC_OWNER_EMAIL
+else:
+    CLOUDFLARE_ACCESS_TEAM_DOMAIN = ""
+    CLOUDFLARE_ACCESS_AUD = ""
+    CLOUDFLARE_ACCESS_ALLOWED_EMAIL = ""
+
 
 INSTALLED_APPS = [
     "django.contrib.admin",

@@ -4,6 +4,7 @@ django-allauth>=65.18,<66
 holidays>=0.102,<1
 Pillow>=12.1.1,<13
 psycopg[binary]>=3.3.4,<4
+PyJWT[crypto]>=2.13,<3
 python-decouple>=3.8,<4
 resend>=2.42,<3
 stripe>=15.1,<16

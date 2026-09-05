@@ -19,6 +19,7 @@ installs only `requirements.txt`; it contains no development tools.
 | holidays | Commerce | United States business-day calculations for order operations. | `>=0.102,<1` accepts compatible pre-1.0 fixes. | github.com/vacanza/holidays / MIT |
 | Pillow | Both modes | Image metadata validation in the release-content check. | `>=12.1.1,<13` retains the current major line. | python-pillow.github.io / MIT-CMU |
 | psycopg[binary] | Both modes | PostgreSQL database adapter with reproducible binary wheels. | `>=3.3.4,<4` retains the current major line. | psycopg.org / LGPL-3.0-only, owner review required |
+| PyJWT[crypto] | Private research POC | Verifies Cloudflare Access RS256 application tokens, including signature, issuer, audience, lifetime, and owner identity. | `>=2.13,<3` starts at the 2.13 security release and retains the current major line. | pyjwt.readthedocs.io / MIT; `cryptography` extra uses Apache-2.0 OR BSD-3-Clause |
 | python-decouple | Both modes | Environment-driven configuration. | `>=3.8,<4` retains its current major line. | github.com/henriquebastos/python-decouple / MIT |
 | resend | Research jobs/webhook | Confirmation delivery, contact/segment sync, broadcast send, and signed webhook verification behind a narrow adapter. | `>=2.42,<3` retains the reviewed major line. | github.com/resendlabs/resend-python / MIT |
 | stripe | Commerce only | Hosted Checkout and verified Stripe webhook processing. | `>=15.1,<16` retains the current major line. | stripe.com / MIT |

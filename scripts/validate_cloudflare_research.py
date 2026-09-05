@@ -67,6 +67,15 @@ def validate(policy: dict) -> None:
     require(access["default_decision"] == "deny", "Access default must deny")
     require(access["allow_email"] == ["ethan@tread-joy.com"], "POC Access must allow only the owner")
     require(access["scope"] == "all-paths-including-admin", "Access must cover admin and all application paths")
+    require(access["origin_jwt_validation"] == {
+        "required": True,
+        "header_name": "Cf-Access-Jwt-Assertion",
+        "issuer_env": "CLOUDFLARE_ACCESS_TEAM_DOMAIN",
+        "audience_env": "CLOUDFLARE_ACCESS_AUD",
+        "algorithms": ["RS256"],
+        "allowed_email": "ethan@tread-joy.com",
+        "health_exempt_paths": ["/health/live/", "/health/ready/"],
+    }, "origin Access JWT validation changed")
     media_access = access["media_poc_policy"]
     require(media_access["hostname"] == hosts["media"], "media Access hostname changed")
     require(media_access["default_decision"] == "deny", "media Access default must deny")

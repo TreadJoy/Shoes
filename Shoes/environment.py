@@ -136,6 +136,60 @@ def https_origins(values: tuple[str, ...], *, allowed_hosts: tuple[str, ...]) ->
     return tuple(normalized)
 
 
+def https_origin(
+    name: str,
+    *,
+    required: bool = False,
+    default: str | None = None,
+    hostname_suffix: str | None = None,
+) -> str:
+    """Return one normalized HTTPS origin without credentials, ports, or paths."""
+    value = string(name, required=required, default=default)
+    if not value:
+        return ""
+
+    parsed = urlsplit(value)
+    try:
+        port = parsed.port
+    except ValueError:
+        _error(name, "must contain a valid HTTPS origin")
+    if (
+        parsed.scheme != "https"
+        or not parsed.hostname
+        or parsed.username
+        or parsed.password
+        or port is not None
+        or parsed.path not in ("", "/")
+        or parsed.query
+        or parsed.fragment
+    ):
+        _error(name, "must be one HTTPS origin without credentials, a port, or a path")
+
+    host = hostname(name, parsed.hostname, allow_ip_address=False)
+    if hostname_suffix and not host.endswith(f".{hostname_suffix.casefold()}"):
+        _error(name, f"hostname must end in .{hostname_suffix}")
+    return f"https://{host}"
+
+
+def opaque_identifier(
+    name: str,
+    *,
+    required: bool = False,
+    default: str | None = None,
+    minimum_length: int = 16,
+    maximum_length: int = 256,
+) -> str:
+    """Validate a non-secret provider identifier without exposing its value."""
+    value = string(name, required=required, default=default)
+    if not value:
+        return ""
+    if not minimum_length <= len(value) <= maximum_length:
+        _error(name, f"must be {minimum_length} to {maximum_length} characters")
+    if not re.fullmatch(r"[A-Za-z0-9_-]+", value):
+        _error(name, "must contain only letters, numbers, underscores, or hyphens")
+    return value
+
+
 def absolute_path(name: str, *, required: bool = True) -> Path | None:
     value = string(name, required=required)
     if not value:

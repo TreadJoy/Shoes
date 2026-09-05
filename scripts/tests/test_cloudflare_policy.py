@@ -65,6 +65,11 @@ class CloudflareResearchPolicyTests(unittest.TestCase):
         with self.assertRaises(validate_cloudflare_research.PolicyError):
             validate_cloudflare_research.validate(mutated)
 
+        mutated = copy.deepcopy(self.policy)
+        mutated["access"]["origin_jwt_validation"]["algorithms"] = ["HS256"]
+        with self.assertRaises(validate_cloudflare_research.PolicyError):
+            validate_cloudflare_research.validate(mutated)
+
     def test_probe_script_requires_fixed_hostnames_and_explicit_origin_gate(self):
         script = (
             Path(__file__).resolve().parents[2]

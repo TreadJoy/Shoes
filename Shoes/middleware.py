@@ -5,12 +5,18 @@ import hmac
 from django.conf import settings
 from django.http import HttpResponse
 
+from .cloudflare_access import (
+    AccessKeyServiceUnavailable,
+    AccessTokenInvalid,
+    verify_access_token,
+)
+
 
 _ORIGIN_HEALTH_PATHS = frozenset({"/health/live/", "/health/ready/"})
 
 
 class CloudflareOriginLockMiddleware:
-    """Reject direct-origin requests that did not cross the Cloudflare edge.
+    """Require both the edge secret and a valid private-POC Access token.
 
     Render's provider health checker reaches the service directly, so the
     generic health endpoints remain exempt. They disclose no configuration or
@@ -22,12 +28,27 @@ class CloudflareOriginLockMiddleware:
     def __init__(self, get_response):
         self.get_response = get_response
 
+    @staticmethod
+    def _error_response(body: str, status: int) -> HttpResponse:
+        response = HttpResponse(body, status=status)
+        response.headers["Cache-Control"] = "no-store"
+        return response
+
     def __call__(self, request):
         if settings.IS_PUBLIC_ENVIRONMENT and request.path not in _ORIGIN_HEALTH_PATHS:
             expected = getattr(settings, "TREADJOY_ORIGIN_SHARED_SECRET", "")
             presented = request.headers.get(self.header_name, "")
             if not expected or not hmac.compare_digest(presented, expected):
-                return HttpResponse("Forbidden", status=403)
+                return self._error_response("Forbidden", 403)
+
+            if getattr(settings, "CLOUDFLARE_ACCESS_REQUIRED", False):
+                token = request.headers.get("Cf-Access-Jwt-Assertion", "")
+                try:
+                    verify_access_token(token)
+                except AccessTokenInvalid:
+                    return self._error_response("Forbidden", 403)
+                except AccessKeyServiceUnavailable:
+                    return self._error_response("Service Unavailable", 503)
         return self.get_response(request)
 
 

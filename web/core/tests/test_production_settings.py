@@ -259,6 +259,8 @@ class PublicSettingsProcessTests(SimpleTestCase):
         environment.update(
             {
                 "TREADJOY_PRIVATE_POC": "true",
+                "CLOUDFLARE_ACCESS_TEAM_DOMAIN": "https://ci.cloudflareaccess.com",
+                "CLOUDFLARE_ACCESS_AUD": "ci_private_poc_audience_0123456789",
                 "RESEARCH_PRIVACY_NOTICE_VERSION": "0.1-draft",
                 "RESEARCH_RETENTION_POLICY_VERSION": "0.1-draft",
                 "RESEARCH_EMAIL_TRANSACTIONAL_FROM": "TreadJoy Research <ethan@tread-joy.com>",
@@ -275,6 +277,8 @@ django.setup()
 from django.conf import settings
 from django.core.management import call_command
 assert settings.TREADJOY_PRIVATE_POC is True
+assert settings.CLOUDFLARE_ACCESS_REQUIRED is True
+assert settings.CLOUDFLARE_ACCESS_ALLOWED_EMAIL == "ethan@tread-joy.com"
 assert settings.RESEARCH_EMAIL_REPLY_TO == "ethan@tread-joy.com"
 call_command("check", "--deploy")
 """,
@@ -284,6 +288,34 @@ call_command("check", "--deploy")
             0,
             msg=f"stdout:\n{result.stdout}\nstderr:\n{result.stderr}",
         )
+
+    def test_private_research_poc_requires_exact_access_application_settings(self):
+        base = self.environment_for("research")
+        base.update(
+            {
+                "TREADJOY_PRIVATE_POC": "true",
+                "CLOUDFLARE_ACCESS_TEAM_DOMAIN": "https://ci.cloudflareaccess.com",
+                "CLOUDFLARE_ACCESS_AUD": "ci_private_poc_audience_0123456789",
+                "RESEARCH_PRIVACY_NOTICE_VERSION": "0.1-draft",
+                "RESEARCH_RETENTION_POLICY_VERSION": "0.1-draft",
+                "RESEARCH_EMAIL_TRANSACTIONAL_FROM": "TreadJoy Research <ethan@tread-joy.com>",
+                "RESEARCH_EMAIL_MARKETING_FROM": "TreadJoy <ethan@tread-joy.com>",
+                "RESEARCH_EMAIL_REPLY_TO": "ethan@tread-joy.com",
+            }
+        )
+        for name in ("CLOUDFLARE_ACCESS_TEAM_DOMAIN", "CLOUDFLARE_ACCESS_AUD"):
+            with self.subTest(name=name):
+                environment = base.copy()
+                environment[name] = ""
+                self.assert_setup_fails(environment, name)
+
+        invalid_team = base.copy()
+        invalid_team["CLOUDFLARE_ACCESS_TEAM_DOMAIN"] = "https://access.example.com"
+        self.assert_setup_fails(invalid_team, "CLOUDFLARE_ACCESS_TEAM_DOMAIN")
+
+        invalid_audience = base.copy()
+        invalid_audience["CLOUDFLARE_ACCESS_AUD"] = "contains spaces"
+        self.assert_setup_fails(invalid_audience, "CLOUDFLARE_ACCESS_AUD")
 
     def test_render_database_url_supplies_postgresql_connection_values(self):
         environment = self.environment_for("research")

@@ -1,12 +1,12 @@
 # Dependency License Inventory
 
-Reverified on 2026-09-03 after A2.3 added Gunicorn 26.2.0 and regenerated
-both CPython 3.12 hash locks. An isolated hash-locked installation reports
-Gunicorn's package metadata as MIT. The prior A2.2 inventory reports the
-official Resend 2.42.0 SDK as MIT. This inventory is factual package metadata,
-not a legal conclusion. No added package reported an unknown or custom
-license. `psycopg` and `psycopg-binary` report `LGPL-3.0-only`; owner review
-remains required before A0.3 is accepted.
+Reverified on 2026-09-05 after adding PyJWT 2.13.0 with its cryptography extra
+for Cloudflare Access token validation and regenerating both CPython 3.12 hash
+locks. The resolved package metadata reports MIT for PyJWT, MIT-0 for cffi,
+Apache-2.0 OR BSD-3-Clause for cryptography, and BSD-3-Clause for pycparser.
+This inventory is factual package metadata, not a legal conclusion. No added
+package reported an unknown or custom license. `psycopg` and `psycopg-binary`
+report `LGPL-3.0-only`; owner review remains required before A0.3 is accepted.
 
 ## Runtime Lock
 
@@ -17,7 +17,9 @@ remains required before A0.3 is accepted.
 | boto3              | 1.43.81     | Apache-2.0                           | https://github.com/boto/boto3                                        |
 | botocore           | 1.43.81     | Apache-2.0                           | https://github.com/boto/botocore                                     |
 | certifi            | 2026.7.22   | Mozilla Public License 2.0 (MPL 2.0) | https://github.com/certifi/python-certifi                            |
+| cffi               | 2.1.1       | MIT-0                                | https://cffi.readthedocs.io/en/latest/whatsnew.html                  |
 | charset-normalizer | 3.5.1       | MIT                                  | https://github.com/jawah/charset_normalizer/blob/master/CHANGELOG.md |
+| cryptography       | 50.0.1      | Apache-2.0 OR BSD-3-Clause           | https://github.com/pyca/cryptography                                 |
 | django-allauth     | 65.19.1     | MIT License                          | https://allauth.org                                                  |
 | django-storages    | 1.14.6      | BSD License                          | https://github.com/jschneier/django-storages                         |
 | gunicorn           | 26.2.0      | MIT                                  | https://gunicorn.org                                                 |
@@ -27,6 +29,8 @@ remains required before A0.3 is accepted.
 | pillow             | 12.3.0      | MIT-CMU                              | https://python-pillow.github.io                                      |
 | psycopg            | 3.3.4       | LGPL-3.0-only                        | https://psycopg.org/                                                 |
 | psycopg-binary     | 3.3.4       | LGPL-3.0-only                        | https://psycopg.org/                                                 |
+| pycparser          | 3.0         | BSD-3-Clause                         | https://github.com/eliben/pycparser                                  |
+| PyJWT              | 2.13.0      | MIT                                  | https://github.com/jpadilla/pyjwt                                    |
 | python-dateutil    | 2.9.0.post0 | Apache Software License; BSD License | https://github.com/dateutil/dateutil                                 |
 | python-decouple    | 3.8         | MIT License                          | http://github.com/henriquebastos/python-decouple/                    |
 | requests           | 2.34.2      | Apache Software License              | https://github.com/psf/requests                                      |
@@ -52,9 +56,11 @@ remains required before A0.3 is accepted.
 | botocore                | 1.43.81     | Apache-2.0                           | https://github.com/boto/botocore                                     |
 | build                   | 1.5.0       | MIT                                  | https://build.pypa.io                                                |
 | certifi                 | 2026.7.22   | Mozilla Public License 2.0 (MPL 2.0) | https://github.com/certifi/python-certifi                            |
+| cffi                    | 2.1.1       | MIT-0                                | https://cffi.readthedocs.io/en/latest/whatsnew.html                  |
 | cfgv                    | 3.5.0       | MIT                                  | https://github.com/asottile/cfgv                                     |
 | charset-normalizer      | 3.5.1       | MIT                                  | https://github.com/jawah/charset_normalizer/blob/master/CHANGELOG.md |
 | click                   | 8.4.2       | BSD-3-Clause                         | https://github.com/pallets/click/                                    |
+| cryptography            | 50.0.1      | Apache-2.0 OR BSD-3-Clause           | https://github.com/pyca/cryptography                                 |
 | cyclonedx-python-lib    | 11.12.0     | Apache Software License              | https://github.com/CycloneDX/cyclonedx-python-lib/#readme            |
 | defusedxml              | 0.7.1       | Python Software Foundation License   | https://github.com/tiran/defusedxml                                  |
 | distlib                 | 0.4.3       | Python Software Foundation License   | https://github.com/pypa/distlib                                      |
@@ -86,6 +92,8 @@ remains required before A0.3 is accepted.
 | psycopg                 | 3.3.4       | LGPL-3.0-only                        | https://psycopg.org/                                                 |
 | psycopg-binary          | 3.3.4       | LGPL-3.0-only                        | https://psycopg.org/                                                 |
 | py-serializable         | 2.1.0       | Apache Software License              | https://github.com/madpah/serializable#readme                        |
+| pycparser               | 3.0         | BSD-3-Clause                         | https://github.com/eliben/pycparser                                  |
+| PyJWT                   | 2.13.0      | MIT                                  | https://github.com/jpadilla/pyjwt                                    |
 | pyparsing               | 3.3.2       | MIT                                  | https://github.com/pyparsing/pyparsing/                              |
 | pyproject_hooks         | 1.2.0       | MIT License                          | https://github.com/pypa/pyproject-hooks                              |
 | python-dateutil         | 2.9.0.post0 | Apache Software License; BSD License | https://github.com/dateutil/dateutil                                 |
