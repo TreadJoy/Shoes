@@ -1382,3 +1382,15 @@
 - Impact: the private hostname remained Access-protected and the Render
   subdomain remained disabled. No access policy, origin secret, credential, or
   database permission was weakened.
+
+## 2026-09-05 — Origin-lock value appeared in dashboard inspection output
+
+- While locating the active request-header transform rule, the dashboard's
+  accessible row text included the complete origin-lock shared value and the
+  inspection result was emitted to the task transcript.
+- Containment: stopped the live configuration workflow immediately, did not
+  reuse or repeat the value, and requested action-time owner approval to rotate
+  it in both Render and Cloudflare before resuming verification.
+- Impact: the value must be treated as exposed until both provider settings use
+  a newly generated replacement. Access remains enabled, the Render-provided
+  subdomain remains disabled, and no database credential was involved.

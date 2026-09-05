@@ -43,7 +43,12 @@ class CloudflareOriginLockMiddleware:
             if not expected or not hmac.compare_digest(presented, expected):
                 _security_logger.warning(
                     "cloudflare origin request denied",
-                    extra={"event": "cloudflare.origin_denied"},
+                    extra={
+                        "event": "cloudflare.origin_denied",
+                        "origin_header_present": bool(presented),
+                        "origin_header_length": len(presented),
+                        "origin_secret_configured": bool(expected),
+                    },
                 )
                 return self._error_response("Forbidden", 403)
 
