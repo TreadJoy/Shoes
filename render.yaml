@@ -37,7 +37,10 @@ services:
       - key: DJANGO_DEBUG
         value: "false"
       - key: SECRET_KEY
-        generateValue: true
+        # Render's generated value did not satisfy the application's
+        # production-strength validation. Set and rotate this in the service
+        # environment; never commit the value here.
+        sync: false
       - key: ALLOWED_HOSTS
         sync: false
       - key: CSRF_TRUSTED_ORIGINS
@@ -53,7 +56,9 @@ services:
       - key: SERVER_EMAIL
         value: ethan@tread-joy.com
       - key: RESEARCH_IDENTITY_HMAC_KEY
-        generateValue: true
+        # Keep the HMAC key service-managed so Blueprint deploys do not
+        # replace it with an undersized generated value.
+        sync: false
       - key: RESEARCH_EMAIL_TRANSACTIONAL_FROM
         value: TreadJoy Research <ethan@tread-joy.com>
       - key: RESEARCH_EMAIL_MARKETING_FROM
