@@ -1232,3 +1232,14 @@
   and dependency audit passed.
 - Impact: disposable local test data and dependency caches only; no provider,
   DNS, Access policy, public route, or live deployment was changed.
+
+## 2026-09-05 — Local GitHub CLI status check was unavailable
+
+- After pushing the Access-verification commit, the attempted read-only
+  `gh run list` check failed because GitHub CLI is not installed in this
+  workspace.
+- Resolution: verified the clean worktree and pushed commit identifier with
+  Git itself. CI remains the remote deployment gate; no replacement CLI or
+  credentials were installed merely to inspect it.
+- Impact: none; the failed command did not reach GitHub or change local or
+  provider state.
