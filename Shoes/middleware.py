@@ -1,6 +1,7 @@
 """Application-owned security and origin-boundary middleware."""
 
 import hmac
+import logging
 
 from django.conf import settings
 from django.http import HttpResponse
@@ -13,6 +14,7 @@ from .cloudflare_access import (
 
 
 _ORIGIN_HEALTH_PATHS = frozenset({"/health/live/", "/health/ready/"})
+_security_logger = logging.getLogger("Shoes.security")
 
 
 class CloudflareOriginLockMiddleware:
@@ -39,6 +41,10 @@ class CloudflareOriginLockMiddleware:
             expected = getattr(settings, "TREADJOY_ORIGIN_SHARED_SECRET", "")
             presented = request.headers.get(self.header_name, "")
             if not expected or not hmac.compare_digest(presented, expected):
+                _security_logger.warning(
+                    "cloudflare origin request denied",
+                    extra={"event": "cloudflare.origin_denied"},
+                )
                 return self._error_response("Forbidden", 403)
 
             if getattr(settings, "CLOUDFLARE_ACCESS_REQUIRED", False):
@@ -46,8 +52,16 @@ class CloudflareOriginLockMiddleware:
                 try:
                     verify_access_token(token)
                 except AccessTokenInvalid:
+                    _security_logger.warning(
+                        "cloudflare access token denied",
+                        extra={"event": "cloudflare.access_token_denied"},
+                    )
                     return self._error_response("Forbidden", 403)
                 except AccessKeyServiceUnavailable:
+                    _security_logger.error(
+                        "cloudflare access signing keys unavailable",
+                        extra={"event": "cloudflare.access_keys_unavailable"},
+                    )
                     return self._error_response("Service Unavailable", 503)
         return self.get_response(request)
 

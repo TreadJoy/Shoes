@@ -140,17 +140,20 @@ class CloudflareAccessMiddlewareTests(SimpleTestCase):
             return {}
 
         verify_token.side_effect = reject_missing_token
-        missing_origin = self.middleware(
-            self.factory.get("/", HTTP_CF_ACCESS_JWT_ASSERTION="signed-token")
-        )
-        missing_token = self.middleware(
-            self.factory.get("/", HTTP_X_TREADJOY_ORIGIN="origin-secret")
-        )
+        with self.assertLogs("Shoes.security", level="WARNING") as captured:
+            missing_origin = self.middleware(
+                self.factory.get("/", HTTP_CF_ACCESS_JWT_ASSERTION="signed-token")
+            )
+            missing_token = self.middleware(
+                self.factory.get("/", HTTP_X_TREADJOY_ORIGIN="origin-secret")
+            )
 
         self.assertEqual(missing_origin.status_code, 403)
         self.assertEqual(missing_token.status_code, 403)
         self.assertEqual(missing_origin.headers["Cache-Control"], "no-store")
         self.assertEqual(missing_token.headers["Cache-Control"], "no-store")
+        self.assertIn("cloudflare origin request denied", captured.output[0])
+        self.assertIn("cloudflare access token denied", captured.output[1])
         verify_token.assert_called_once_with("")
 
     @patch("Shoes.middleware.verify_access_token")
@@ -165,19 +168,23 @@ class CloudflareAccessMiddlewareTests(SimpleTestCase):
     def test_invalid_token_is_forbidden(self, verify_token):
         verify_token.side_effect = AccessTokenInvalid
 
-        response = self.middleware(self.request())
+        with self.assertLogs("Shoes.security", level="WARNING") as captured:
+            response = self.middleware(self.request())
 
         self.assertEqual(response.status_code, 403)
         self.assertEqual(response.headers["Cache-Control"], "no-store")
+        self.assertIn("cloudflare access token denied", captured.output[0])
 
     @patch("Shoes.middleware.verify_access_token")
     def test_key_service_outage_is_unavailable(self, verify_token):
         verify_token.side_effect = AccessKeyServiceUnavailable
 
-        response = self.middleware(self.request())
+        with self.assertLogs("Shoes.security", level="ERROR") as captured:
+            response = self.middleware(self.request())
 
         self.assertEqual(response.status_code, 503)
         self.assertEqual(response.headers["Cache-Control"], "no-store")
+        self.assertIn("cloudflare access signing keys unavailable", captured.output[0])
 
     @patch("Shoes.middleware.verify_access_token")
     def test_generic_health_paths_remain_directly_available(self, verify_token):
