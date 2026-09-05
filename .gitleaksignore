@@ -1,0 +1,4 @@
+# Synthetic Cloudflare Access audience fixtures added in 1c4e69e. These are
+# fixed test strings, not provider-issued identifiers or credentials.
+1c4e69e80e03727dd3aaf627164d0fc3079212df:web/core/tests/test_production_settings.py:generic-api-key:263
+1c4e69e80e03727dd3aaf627164d0fc3079212df:web/core/tests/test_production_settings.py:generic-api-key:298

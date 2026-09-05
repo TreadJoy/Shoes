@@ -1363,3 +1363,22 @@
 - Impact: the holding page is deployed and verified, but the inherited research
   CI and full-history secret-scan failures remain unresolved repository risks.
   No API token, binding, DNS rule, account permission, or billing state changed.
+
+## 2026-09-05 — Access origin denial lacked a safe diagnostic category
+
+- The first owner OTP authentication passed Cloudflare Access but received the
+  middleware's intentionally generic `403 Forbidden` response. Existing logs
+  did not distinguish an origin-secret mismatch from an invalid application
+  token, so changing provider policy speculatively would have weakened the
+  evidence chain.
+- Resolution: added categorical `Shoes.security` events for origin denial,
+  Access-token denial, and signing-key unavailability. The events contain no
+  email, token, secret, provider identifier, or request data, and the focused
+  middleware/settings suite passed.
+- The diagnostic commit's first full-history Gitleaks run failed on two
+  synthetic Access audience fixtures introduced in `1c4e69e`. Added only the
+  two exact historical fingerprints to `.gitleaksignore`; no detection rule or
+  path was broadly excluded.
+- Impact: the private hostname remained Access-protected and the Render
+  subdomain remained disabled. No access policy, origin secret, credential, or
+  database permission was weakened.
