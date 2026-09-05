@@ -197,10 +197,14 @@ public deployment.
   568x320 without horizontal overflow or decorative overlap. It intentionally
   permits vertical document scrolling at exceptionally short heights so the
   recovery link cannot be clipped.
-- Local HTTP checks returned `200` for `/` and branded `404` for an unknown
-  path with the configured CSP, HSTS, noindex, permissions, framing, referrer,
-  MIME-sniffing, and cache headers. Public Worker deployment and post-deploy
-  edge verification remain separate evidence.
+- Cloudflare's main-branch Worker build for commit `69d8112` succeeded and
+  deployed version `e4d8d7df` to 100% of production traffic; preceding version
+  `bdf569e2` remains available for rollback. The deployed responsive matrix
+  repeated the local no-overflow, exact-centering, white-canvas, and stamp-removal
+  results. The apex returned `200`, the branded unknown path returned `404`, and
+  HTTP apex plus HTTPS `www` preserved the test path and query while redirecting
+  once to HTTPS apex. All checked responses retained the configured CSP, staged
+  HSTS, noindex, permissions, framing, referrer, MIME-sniffing, and cache headers.
 
 ## Deployment gate
 
