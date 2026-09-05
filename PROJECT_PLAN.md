@@ -379,7 +379,7 @@ P1 storefront, email, accessibility, SEO, performance, monitoring, and admin-usa
   owner cost/recovery decision (2026-09-04).
 - **Objective:** Deploy research mode through Cloudflare to a managed Django/PostgreSQL origin with repeatable release and recovery.
 - **Why it matters:** The research site is the first public validation surface and the production architecture rehearsal for commerce.
-- **Current state:** `tread-joy.com` has been purchased through Cloudflare as the intended base domain. The repository now contains a release workflow, Render staging Blueprint, WSGI/build/start/migration/job/backup scripts, rollback adapter, and a review-gated Cloudflare/R2 policy. A disposable Free Render Postgres 17 database is provisioned in Ohio with external access blocked; no research web service, hostname allocation, DNS/TLS, R2, provider backup, live monitoring, roles, migrations, or public deployment is configured. Repository health/observability foundations are documented under A1.3.
+- **Current state:** `tread-joy.com` has been purchased through Cloudflare as the intended base domain. The repository now contains a release workflow, Render staging Blueprint, WSGI/build/start/migration/job/backup scripts, rollback adapter, and a review-gated Cloudflare/R2 policy. A disposable Free Render Postgres 17 database is provisioned in Ohio with external access blocked, three least-privilege roles are verified, and the owner-approved Render research origin is live on the recorded release commit with migrations applied and provider readiness returning HTTP 200. Cloudflare Access/edge wiring, direct-origin proof, durable recovery, live monitoring, and public launch remain open. Repository health/observability foundations are documented under A1.3.
 - **Required work:** Select an approved research hostname plus managed origin/vendor/region; provision a separate research database and least-privilege roles; configure Cloudflare DNS, Full strict TLS, WAF/rate rules, origin lock-down, static/media caching, and an R2 custom domain; configure secrets, email, logs, health checks, migrations, backups/PITR, restore and rollback; publish approved research privacy/terms/accessibility/contact content and basic canonical/robots/social metadata; complete keyboard, WCAG 2.2 AA, responsive, and performance launch checks; deploy one immutable release artifact and run launch/rollback rehearsals.
 - **Dependencies:** A0.1–A0.3, A1.1–A1.4, A2.1, and A2.2.
 - **Affected areas:** Hosting/IaC or deployment config, Cloudflare, R2/storage, database, CI/CD, settings, operations docs.
@@ -439,6 +439,19 @@ P1 storefront, email, accessibility, SEO, performance, monitoring, and admin-usa
   provisioned and verified without retaining their generated passwords. No web
   service, application secret, migration, email, scheduler, DNS, R2, or public
   deployment was created.
+- **Implementation evidence (2026-09-04):** The owner-approved Render
+  research web service was provisioned on the Free web tier with the provider
+  subdomain disabled and `research.tread-joy.com` reserved as the intended
+  origin hostname. The runtime and migrator credentials remain separate; the
+  database-level public allowlist is empty; and the initial migrations were
+  applied through the temporary, owner-IP-restricted TLS connection before
+  the rule was removed. Commit `ba73622770c8242c00edac7baef35b76c7e8b417`
+  deployed successfully after the service-managed `ALLOWED_HOSTS` value was
+  corrected to include Render's health-check hostname. `check --deploy` and
+  `/health/ready/` passed, while a direct root probe remained HTTP 403 under
+  the origin-lock middleware. Cloudflare Access, custom-domain routing,
+  direct-origin/forged-header verification, backups, monitoring, and public
+  research exposure remain intentionally pending.
 - **Implementation evidence (2026-09-03):** A2.3 Plan 6 repository work is
   recorded in `deploy/cloudflare/research/policy.json`,
   `scripts/validate_cloudflare_research.py`,
