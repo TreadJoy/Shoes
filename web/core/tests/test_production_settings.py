@@ -273,8 +273,10 @@ class PublicSettingsProcessTests(SimpleTestCase):
 import django
 django.setup()
 from django.conf import settings
+from django.core.management import call_command
 assert settings.TREADJOY_PRIVATE_POC is True
 assert settings.RESEARCH_EMAIL_REPLY_TO == "ethan@tread-joy.com"
+call_command("check", "--deploy")
 """,
         )
         self.assertEqual(

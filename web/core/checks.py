@@ -25,11 +25,20 @@ def check_public_settings_contract(app_configs, **kwargs):
         )
     if settings.IS_COMMERCE_MODE and settings.EMAIL_BACKEND != "django.core.mail.backends.smtp.EmailBackend":
         errors.append(Error("Public commerce settings must use SMTP email.", id="treadjoy.E004"))
-    if not settings.IS_COMMERCE_MODE and settings.RESEARCH_EMAIL_PROVIDER != "resend":
+    if (
+        not settings.IS_COMMERCE_MODE
+        and not settings.TREADJOY_PRIVATE_POC
+        and settings.RESEARCH_EMAIL_PROVIDER != "resend"
+    ):
         errors.append(Error("Public research settings must use Resend.", id="treadjoy.E012"))
-    if settings.STORAGES["default"]["BACKEND"] != "storages.backends.s3.S3Storage":
+    if (
+        not settings.TREADJOY_PRIVATE_POC
+        and settings.STORAGES["default"]["BACKEND"] != "storages.backends.s3.S3Storage"
+    ):
         errors.append(Error("Public TreadJoy media must use the R2 S3 backend.", id="treadjoy.E005"))
     if (
+        not settings.TREADJOY_PRIVATE_POC
+        and
         settings.STORAGES["staticfiles"]["BACKEND"]
         != "django.contrib.staticfiles.storage.ManifestStaticFilesStorage"
     ):
