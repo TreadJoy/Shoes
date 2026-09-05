@@ -1,5 +1,31 @@
 # Verification Limitations
 
+## 2026-09-04 — Provider cost review exposed a lowest-tier capability mismatch
+
+- The initial private-preview plan carried forward the owner's lowest-tier
+  choice without proving that the free Cloudflare tier could express the exact
+  A2.2 waitlist/survey rules or that free Render infrastructure could satisfy
+  the recovery and scheduler requirements.
+- Resolution: checked current official capability matrices and pricing before
+  any provisioning. Cloudflare Free/Pro cannot express the required
+  host/method/source-IP 600-second rules, Render Free has no backup/PITR and
+  expires after 30 days, and Free web services have no shell/one-off jobs or
+  outbound SMTP. Recorded the compatible paid-path estimate and left Plan 8
+  stopped pending an owner decision.
+- Impact: documentation and gate status only. No provider, credential, DNS,
+  R2, email, paid service, or deployment state changed.
+
+## 2026-09-04 — Plan 7 focused test initially inherited unavailable PostgreSQL
+
+- The first documentation-gate verification ran the focused Django test with
+  the repository's configured PostgreSQL profile. No local PostgreSQL listener
+  was available, so Django failed while creating the test database.
+- Resolution: reran the same focused metadata tests with the documented
+  disposable SQLite local profile. All eight tests passed; the Cloudflare
+  policy validator and whitespace check also passed.
+- Impact: local environment failure only; no database, provider, credential,
+  or deployment state was changed.
+
 ## 2026-09-04 — Plan 6 rehearsal used the wrong local CLI option on its first attempt
 
 - The first rehearsal invocation passed `--python-bin`, but the script's

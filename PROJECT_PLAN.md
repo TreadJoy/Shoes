@@ -374,8 +374,9 @@ P1 storefront, email, accessibility, SEO, performance, monitoring, and admin-usa
 ### A2.3 — Provision, rehearse, and launch the research deployment
 
 - **Priority / status:** P0 — In progress; the follow-on private-preview
-  development Plans 1–6 are complete locally, while Plans 7–8, provider
-  staging, and public launch remain blocked (2026-09-04).
+  development Plans 1–7 are complete as repository and readiness-gate work,
+  while Plan 8, provider staging, and public launch remain blocked pending the
+  owner cost/recovery decision (2026-09-04).
 - **Objective:** Deploy research mode through Cloudflare to a managed Django/PostgreSQL origin with repeatable release and recovery.
 - **Why it matters:** The research site is the first public validation surface and the production architecture rehearsal for commerce.
 - **Current state:** `tread-joy.com` has been purchased through Cloudflare as the intended base domain. The repository now contains a release workflow, Render staging Blueprint, WSGI/build/start/migration/job/backup scripts, rollback adapter, and a review-gated Cloudflare/R2 policy. A disposable Free Render Postgres 17 database is provisioned in Ohio with external access blocked; no research web service, hostname allocation, DNS/TLS, R2, provider backup, live monitoring, roles, migrations, or public deployment is configured. Repository health/observability foundations are documented under A1.3.
@@ -467,6 +468,23 @@ P1 storefront, email, accessibility, SEO, performance, monitoring, and admin-usa
   checks passed. No Cloudflare account, DNS, TLS, Access, WAF, R2, credential,
   cache, or staging state was changed; live edge and provider evidence remain
   open.
+- **Implementation evidence (2026-09-04):** Follow-on Private Preview Plan 7
+  is recorded in `docs/a2.3-provider-cost-gate.md`. Current official provider
+  capability and pricing were reconciled against the owner-approved lowest-tier
+  POC, the RTO ≤1 hour/RPO ≤15 minutes/35-day recovery contract, and the exact
+  A2.2 edge rules. Render Free remains suitable only for synthetic owner tests:
+  its database expires after 30 days with no backups/PITR, its web service has
+  no shell or one-off jobs and cannot send outbound SMTP, and its paid recovery
+  windows still require a separately retained 35-day export. Cloudflare
+  Free/Pro cannot express the required two 600-second host/method/source-IP
+  rules; Business is the lowest matching network tier. Resend Free, R2's blank
+  standard allowance, and owner-only Cloudflare Access remain cost-compatible
+  with a disposable preview. The planning baseline for the compatible paid path
+  is approximately `$213/month` on annual billing or `$263/month` monthly,
+  before usage and external 35-day exports; the exact Render dashboard charge
+  must be captured before purchase. No provider, credential, DNS, R2, email,
+  paid service, or deployment state changed. Plan 8 remains STOP pending the
+  owner's choice to defer the incompatible gates or approve the paid path.
 - **Implementation evidence (2026-09-02):** Phase 1 of the separately approved
   temporary holding-page plan is recorded in
   `docs/cloudflare-coming-soon.md`. The asset-only `treadjoy-coming-soon`
