@@ -46,8 +46,9 @@ test("the holding page contains only the approved visible copy", async () => {
   const html = await text("public/index.html");
   assert.equal(
     visibleText(html),
-    "TreadJoy Coming Soon We’re building TreadJoy. Check back soon.",
+    "Coming Soon We’re building TreadJoy. Check back soon.",
   );
+  assert.doesNotMatch(html, /class="brand"/);
   assert.match(html, /<title>TreadJoy \| Coming Soon<\/title>/);
   assert.match(html, /<link rel="canonical" href="https:\/\/tread-joy\.com\/">/);
   assert.match(html, /<meta name="robots" content="noindex, nofollow, noarchive">/);
@@ -60,6 +61,7 @@ test("the holding page contains only the approved visible copy", async () => {
 test("the custom 404 is distinct, branded, and locally navigable", async () => {
   const html = await text("public/404.html");
   assert.match(html, /<title>Page Not Found \| TreadJoy<\/title>/);
+  assert.match(html, /<p class="brand">TreadJoy<\/p>/);
   assert.match(html, /<h1 id="page-title">Page Not Found<\/h1>/);
   assert.match(html, /<a class="home-link" href="\/">Return Home<\/a>/);
   assert.match(html, /<meta name="robots" content="noindex, nofollow, noarchive">/);
@@ -72,6 +74,10 @@ test("the stylesheet uses approved colors and no remote resources or motion", as
     assert.match(css, new RegExp(color, "i"));
   }
   assert.doesNotMatch(css, /@import|url\s*\(|animation(?:-name)?\s*:|transition\s*:/i);
+  assert.match(css, /--color-page:\s*#fff/i);
+  assert.match(css, /block-size:\s*100dvh/i);
+  assert.match(css, /letter-spacing:\s*-0\.06em/i);
+  assert.match(css, /letter-spacing:\s*0\.015em/i);
   assert.match(css, /@media \(prefers-reduced-motion: reduce\)/);
   assert.match(css, /:focus-visible/);
 });

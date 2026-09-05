@@ -178,6 +178,34 @@ public deployment.
   upgrade, R2 subscription, analytics product, or other billable feature was
   enabled.
 
+### Holding-page responsive refresh — 2026-09-05
+
+- The public holding-page source now uses a white outer canvas, a height-aware
+  dynamic-viewport frame, centered copy, slightly looser letter spacing, and
+  two CSS-only pixel-tread corner accents in the existing sky, gold, and ink
+  palette. The upper-left TreadJoy stamp was removed from the holding page and
+  retained on the custom 404.
+- All nine Node tests and the Wrangler 4.128.0 deployment dry run passed. The
+  dry run read the same five static assets, reported no bindings, and introduced
+  no JavaScript, imagery, remote resource, form, cookie, storage, or secret.
+- Browser checks passed at 320x568, 390x844, 568x320, 720x450, 800x600,
+  1024x768, 1280x720, 1440x900, 1536x864, and 1920x1080 CSS pixels. At every
+  size the holding page matched the viewport in both axes, the message center
+  matched the frame center, and all copy remained inside the frame. The 720x450
+  case provides the documented 200% reflow approximation.
+- The custom 404 retained its visible brand and recovery link at 320x568 and
+  568x320 without horizontal overflow or decorative overlap. It intentionally
+  permits vertical document scrolling at exceptionally short heights so the
+  recovery link cannot be clipped.
+- Cloudflare's main-branch Worker build for commit `69d8112` succeeded and
+  deployed version `e4d8d7df` to 100% of production traffic; preceding version
+  `bdf569e2` remains available for rollback. The deployed responsive matrix
+  repeated the local no-overflow, exact-centering, white-canvas, and stamp-removal
+  results. The apex returned `200`, the branded unknown path returned `404`, and
+  HTTP apex plus HTTPS `www` preserved the test path and query while redirecting
+  once to HTTPS apex. All checked responses retained the configured CSP, staged
+  HSTS, noindex, permissions, framing, referrer, MIME-sniffing, and cache headers.
+
 ## Deployment gate
 
 Do not deploy from an unreviewed local working tree. Phase 2 must connect

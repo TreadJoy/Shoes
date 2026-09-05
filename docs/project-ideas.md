@@ -23,6 +23,16 @@ planning list, not evidence that an item is complete or approved for release.
 | Not started | Take brand and product photos | Plan the shot list, subjects, location, styling, usage rights, and required product details. |
 | Not started | Learn CAD and begin work on the product | Define a learning milestone, choose the CAD workflow, and document the first product-development deliverable. |
 
+## Subscriptions and services
+
+| Status | Service | Notes / next checkpoint |
+| --- | --- | --- |
+| Not started | GitHub Enterprise | Confirm the required plan, seats, and billing owner before subscribing. |
+| Not started | Cloudflare | Confirm the required domain, DNS, security, and media services and keep account credentials outside the repository. |
+| Not started | Render | Confirm the required hosting services, environment, database, and billing plan. |
+| Not started | Additional custom email addresses | Decide which addresses are needed, who should receive them, and which email provider will host them. |
+| Not started | Codex | Confirm the appropriate plan and account/billing owner for ongoing project work. |
+
 ## Completed work
 
 Move finished items here with the completion date, a short result, and links to

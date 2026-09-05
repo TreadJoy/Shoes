@@ -209,7 +209,7 @@ def main() -> int:
     all_local_checks_passed = all(item["status"] == "passed" for item in results)
     stop_reasons = [
         "Private POC content intentionally leaves media and social URLs blocked.",
-        "Render and Cloudflare staging resources, credentials, and live evidence are absent.",
+        "A private Render POC exists, but current-release promotion and Cloudflare research edge wiring/live evidence remain pending.",
         "PostgreSQL isolated restore and measured RTO/RPO evidence are absent.",
         "Owner launch acceptance has not been recorded.",
     ]

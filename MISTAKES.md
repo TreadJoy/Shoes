@@ -1270,3 +1270,96 @@
   Cloudflare-policy, and whitespace checks passed.
 - Impact: no application, provider, credential, or persistent database state
   was changed; only disposable local databases were created.
+
+## 2026-09-05 — Final documentation verification first used the system interpreter
+
+- The first local `manage.py check` invocation used `/opt/anaconda3/bin/python`
+  (Django 6.0), while the repository's locked environment is `.venv` with
+  Django 5.2.17. Startup therefore failed on the removed `CheckConstraint`
+  `check=` argument before any application checks ran.
+- Resolution: reran the check, migration-drift check, compilation, and focused
+  metadata/research rehearsal tests with `.venv/bin/python` and explicit local
+  research settings. All passed; the SQLite run emitted only expected comments
+  unsupported warnings.
+- A local commit attempt for the documentation corrections was denied because
+  this workspace exposes `.git` read-only. The corrections remain as a clean,
+  reviewable working-tree diff; no push or remote mutation was attempted.
+- Impact: no application, provider, credential, or database state changed.
+
+## 2026-09-05 — Holding-page verification needed the bundled Node boundary
+
+- The first verification command assumed `npm` and `npx` were on the shell
+  path; neither executable was available. A stale local Wrangler shim then
+  referenced a missing package, and the first downloaded CLI invocation could
+  not locate Node. The first sandboxed Wrangler and local `curl` checks also
+  could not write Wrangler diagnostics or reach the separately hosted preview.
+- Resolution: ran the nine package tests with the bundled pinned Node 24.19.0
+  executable, downloaded the repository-pinned Wrangler 4.128.0 package, and
+  ran Wrangler and the local HTTP probes through their approved boundaries.
+  The tests, deployment dry run, browser matrix, and HTTP header checks passed.
+- Impact: only package-manager caches, Wrangler diagnostic logs, and a
+  disposable local preview were used. No credential, DNS record, Worker
+  binding, public route, or deployed Worker version changed during these
+  failed attempts.
+
+## 2026-09-05 — Holding-page package runner was unavailable in the shell
+
+- The existing uncommitted holding-page visual revision could not be run with
+  its declared `npm test` command because this workspace shell has neither npm
+  nor a Node executable available from the project directory.
+- Resolution: preserved the pre-existing revision, used the bundled browser
+  runtime for a read-only contract check of its HTML/CSS/security invariants,
+  and left the full Node test as a follow-up for a Node 24 environment.
+- Impact: no asset, deployment, Cloudflare, credential, or remote state was
+  changed by the failed command.
+
+## 2026-09-05 — Rehearsal manifest retained a stale provider-absence reason
+
+- The current research rehearsal still described Render staging resources and
+  live evidence as absent, although the owner-approved private Render POC and
+  its database are provisioned.
+- Resolution: changed the STOP reason to distinguish the existing private POC
+  from the still-pending current-release promotion, Cloudflare edge wiring, and
+  public evidence. A fresh rehearsal passed all local checks and recorded the
+  corrected reason while retaining `launch_decision: STOP`.
+- Impact: manifest wording only; no provider, credential, database, DNS, R2,
+  or deployment state changed.
+
+## 2026-09-05 — Holding-page tests were rerun through the bundled Node runtime
+
+- The shell still lacks `npm` and a project-local Node executable, so the
+  package script could not be invoked directly.
+- Resolution: used the bundled `node:test` runner through the Computer Use
+  runtime against the same test file. All nine holding-page tests passed;
+  Wrangler dry-run remains provider-tooling evidence from the existing local
+  record and was not re-run here.
+- Impact: read-only test execution only; no Worker, Cloudflare, or asset state
+  changed.
+
+## 2026-09-05 — Full-page browser captures were rejected as scaled artifacts
+
+- The first live holding-page and 404 full-page screenshots were visually
+  scaled to roughly half the CSS layout even though DOM measurements were
+  correct, so they were not suitable as audit evidence.
+- Resolution: rejected those files, captured normal viewport screenshots at
+  desktop and 390px mobile sizes, inspected each saved image, and retained
+  only the accepted captures in `/private/tmp/treadjoy-visual-audit-2026-09-05`.
+- Impact: read-only screenshots only; no website or external state changed.
+
+## 2026-09-05 — Holding-page release inherited failing repository checks
+
+- The approved release push bypassed four expected branch checks, and the
+  GitHub connector could not read the private commit status. Wrangler also
+  could not list account deployments without introducing an API token, the
+  first timed browser wait expired, and the first redirect probes omitted
+  shell quoting around query strings.
+- Resolution: inspected the existing signed-in Cloudflare and GitHub dashboards
+  without creating credentials, then reran the quoted public probes. Cloudflare's
+  package build succeeded and deployed the reviewed version to 100% traffic.
+  GitHub's commerce PostgreSQL and dependency-audit jobs passed; the research
+  PostgreSQL job reproduced the already-recorded nullable outer-join lock error,
+  and Gitleaks reported the same two full-history findings as the preceding
+  commit. No secret values were opened or reproduced.
+- Impact: the holding page is deployed and verified, but the inherited research
+  CI and full-history secret-scan failures remain unresolved repository risks.
+  No API token, binding, DNS rule, account permission, or billing state changed.

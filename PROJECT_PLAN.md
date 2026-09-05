@@ -1,7 +1,7 @@
 # TreadJoy Production Roadmap
 
-- Last repository audit: 2026-08-30
-- Audited base commit: 0e8a0dd1487e9f7a15b75af91c9dfc74a221510c
+- Last repository audit: 2026-09-05
+- Audited base commit: f7bd463f1e0cd5eb32140074b10969d0859d2482 (local; the worktree also contains uncommitted audit/holding-page changes; hosted CI and origin/main still require owner-authorized publication)
 - Document purpose: living assessment, decision record, and dependency-ordered path from the current repository to research launch and then commerce launch.
 
 ## How to use this plan
@@ -18,7 +18,7 @@
 
 ### Current architecture
 
-TreadJoy is a Django 5.2 and PostgreSQL application rendered with Django templates, centralized CSS, and small vanilla JavaScript enhancements. It uses django-allauth account flows without Google/social authentication for now, Stripe-hosted Checkout and signed webhooks, database-backed authenticated/guest carts, order snapshots, shipment records, and Django admin. Public-environment settings configure manifest static files and R2-backed public media, but no live origin, bucket, custom domain, or CDN path has been provisioned. There is no SPA, public API, background queue, cache service, search service, or generalized CMS.
+TreadJoy is a Django 5.2 and PostgreSQL application rendered with Django templates, centralized CSS, and small vanilla JavaScript enhancements. It uses django-allauth account flows without Google/social authentication for now, Stripe-hosted Checkout and signed webhooks, database-backed authenticated/guest carts, order snapshots, shipment records, and Django admin. A private, development-team-only research POC is live on a Render-managed Django origin with a separate Render PostgreSQL database. The public research edge path, R2 bucket/custom media domain, and public CDN route are not provisioned; the apex/www holding Worker is a separate noindex asset-only surface. There is no SPA, public API, background queue, cache service, search service, or generalized CMS.
 
 The codebase supports two fail-closed modes selected by TREADJOY_MODE:
 
@@ -48,18 +48,18 @@ The approved deployment architecture is one tested release commit deployed to se
 - Orders now retain immutable currency and shipping/contact snapshots, so account/address deletion does not remove historical delivery facts. The legacy `ShippingAddress` relationship remains for one compatibility release and must not be contracted until deployed backfill completeness and rollback reads are verified.
 - Order, line, payment/refund, provider, allocation, and status-history fields are read-only in ordinary admin workflows; material record deletion and direct shipped/delivered/canceled actions are disabled. Shipment timestamps, the refund reconciler, and a guarded processing action use one row-locking transition service.
 - Authentication still needs production hardening: email verification is optional and effective login is username-based; terms/privacy acceptance is not durably recorded, and stronger verification/MFA policy remains a separate launch decision.
-- There is no application rate limiting, brute-force/abuse control, production email provider, data-retention schedule, consent versioning, unsubscribe/suppression system, or complete staff-permission model.
+- Research waitlist and survey flows have session-scoped throttles, honeypot metrics, and neutral responses. Production edge WAF/rate enforcement, authentication brute-force controls, provider alert evidence, a production email provider, data-retention schedule, consent versioning, unsubscribe/suppression operations, and a complete staff-permission model remain open.
 - Shipping and tax totals are hardcoded to zero. Contiguous-US validation, carriers, service levels, rate source, tax registrations, product tax codes, and customer disclosures are not implemented.
 - Cancellation, return, exchange, inspection, and customer-initiated refund workflows do not yet represent the approved policy.
 - New Stripe event/payment/refund writes retain bounded audit fields instead of raw payloads. Legacy raw fields remain temporarily for expand/backfill/verify/backup/contract safety; production retention approval, alerting, and controlled replay tooling remain open.
 - The reviewed dependency inputs and hash-locked runtime/development manifests are reproducible; Phase 1 removed the Google/social extra and refreshed both locks and the license inventory.
-- GitHub runs separate commerce/research PostgreSQL jobs, a dependency audit, and full-history secret scanning. The repository now includes a SHA-pinned research release workflow with immutable artifact metadata, protected staging/production promotion jobs, and explicit rollback operations; no provider deployment-status evidence exists yet.
-- Production configuration includes `STATIC_ROOT`, manifest static storage, and an R2 media backend contract. Repository health/readiness, structured logging, redaction, alert definitions, and incident runbooks are now present, but no live hosting, DNS/TLS path, R2 resource, provider monitoring, analytics, backup/PITR procedure, restore drill, migration release process, or rollback runbook has been provisioned or verified.
+- GitHub runs separate commerce/research PostgreSQL jobs, a dependency audit, and full-history secret scanning. The repository now includes a SHA-pinned research release workflow with immutable artifact metadata, protected staging/production promotion jobs, and explicit rollback operations. The latest hosted run failed in the research PostgreSQL job on a nullable-row lock query; the fix is verified locally but remains unpublished pending owner authorization to push to `main`.
+- Production configuration includes `STATIC_ROOT`, manifest static storage, and an R2 media backend contract. Repository health/readiness, structured logging, redaction, alert definitions, and incident runbooks are present. The private Render POC origin/database and apex holding Worker are live, but public research DNS/Access, R2 resources, provider monitoring, analytics, backup/PITR procedure, restore drill, migration release process, and rollback evidence are not yet verified.
 - The catalog has been quarantined to its safe empty state, while homepage and
   social sections remain explicitly labeled development placeholders that block
   release until approved factual replacements exist.
 - Product detail lacks production imagery, size/fit, materials, care, compatibility explanation, shipping/returns context, and other purchase-confidence content.
-- SEO support is limited: sitemap, robots policy, canonicals, structured data, social metadata, production error pages, and measurement are absent.
+- SEO support is deployment-aware but incomplete: the private research POC correctly emits noindex/robots controls and safe canonical/Open Graph/X metadata when public, while a public sitemap, approved structured data/content, verified social destinations, production error-page review, and measurement are still absent.
 
 ### Missing or intentionally deferred functionality
 
@@ -640,6 +640,18 @@ P1 storefront, email, accessibility, SEO, performance, monitoring, and admin-usa
   horizontal overflow, and no console errors. The safe research rehearsal
   passed and retained the expected `STOP` decision; no provider, credential,
   database, DNS, R2, staging, or public deployment state changed.
+- **Implementation evidence (2026-09-05):** The live recheck found the private
+  Render service/database still available on the Free Ohio POC tier, with the
+  provider subdomain disabled, the database external allowlist blocked, and
+  the last successful deployment on `ba736227` rather than the current local
+  release. GitHub `Application CI #33` remains red only in the historical
+  research PostgreSQL job; the nullable-row lock fix in `4d4c134` passes the
+  full disposable PostgreSQL research suite and local commerce suite but has
+  not been published to `main`. Cloudflare still has only the apex/www
+  holding Worker: research/media DNS, Access, R2, origin lock, provider
+  monitoring, and public route evidence remain absent. The current rehearsal
+  decision is therefore `STOP`; no external configuration or deployment state
+  was changed.
 
 ## Phase 3 — Commerce data integrity and identity
 
@@ -905,7 +917,7 @@ P1 storefront, email, accessibility, SEO, performance, monitoring, and admin-usa
 - **Priority / status:** P1 — Not started.
 - **Objective:** Make approved public content discoverable without indexing private, duplicate, test, or mode-inappropriate pages.
 - **Why it matters:** Search visibility and trustworthy previews support validation/conversion, while incorrect indexing can expose customer or placeholder content.
-- **Current state:** Templates provide basic title/language/viewport but lack full meta descriptions, canonicals, social cards, sitemap, robots policy, structured data, and production 404/500 content.
+- **Current state:** Shared templates now provide deployment-owned descriptions, canonical URLs, noindex/index robots directives, and Open Graph/X metadata; `/robots.txt` is mode-aware and private/transactional paths are excluded. A public sitemap, truthful structured data, approved social images/destinations, branded production 404/500 review, and measurement remain incomplete.
 - **Required work:** Define indexable URL policy per mode; add canonical and robots directives, sitemap and robots.txt, Product/Offer/Breadcrumb/Organization structured data only from authoritative fields, Open Graph/Twitter metadata with approved images, semantic heading/link cleanup, clean pagination/query handling, favicon/manifest as appropriate, and branded accessible 404/500 pages; register webmaster tools after the applicable public hostname and production DNS/TLS are active.
 - **Dependencies:** A7.1–A7.3 and activated production hostnames from A2.3/A9.1.
 - **Affected areas:** base/product/catalog/core templates, context processors, sitemap/robots/error views, URLs, settings, static media.

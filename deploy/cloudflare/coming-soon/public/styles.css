@@ -5,8 +5,12 @@
   --color-ink: #191919;
   --color-stone: #e9e1d5;
   --color-cool: #dce5e7;
-  --page-gutter: clamp(1.25rem, 4vw, 4rem);
-  --frame-border: clamp(0.25rem, 0.5vw, 0.5rem);
+  --color-page: #fff;
+  --page-gutter: clamp(0.75rem, min(3.5vw, 3.5vh), 3rem);
+  --frame-border: clamp(0.2rem, min(0.45vw, 0.65vh), 0.5rem);
+  --frame-padding: clamp(1rem, min(4vw, 4vh), 3.5rem);
+  --frame-shadow: clamp(0.4rem, min(1.1vw, 1.5vh), 1rem);
+  --pixel-size: clamp(0.45rem, min(1.15vw, 1.7vh), 1rem);
   font-family: ui-rounded, "Arial Rounded MT Bold", "Avenir Next", Avenir,
     "Segoe UI", Helvetica, Arial, sans-serif;
   font-synthesis: none;
@@ -20,19 +24,21 @@
 }
 
 html {
-  background: var(--color-stone);
+  block-size: 100%;
+  background: var(--color-page);
 }
 
 body {
+  min-block-size: 100%;
   min-width: 20rem;
   margin: 0;
   color: var(--color-ink);
-  background: var(--color-stone);
+  background: var(--color-page);
 }
 
 .poster {
-  min-block-size: 100vh;
-  min-block-size: 100svh;
+  block-size: 100vh;
+  block-size: 100dvh;
   padding: var(--page-gutter);
   display: grid;
 }
@@ -40,44 +46,58 @@ body {
 .poster__frame {
   position: relative;
   isolation: isolate;
-  min-block-size: calc(100vh - (2 * var(--page-gutter)));
-  min-block-size: calc(100svh - (2 * var(--page-gutter)));
-  padding: clamp(1.25rem, 4vw, 4rem);
+  min-block-size: 0;
+  padding: var(--frame-padding);
   display: grid;
-  grid-template-rows: auto 1fr;
+  place-items: center;
+  overflow: clip;
   border: var(--frame-border) solid var(--color-ink);
   background: var(--color-cool);
-  box-shadow: clamp(0.6rem, 1.5vw, 1.25rem) clamp(0.6rem, 1.5vw, 1.25rem) 0
-    var(--color-sky);
+  box-shadow: var(--frame-shadow) var(--frame-shadow) 0 var(--color-sky);
 }
 
 .poster__frame::before,
 .poster__frame::after {
   position: absolute;
-  z-index: -1;
+  z-index: 0;
+  inline-size: var(--pixel-size);
+  block-size: var(--pixel-size);
   content: "";
   pointer-events: none;
 }
 
 .poster__frame::before {
-  inset: 0 0 auto auto;
-  inline-size: clamp(4.5rem, 14vw, 13rem);
-  block-size: clamp(1rem, 2.5vw, 2rem);
+  inset: var(--pixel-size) var(--pixel-size) auto auto;
   background: var(--color-gold);
-  border-block-end: var(--frame-border) solid var(--color-ink);
-  border-inline-start: var(--frame-border) solid var(--color-ink);
+  box-shadow:
+    calc(-1 * var(--pixel-size)) 0 0 var(--color-gold),
+    calc(-2 * var(--pixel-size)) var(--pixel-size) 0 var(--color-sky),
+    calc(-3 * var(--pixel-size)) var(--pixel-size) 0 var(--color-sky),
+    calc(-1 * var(--pixel-size)) calc(2 * var(--pixel-size)) 0 var(--color-ink),
+    0 calc(2 * var(--pixel-size)) 0 var(--color-gold),
+    calc(-2 * var(--pixel-size)) calc(3 * var(--pixel-size)) 0
+      var(--color-gold);
 }
 
 .poster__frame::after {
-  inset: auto auto 0 0;
-  inline-size: clamp(1rem, 2.5vw, 2rem);
-  block-size: clamp(4.5rem, 14vw, 13rem);
+  inset: auto auto var(--pixel-size) var(--pixel-size);
   background: var(--color-sky);
-  border-block-start: var(--frame-border) solid var(--color-ink);
-  border-inline-end: var(--frame-border) solid var(--color-ink);
+  box-shadow:
+    var(--pixel-size) 0 0 var(--color-sky),
+    calc(2 * var(--pixel-size)) calc(-1 * var(--pixel-size)) 0
+      var(--color-gold),
+    calc(3 * var(--pixel-size)) calc(-1 * var(--pixel-size)) 0
+      var(--color-gold),
+    var(--pixel-size) calc(-2 * var(--pixel-size)) 0 var(--color-ink),
+    0 calc(-2 * var(--pixel-size)) 0 var(--color-sky),
+    calc(2 * var(--pixel-size)) calc(-3 * var(--pixel-size)) 0
+      var(--color-sky);
 }
 
 .brand {
+  position: absolute;
+  z-index: 1;
+  inset: var(--frame-padding) auto auto var(--frame-padding);
   width: fit-content;
   margin: 0;
   padding: 0.45em 0.7em;
@@ -90,28 +110,33 @@ body {
 }
 
 .message {
-  align-self: center;
-  margin-block: clamp(3rem, 10vh, 8rem);
-  padding-inline: clamp(0rem, 4vw, 4rem);
+  position: relative;
+  z-index: 1;
+  inline-size: min(100%, 70rem);
+  margin: 0;
+  padding-inline: clamp(0rem, min(3vw, 3vh), 3rem);
+  display: grid;
+  place-items: center;
+  text-align: center;
 }
 
 .message h1 {
   max-inline-size: 8ch;
   margin: 0;
-  font-size: clamp(4rem, 15vw, 13rem);
+  font-size: clamp(3rem, min(14vw, 22vh), 13rem);
   font-weight: 900;
-  letter-spacing: -0.085em;
-  line-height: 0.78;
+  letter-spacing: -0.06em;
+  line-height: 0.8;
 }
 
 .message h1 > span {
   display: block;
   width: fit-content;
+  margin-inline: auto;
 }
 
 .message__accent {
   margin-block-start: 0.13em;
-  margin-inline-start: clamp(0rem, 9vw, 8rem);
   padding: 0.06em 0.12em 0.11em;
   background: var(--color-gold);
   box-shadow: 0.06em 0.06em 0 var(--color-ink);
@@ -120,22 +145,34 @@ body {
 
 .message > p:not(.error-code) {
   max-inline-size: 31rem;
-  margin: clamp(2rem, 5vw, 4rem) 0 0;
+  margin: clamp(1rem, min(4vw, 4vh), 2.5rem) auto 0;
   font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
   font-size: clamp(1rem, 2.4vw, 1.35rem);
   font-weight: 650;
+  letter-spacing: 0.015em;
   line-height: 1.5;
 }
 
+.poster--not-found {
+  min-block-size: 100vh;
+  min-block-size: 100dvh;
+  block-size: auto;
+}
+
 .message--not-found {
-  display: grid;
+  padding-block-start: clamp(3.5rem, 10vh, 5rem);
   justify-items: start;
+  text-align: start;
 }
 
 .message--not-found h1 {
   max-inline-size: 10ch;
-  font-size: clamp(3.5rem, 12vw, 10rem);
+  font-size: clamp(3.25rem, min(12vw, 20vh), 10rem);
   line-height: 0.88;
+}
+
+.message--not-found > p:not(.error-code) {
+  margin-inline: 0;
 }
 
 .error-code {
@@ -177,20 +214,8 @@ body {
 }
 
 @media (max-width: 30rem) {
-  .poster__frame {
-    padding: 1.25rem;
-  }
-
-  .message {
-    margin-block: 3rem;
-  }
-
   .message h1 {
-    font-size: clamp(3.75rem, 21vw, 6rem);
-  }
-
-  .message__accent {
-    margin-inline-start: 0.25em;
+    font-size: clamp(3.75rem, min(21vw, 22vh), 6rem);
   }
 }
 
@@ -211,5 +236,11 @@ body {
     border: 0.2rem solid CanvasText;
     box-shadow: none;
     forced-color-adjust: auto;
+  }
+
+  .poster__frame::before,
+  .poster__frame::after {
+    background: CanvasText;
+    box-shadow: none;
   }
 }
