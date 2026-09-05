@@ -297,6 +297,16 @@ P1 storefront, email, accessibility, SEO, performance, monitoring, and admin-usa
   GitHub disabled merging while research and the dependency audit remained
   green. The probe was removed without merging, and commit `91d9f4f` restored
   all four checks to green.
+- **Implementation evidence (2026-09-05):** Application CI #33 at commit
+  `e3b5cc3` exposed a PostgreSQL-only regression in the research email
+  delivery command: locking a `ResearchOutboundEmail` together with its
+  nullable `subscription` join generated PostgreSQL's prohibited outer-join
+  lock. The commerce job and dependency audit were green. Commit `4d4c134`
+  changes the lock to `select_for_update(of=("self",))`; the complete research
+  suite passes against disposable PostgreSQL (181 tests), and the full local
+  commerce suite passes (287 tests). The fix is committed locally but hosted
+  CI acceptance remains pending until the owner authorizes publishing it to
+  `main`.
 
 ### A1.2 — Harden and validate production settings
 
