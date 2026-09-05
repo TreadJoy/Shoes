@@ -7,11 +7,14 @@ commerce remains disabled until its payment, inventory, fulfillment, legal,
 security, and operational gates pass.
 
 The owner confirmed on 2026-08-26 that `tread-joy.com` was purchased through
-Cloudflare as the intended base domain. Registration is not an active-site
-claim: this repository has not provisioned a public hostname, DNS/TLS path,
-managed origin, R2 bucket/custom domain, PostgreSQL service, or email service.
-`hello@tread-joy.com` and `noreply@tread-joy.com` are reserved future addresses,
-not active or monitored mailboxes.
+Cloudflare as the intended base domain. The apex and `www` currently serve an
+asset-only, noindexed holding page. A private research POC now has a
+Render-managed Django origin and separate Render PostgreSQL database, but its
+provider hostname is disabled and `research.tread-joy.com` has no DNS record;
+there is no public research edge, Access policy, R2 bucket/custom domain, or
+transactional email service yet. `hello@tread-joy.com` and
+`noreply@tread-joy.com` are reserved future addresses, not active or monitored
+mailboxes.
 
 ## Source of Truth
 
@@ -60,8 +63,9 @@ live infrastructure.
   of mutable accounts and address rows. One row-locking transition service
   owns fulfillment/refund status changes and append-only history.
 - Public settings use manifest static files and configure R2-backed public
-  media. These settings have automated coverage, but no live resources have
-  been provisioned.
+  media. These settings have automated coverage; the live holding page is
+  deployed separately, while research R2/media and public origin resources
+  remain unprovisioned.
 
 `TREADJOY_MODE` is required and must be `commerce` or `research`.
 `TREADJOY_ENVIRONMENT` is required and must be `local`, `ci`, `staging`, or
