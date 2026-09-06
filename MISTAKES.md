@@ -1418,3 +1418,23 @@
 - Impact: staging verification used the approved manual Render deployment after
   required checks passed; the immutable Research Release workflow remains
   unavailable until those separate content gates are resolved.
+
+## 2026-09-06 — Access-aware Worker completed the origin-header handoff
+
+- The Cloudflare Transform Rule matched the research request but did not deliver
+  `X-TreadJoy-Origin` to Render, so an authenticated request continued to fail
+  the origin-lock middleware even though the server-side secret was configured.
+- Resolution: deployed the source-controlled `treadjoy-research-edge` Worker
+  on the research route, added its encrypted runtime secret, rotated the
+  origin-lock value across Render, the Transform Rule, and the Worker, and
+  redeployed Render. The Worker preserves the Access JWT header and injects
+  only the server-side origin header; no value was logged or committed.
+- Verification: unauthenticated and forged-header requests still stop at
+  Cloudflare Access (`302`), the disabled Render hostname remains `404`, and
+  the Worker binding is present as an encrypted secret. The last observed
+  origin-denial event predated the final synchronization. An owner-authenticated
+  application response remains pending because the available browser sessions
+  could not complete the Access login for this check.
+- Impact: the private edge is staged with a reversible Worker route and secret;
+  R2, WAF/rate rules, monitoring, recovery, and public launch remain blocked by
+  their separate approval and evidence gates.

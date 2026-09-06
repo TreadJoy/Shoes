@@ -652,6 +652,22 @@ P1 storefront, email, accessibility, SEO, performance, monitoring, and admin-usa
   monitoring, and public route evidence remain absent. The current rehearsal
   decision is therefore `STOP`; no external configuration or deployment state
   was changed.
+- **Implementation evidence (2026-09-06):** The owner-approved private edge
+  staging was connected. Cloudflare Access now protects the proxied
+  `research.tread-joy.com` hostname with the owner-only policy, the verified
+  Render custom domain is served through Full (strict) TLS, and the Render
+  provider subdomain remains disabled. Because the Transform Rule matched but
+  did not deliver the origin-lock header, the source-controlled
+  `treadjoy-research-edge` Worker (route `research.tread-joy.com/*`,
+  `workers.dev` disabled) was deployed from commit `146ecdf`. A new
+  origin-lock secret was rotated across Render, the Transform Rule, and the
+  Worker's encrypted runtime binding, followed by a successful Render
+  redeploy. Unauthenticated and forged-header probes remain blocked by Access
+  (`302`), and the disabled provider hostname remains `404`. The final
+  owner-authenticated application response could not be rechecked in the
+  available browser sessions, so authenticated end-to-end proof remains open;
+  R2, WAF/rate rules, cache policy, monitoring, recovery, and public launch are
+  still intentionally pending.
 
 ## Phase 3 — Commerce data integrity and identity
 
