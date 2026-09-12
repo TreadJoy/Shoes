@@ -22,6 +22,7 @@ planning list, not evidence that an item is complete or approved for release.
 | Not started | Create a new logo with an artist | Identify the artist, agree on scope/usage rights, and collect approved final assets. |
 | Not started | Take brand and product photos | Plan the shot list, subjects, location, styling, usage rights, and required product details. |
 | Not started | Learn CAD and begin work on the product | Define a learning milestone, choose the CAD workflow, and document the first product-development deliverable. |
+| Not started | Add Blender and other 3D models to the website | Decide which pages need 3D assets, choose the web format and interaction level, optimize files for performance, and confirm ownership/licensing. |
 
 ## Subscriptions and services
 

@@ -1,5 +1,37 @@
 # Verification Limitations
 
+## 2026-09-11 — V3 exploded transform and layer checks
+
+- Initial return-position checks read stale original object matrices after changing view layers. Switched to the active dependency graph's evaluated matrices; start and end return errors are zero.
+- The first renders leaked assembled geometry because recursively clearing exclusions also cleared ancestor exclusions. Set the intended top-level collection exclusions directly and verified them after reopening.
+- Rebuilt copies use evaluated world-space meshes, retaining source-object references. The final saved file passes module-motion, sole staging, reverse-order, and view-isolation checks. These do not establish physical clearance or manufacturing readiness.
+
+## 2026-09-09 — Joyline fit review after full render pass
+
+- Completed renders revealed exposed inner badge sockets and a rigid tongue/bow.
+  Created a separate fit revision instead of replacing the existing source.
+- Its first check revealed the tongue Solidify modifier adding thickness above
+  the fitted surface and intersecting the laces. Changed padding to extend inward
+  and regenerated front/rear checks. Final package acceptance remains pending.
+- Impact: private Blender geometry only; original source and renders preserved.
+
+## 2026-09-09 — Local Blender concept launch and first preview corrections
+
+- The sandboxed Blender background process exited with a crash before running
+  the approved concept-generation script. The same command ran successfully
+  through the approved outside-sandbox execution path.
+- The first preview was overexposed at the model's meter scale and revealed
+  floating badge details and excessive lace/tongue height. Reduced light power
+  and revised surface placement before continuing visual verification.
+- Impact: internal development model and preview artifacts only; no deployed
+  imagery, application data, or public product claims were changed.
+- Additional preview checks caught view-layer exclusions being reset by parent
+  toggles and module pivot relocation using stale parent transforms. Applied
+  exclusions in two passes, updated transforms before preserving child world
+  matrices, and verified the main shell returned to its original world position.
+  Low side-view camera rays also began below the floor; moved that orthographic
+  camera farther back while preserving its view angle.
+
 ## 2026-09-04 — Provider cost review exposed a lowest-tier capability mismatch
 
 - The initial private-preview plan carried forward the owner's lowest-tier
@@ -1438,3 +1470,75 @@
 - Impact: the private edge is staged with a reversible Worker route and secret;
   R2, WAF/rate rules, monitoring, recovery, and public launch remain blocked by
   their separate approval and evidence gates.
+
+## 2026-09-10 — V2 Blender blockout startup failure
+
+- Blender 5.2.1 background startup exited with code 139 inside the sandbox,
+  before the blockout script could complete. Retried the same private-media
+  build through the approved unsandboxed Blender command.
+- An attempted log patch used a nonexistent heading and changed nothing;
+  corrected the patch to use verified surrounding text.
+- No V1 files or public assets were overwritten by these attempts.
+
+## 2026-09-11 — V2 automatic surface projection pinched panel edges
+
+- The interface-envelope script assumed an unused gold material survived file
+  reload; Blender had discarded it, causing a KeyError before any save. Added
+  explicit material creation when missing and reran the private study.
+
+- During the later upper-detail pass, an assumed regular vertex grid failed
+  after the toe vertices had been welded (IndexError before saving). Replaced
+  numerical row indexing with actual boundary-edge traversal for mudguard
+  stitching. Earlier model files remained untouched.
+
+- The contact-refinement trial welded the central vamp but nearest-surface
+  projection pinched the terminal toe and quarter join. The first diagnostic
+  also flagged 307 intersecting triangle pairs at each quarter/vamp boundary.
+- Replaced quarter projection with blended normal offsets and excluded the
+  terminal mudguard pole from projection. Preserve the contact audit rather
+  than interpreting a render or unsigned overlap count as safe clearance.
+- Original blockout, shape-refined source and V1 files remain unchanged.
+- Follow-up pole closure and blended normal offsets increased the diagnostic
+  overlaps (827 vamp/mudguard and 468/466 quarter/vamp pairs). Removed those
+  adjustments from the saved revision; retain only welded/smoothed vamp and
+  the initial overlay projection. Toe-tip and quarter joins remain unresolved;
+  this pass must not be labeled contact-verified or promoted as final geometry.
+
+## 2026-09-11 — V3 Blender bootstrap sandbox crash and layer leak
+
+- Blender 5.2.1 background startup exited with code 139 inside the restricted
+  sandbox before loading the V2 source. The same source-controlled command was
+  rerun with approved Blender background execution and completed successfully.
+- The first V3 preview exposed exploded badge duplicates in the assembled
+  render because the new vendor-visualization child collection inherited
+  render visibility. Marked that collection and its duplicate objects hidden
+  for ordinary renders, regenerated from the untouched V2 source, and reran
+  the reopen checks.
+- Impact: no V2 file or public asset was overwritten. The corrected private V3
+  file reopens in Blender 5.2.1 LTS and retains explicit concept-only status.
+
+## 2026-09-11 — Initial V3 upper overlays read as floating directional flaps
+
+- The first upper-rebuild render placed the tongue too high over the inherited
+  laces and produced pointed saddle and eyestay ends. In lateral view, the
+  saddle became an unacceptable directional gesture and the ventilation
+  inserts projected above the vamp.
+- Rebuilt the saddle as a broad quarter badge frame, tapered the eyestay,
+  lowered and narrowed the tongue, recessed the ventilation inserts, reduced
+  the badge presentation scale, and added a true lateral camera.
+- Impact: the corrected R1 is retained only as a private form checkpoint. Badge
+  seating, contact, heel definition, stitching, materials, exploded geometry,
+  and every engineer-owned interface remain open rather than being described
+  as production-ready.
+
+## 2026-09-11 — Initial V3 contact-detail hardware was oversized
+
+- The first contact-detail render used eyelet rings and lace lift values that
+  were structurally present but visually too large and too far above the
+  tongue, especially in lateral view.
+- Reduced eyelet diameter and wire section, narrowed and thinned the flat lace
+  ribbons, lowered the endpoints, and reduced crossing lift before freezing
+  the checkpoint.
+- Impact: the corrected geometry is retained only as presentation geometry.
+  It is not a tension simulation, last/pattern validation, or evidence that
+  the lace, eyelet, or tongue system will work in a physical shoe.
