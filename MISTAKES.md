@@ -1,5 +1,187 @@
 # Verification Limitations
 
+## 2026-09-15 — R13 marked front trim
+
+- The first R13 footprint was evaluated in side-view Y/Z coordinates without
+  restricting it to the shoe's sides. It extended across the toe-box center.
+  Restrict the new strip to the side surface beside the lace opening and
+  visually inspect the result; a single connected mesh is not shape acceptance.
+- Preserve evaluated source lace geometry before replacing trim objects. Do not
+  claim a particular dependency caused a displaced lace end without evidence.
+- The lower trim is extended behind the cupsole rim to avoid the exposed sampled
+  edge retained in R12. This is a visual overlap, not an engineered attachment.
+
+## 2026-09-14 — R12 continuous-trim fusion
+
+- The first voxel fusion left 169 tiny disconnected fragments, two blocked
+  terminal eyelet center rays, and unwelded end-cap rings on new stitch dashes.
+  Removed only fragment components under 1,000 vertices from the new trim,
+  restored the existing eyelet bores, and welded the new stitch end caps.
+- The resulting mesh passed the scoped topology and 40 aperture-center checks,
+  but its render still read as stacked flaps. Topological connection alone did
+  not meet the owner's continuous-panel request. Re-seat the merging side
+  surfaces to a common base-shell depth and blend the junctions before review.
+- That attempted per-vertex side projection distorted thin eyestay geometry,
+  introduced openings/fragments and blocked four aperture rays. Rejected it.
+  Rebuild a single sampled surface from the existing trim footprints and base
+  shell instead, with explicit thickness and restored eyelet bores. Do not
+  report the failed intermediate R12 render as the completed design.
+- Reconstructing the whole trim radially created a toe-tip singularity, and
+  regularizing that intermediate solid lost visible panel definition. Restricted
+  radial reconstruction to the owner's new connecting strips, retained the
+  existing saddle/eyestay/toe-wrap shells, and clamped smoothing against the
+  measured supporting surface. Recheck terminal bores after solid fusion because
+  a bore cut before fusing overlapping shells may not survive the operation.
+- A lace-dependency explanation was considered for a render artifact, but direct
+  inspection found no object modifier targets in the original R11 file. Do not
+  present that hypothesis as an established cause. Hidden originals are retained
+  for reference and smooth-normal transfer. A separate unchanged R11 baseline
+  render is preserved in the R12 QA folder without replacing the owner's markup.
+- R11 and its newly annotated perspective image must remain untouched. This
+  continuous trim crosses previous module divisions; it does not establish an
+  engineered removable assembly.
+
+## 2026-09-14 — R11 overlay seam projection
+
+- Directly projecting each new overlay vertex onto the outermost existing panel
+  copied abrupt seam heights and produced rough/intersecting areas in the first
+  perspective render, despite zero boundary edges or degenerate faces.
+- Fit a smooth surface with an outward envelope allowance, round the contour
+  tips and bevel the perimeter. Recheck rendered appearance and aperture access;
+  topology alone does not prove coherent layering or production attachment.
+- The attempted micro-bevel generated hundreds of tiny faces; welding/dissolving
+  them opened boundaries. Removed that bevel and its cleanup, retaining the
+  explicitly rounded contour. The revised 183-mesh check has zero boundary
+  edges and degenerate faces. Seated backs fill the space beneath the smooth
+  fronts rather than leaving a floating overlay. Thickness remains conceptual.
+- Front/rear review revealed excessive stand-off from the full smoothing
+  envelope. Reduced the envelope contribution to 22% with a 0.45 mm base
+  face offset. These are visual parameters, not manufactured thicknesses.
+- That raw-surface blend reintroduced seam artifacts. Replaced it with local
+  smooth support bumps around existing seam relief and a 0.45 mm front offset;
+  the front remains analytic while avoiding a global lift for one seam peak.
+- Final perspective review also identified inherited stitch dashes poking through
+  the new contours. Remove whole covered dash components, retaining exposed
+  border stitching; do not treat those marks as texture or a successful smooth
+  surface merely because topology checks pass.
+- Preserve the marked-up R10 lateral image. New geometry belongs only to R11.
+
+## 2026-09-14 — R9 visual finishing checks
+
+- The first R9 side render still showed heel recesses after the control objects
+  were removed: the R4 heel already retained the cut geometry. Restore the uncut
+  R3 heel and replay the established R5/R7/R8 shape transforms instead.
+- The initial pull loop read as a tall narrow strip, and projecting the inherited
+  lower stitch row exposed a stray line beneath the badge. Rebuilt the loop as a
+  shorter rounded opening and joined the quarter's lower/front stitch border.
+- Rebuilt lace crossings initially intersected adjacent entries and the tongue.
+  Offset adjacent entries, separate over/under lanes, and use nearest-surface
+  support when a vertical ray misses the tongue edge; a fixed fallback height
+  created unwanted dips. The corrected construction check reports zero tested
+  crossing/tongue and crossing/crossing overlaps.
+- Passing those overlap checks did not prove visible eyelet entry: a subsequent
+  render showed lace portions buried by the eyestays. Added explicit eyestay
+  surface support to the crossing edges. Keep visual inspection separate from
+  the narrower automated crossing/tongue test.
+- Neighbor-based sole smoothing was insufficient for the stepped front foxing.
+  Filter matching perimeter lanes instead, retaining the cross-section structure
+  and footprint. Final visible results still require owner review.
+- These are private visual revisions, not proof of loop strength, attachment,
+  locking logic, or physical fit. R8 and its annotated review images are retained.
+
+## 2026-09-14 — R8 inherited material names
+
+- The first annotation build reached the new tongue label but stopped because
+  saved R7 badge materials carry Blender-generated name suffixes. A fixed
+  material-name lookup was not a stable reference.
+- Resolve the label colors from the existing Blank face and shared backer material
+  assignments instead. The failed invocation stopped before saving or rendering
+  R8; R7 and the owner's marked-up images were preserved.
+- The first side render of the rounded toe-overlay end exposed a dark gap at
+  the old butt joint. Extended the quarter's lower front beneath the new rounded
+  termination; the throat and badge region stay unchanged. This is a visual
+  underlap, not a validated structural seam or physical attachment.
+
+## 2026-09-14 — R7 final-coordinate width verification
+
+- The first size-9 reference-width check found a 78.4 mm modeled heel against
+  the 77.7 mm sample benchmark. Measuring the pre-warp longitudinal band missed
+  the effect of redistributing the heel/instep/forefoot stations.
+- Added a final-coordinate section measurement and corrective heel scale before
+  saving. The 0.1 mm check is a numerical model threshold, not a manufacturing
+  tolerance or proof of AF1 fit. R6 remains unchanged.
+- The final evaluated mesh check also reports one medial-quarter face below the
+  1e-12 m² area threshold at the refitted badge pocket. Boundaries/nonmanifold
+  edges remain zero. Logged as open mesh cleanup rather than claiming a complete
+  geometry pass at this silhouette-review checkpoint.
+
+## 2026-09-13 — R6 badge close-up artifacts
+
+- Wide views concealed diagonal relief shading artifacts. Increasing sampling
+  and embedding the raised mark did not remove the creases. Fitted a smooth shared
+  presentation surface and supplied analytic cap normals; the diagnostic close-up
+  confirmed the diagonal shading creases were removed. This is not contact QA.
+- Per-polygon Art colors produced jagged boundaries. Replaced those assignments
+  with a continuous procedural wave and circle study; it remains a placeholder.
+
+## 2026-09-13 — R6 vector triangulation API
+
+- Blender 5.2 returned triangle indices rather than vectors from the triangulation
+  helper. The first badge build stopped before saving R6, but the chained render
+  script continued on R5. Added compatibility handling and use `--python-exit-code 1`
+  on subsequent chained invocations so a failed build cannot continue rendering.
+- Hash comparison confirmed the saved R5 Blender source was unchanged, but the
+  accidentally rerendered perspective PNG differed. Regenerated that view directly
+  from the unchanged saved R5 file and refreshed its geometry/render hash record.
+  The original PNG bytes were not preserved; the source model and other views were.
+
+## 2026-09-13 — R5 layered toe and curve conversion
+
+- Merely lowering the perforated vamp did not create the intended overlapping
+  toe overlay. Expanding the old overlay also left a swallowed seam at the front.
+  Replaced that patch boundary with a true inset vamp and a U-shaped overlay
+  extending across the toe roof; the insert no longer runs to the toe tip.
+- Baking collar and stitch curves exposed disconnected coincident end-cap
+  vertices in the mesh check. Added a coincident-vertex weld to the R5 derivative;
+  preserved the R4 source and kept geometry validation separate from visual review.
+
+## 2026-09-13 — R4 lace contact checks
+
+- The first construction render concealed lace/tongue and lace/crossing surface
+  intersections. Centerline-only height checks missed the width of ribbons on a
+  sloping tongue; endpoint interpolation also overrode the intended crossing lanes.
+- Revised placement to sample both ribbon edges, apply separate crossing heights,
+  and narrow/offset ends at eyelets. A floating bow tail also required draping.
+- Direct tongue conformance then pulled some ribbon ends below their eyelets.
+  Restored endpoint seating separately from the middle-span fit; a passing
+  intersection check alone was not sufficient evidence of correct threading.
+- Aperture center rays passed for 14 eyelet and 18 vent openings; this limited
+  evidence does not validate physical threading, reinforcement loads, or fit.
+
+## 2026-09-12 — R2 toe junction refinement
+
+- The first right-foot form pass still showed a slight central toe pinch despite
+  the shortened tongue and asymmetric footprint. Added continuous-surface
+  subdivision before panel thickness and rerendered for inspection.
+- Mesh boundary checks alone do not detect this shading/form defect; visual
+  inspection remains necessary. No physical fit or interface claim is established.
+
+## 2026-09-12 — Design-master silhouette diagnostics
+
+- Background Blender again exited 139 inside the sandbox; the approved external
+  invocation successfully built the separate design-master revision.
+- The initial form render lifted the lower toe boundary off the cupsole and
+  cropped the top view. Corrected the lower datum and top-camera framing before
+  continuing visual review. The first pass was not accepted.
+- Recovery comparison covers mesh coordinates, object matrices, parenting and
+  render visibility; it does not establish equality of material or UI state.
+
+## 2026-09-12 — Raised toe loft exposed a terminal gap
+
+- Lifting the final forefoot rows exposed an opening at the toe. A planar convex cap did not bridge the evaluated surface edges.
+- Removed both adjustments from `refine_v3_finish.py` and regenerated from the preserved construction source. Retained only the badge alignment and curved ribbon bow changes.
+- Toe refinement now requires a coherent forefoot/mudguard loft replacement. The rejected toe patch is not a validated closure or a manufacturing-ready feature.
+
 ## 2026-09-11 — V3 exploded transform and layer checks
 
 - Initial return-position checks read stale original object matrices after changing view layers. Switched to the active dependency graph's evaluated matrices; start and end return errors are zero.
@@ -1542,3 +1724,612 @@
 - Impact: the corrected geometry is retained only as presentation geometry.
   It is not a tension simulation, last/pattern validation, or evidence that
   the lace, eyelet, or tongue system will work in a physical shoe.
+
+## 2026-09-15 — R16 pair rebuild required Blender 5.2 compatibility fixes
+
+- The requested `game-dev` command was unavailable, so no Game Development
+  Studio canonical-package receipt was produced. Used the installed Blender
+  5.2.1 LTS executable, source-controlled build/validation scripts, hashes, and
+  local QA records instead.
+- Blender background startup again exited with code 139 in the restricted
+  sandbox. Reran the same bounded Blender commands through the approved native
+  Blender execution path.
+- Early builds stopped before saving because Blender 5.2 removed the expected
+  `GeometryNodeResampleCurve.mode`, uses `BLENDER_EEVEE` rather than the assumed
+  `BLENDER_EEVEE_NEXT` enum, and did not return a mesh for unrealized seam
+  instances. Replaced the incompatible node setting, corrected the engine enum,
+  and explicitly realized Geometry Nodes instances before evaluation.
+- Impact: these failed attempts did not overwrite the saved R14 source. R16 was
+  generated from the byte-identical R14 `.blend1` recovery copy whose SHA-256
+  remains `a90815b9793dab3b9a97edbe7d3db92e12edfee2267a9e9d7fc441f79518898c`.
+
+## 2026-09-15 — Initial R16 geometry and proof candidates failed QA
+
+- The first structural candidate produced nonmanifold diagonal-panel edges and
+  a validator threshold incorrectly treated valid small faces as degenerates.
+  Moved Shrinkwrap ahead of Subdivision, inset cage endpoints, reduced bevels,
+  and changed the degeneracy check to a numerical-zero area threshold while
+  retaining the measured minimum face area.
+- The first proof render was overexposed because lighting values were scaled
+  for a room-sized scene rather than a roughly 287 mm shoe. Reduced studio light
+  energy, darkened the world, and used controlled AgX exposure.
+- A hidden 200 m studio ground object had been copied into each shoe, and copied
+  trim modifiers still targeted unposed master surfaces. Excluded studio objects
+  from the shoe hierarchy and generated hidden, pose-matched modifier targets.
+- Seam Geometry Nodes initially retained unrealized instances with invalid
+  multi-meter bounds. Adding `Realize Instances` restored the intended dash
+  dimensions. The first stitch placement also floated as much as 22 mm because
+  inherited guide paths were not seated to the rebuilt panels; projected every
+  editable seam control point onto the evaluated R16 surface and limited the
+  presentation offset to 0.16 mm.
+- Early flow and diagonal cages collapsed against undersized legacy patches,
+  creating visible blue shards. Reseated those cages against the hidden
+  continuous R13 reference surface while keeping that reference non-rendering.
+- Impact: failed model and proof iterations are preserved under
+  `media/development/treadjoy-heritage-court-v3/qa/pair-master-r16/failed-builds/`.
+  The accepted R16 candidate passes the scripted structural checks, but remains
+  a private digital concept pending owner visual approval; it is not evidence
+  of physical fit, wear, traction, manufacturability, or production readiness.
+
+## 2026-09-15 — R16 rerun disproved the previous visual-completion claim
+
+- Reran the existing R16 build, reopen validation, and seven proof renders from
+  the unchanged R14 recovery source. Preserved the previous R16 file and QA under
+  `qa/r16-before-rerun-20260915/` in the private Heritage Court media directory.
+- Structural checks passed again, but direct render review exposed uneven toe
+  layers, hidden lace/eyelet passage, a mirrored left tongue mark, overlapping
+  side surfaces, residual faceting, protruding tread blocks, and cropped proofs.
+- The earlier handoff incorrectly treated structural checks and limited artwork
+  tests as sufficient evidence of visual completion. Recorded the failed visual
+  gate in `qa/pair-master-r16/visual-review.md`; further R16 correction is required
+  before R17. This rerun did not repair those remaining defects.
+
+## 2026-09-16 — R16 R14-style repair trials and stronger visual checks
+
+- The old builder mixed R3 surface proportions with R14 geometry and located
+  baked eyelets using stale object origins. Rebuilt guides from R14 seam
+  measurements and actual eyelet mesh centers/normals instead.
+- Automatic trim extraction/decimation exceeded the trim budget and produced
+  nonmanifold results. Radial grid and face-normal trials introduced ragged
+  edges, gaps, or large solidify spikes. These candidates were discarded from
+  the active model and preserved in named `qa/r16-repair-*-trial/` archives.
+  Replaced them with consistently oriented, bounded-thickness editable cages.
+- Old flow stitch guides could land about 32 mm away from the rebuilt panels.
+  New flow/diagonal guides use their actual cage boundaries. Dash instances
+  now align their long axis to the curve tangent, not the default frame axis.
+- Early contact checks found lace/tongue penetration, unintended cross-lace
+  intersections, and 16 tread vertices outside the sole. Local tongue seating,
+  explicit over/under routing and knot-lead adjustment, and narrower front tread
+  blocks removed those failures in the checked candidate. Intentional eyelet
+  and knot joins are separately excluded and documented, not claimed as a
+  physically simulated knot.
+- Passing these checks still left a rough toe edge and wrinkled overlays in
+  the perspective render. Old voxel seating and direct projection across
+  underlying panel discontinuities were reproducing the defects. Removed that
+  toe seating and used smooth fitted side surfaces; further proof inspection
+  remains required. No structural PASS alone establishes visual completion.
+- Added independent reopened geometry budgets and finite-coordinate checks,
+  actual eyelet-bore rays, tread containment, tongue artwork handedness, and
+  evaluated lace contact checks. Saved camera/light settings now match the
+  calibrated preview rather than relying only on the rendering script.
+- Native Blender runs now use `--python-exit-code 1`; without it, Python failures
+  could print a traceback but leave a misleading successful process exit.
+  The Game Development Studio CLI is unavailable; no canonical package receipt
+  is claimed. Original R14 sources remain unchanged, and public-release and
+  engineering approval gates remain closed.
+
+## 2026-09-17 — R16 surface repair continuation
+
+- The previous continuation stopped when automatic tool approval reported an
+  account usage limit. The queued patch had not been built; the last model and
+  proofs were safely archived, not a verified final revision.
+- Polynomial fitting across separate upper pieces produced floating edges.
+  Projecting solely to the inner bootie also failed where the outer panels
+  extend above that surface. Direct coordinate probes identified the mismatch;
+  side cages now measure the R14 outer trim and preserve their authored Y/Z
+  coordinates, with separate edge seating at the vamp and cupsole.
+- The resumed candidate passed reopened structural checks and contact checks,
+  but the full proof set still exposed forefoot gaps, sole-rim surface overlap,
+  and badge faceting. These remained repair items, not owner-approval items.
+- Adding two badge subdivision levels after bevel increased visible geometry
+  to 963,745 vertices per shoe. The build budget check rejected it before save.
+  Reduced the candidate to one subdivision level before bevel; the original
+  500k per-shoe and 200k trim limits remain unchanged.
+
+## 2026-09-21 — R16 validation resumed; narrow-panel bevel removed
+
+- One subdivision level on every badge piece still exceeded the budget
+  (539,761 vertices). Restricted it to the visible blue face and route artwork;
+  the backing and small release accent retain their existing geometry.
+- The narrow diagonal overlays produced zero-area bevel wedges. A micron Weld
+  trial removed the degenerate faces but introduced nonmanifold edges. Removed
+  the redundant bevel on the flow/diagonal cages instead; Subdivision and
+  Solidify remain editable. The reopened replacement meshes subsequently had
+  zero boundary, nonmanifold, and degenerate results. Retained R14 meshes also
+  passed the separate topology audit.
+- Projecting lower overlays to the cupsole rim caused a wavy join. Simplified
+  their lower boundary above the rim and extended the toe band behind the join
+  to cover the exposed inner-upper strip. Failed candidates remain archived.
+- Full-view inspection still found a small toe-overlap opening and badge
+  shading bands after structural validation passed. Seated the toe-band upper
+  edge directly against the R14 vamp and removed sharp-edge/weighted-normal
+  treatment from the smoothed badge. These changes require the new proof set;
+  earlier receipts do not establish the revised model's visual quality.
+- Direct nearest-surface toe projection subsequently created a scalloped overlap
+  and was rejected. Restored the smooth toe band, removed the broad vamp inset,
+  and confined the adjustment to the raised toe-center area. Sharp-normal
+  removal alone did not remove badge banding; added depth-only smoothing that
+  leaves the existing badge's Y/Z outline unchanged.
+
+## 2026-09-23 — R16 interrupted badge build and visual-validation failures
+
+- Recovered the interrupted build result: badge deformation plus an additional
+  bevel exceeded the 500k budget at 518,486 vertices. No candidate was saved.
+  Removing the redundant bevel reduced the next build to 436,255 vertices.
+- Depth smoothing collapsed thin badge faces; the separate retained-mesh audit
+  exposed degenerate geometry. Normal-based depth deformation then passed mesh
+  topology checks but visibly sank part of the plaque into the upper. Neither
+  candidate was accepted; both remain in named private QA archives.
+- Replaced that deformation with an affine depth reduction, preserving the
+  R14 artwork outline and separating the badge tiers outside the upper.
+  The proof verifier now requires the retained-mesh audit to pass as well as
+  matching hashes, dimensions, source files, and contact validation. Visual
+  inspection remains a separate gate; no structural PASS implies completion.
+- The affine badge candidate passed all automated checks but its plaque still
+  stood visibly off the quarter. Macro inspection also exposed raised eyestay
+  edges; these are unresolved repairs, not approved design changes.
+- Increased only the toe band's inward shell from 1.2 to 3.0 mm. The next
+  seven-proof set covers the former black toe opening but still shows a small
+  notch/step. Reopened topology/contact checks and proof provenance pass at
+  436,239 vertices per shoe. Recorded remaining defects in the current private
+  `qa/pair-master-r16/visual-review.md`; R16 visual acceptance remains open.
+
+## 2026-09-23 — Owner-requested continuous warm-stone upper
+
+- The owner marked the tonal forefoot strips and requested a continuous piece
+  from the badge quarter through the eyelets and toe to the sole rim. Archived
+  the previous R16 and removed the floating strips and redundant seam paths.
+- The first integration helper shadowed the existing `smooth` function with a
+  modifier variable, stopping the build before save. Renamed the variable.
+- Volume union produced one main shell plus a three-vertex fragment and closed
+  four eyelet bores. Removed tiny debris and recut all fourteen bores; the next
+  reopened mesh passed single-component, topology, and contact checks.
+- Render review still showed old panel ridges. Added localized side-junction
+  smoothing while protecting the eyelet neighborhoods and toe perforations.
+  The unified surface is editable but no longer consists of separate quad
+  panel cages. This tradeoff is documented in the owner guide; archived panel
+  sources remain recoverable. No manufacturing or public-release claim is made.
+- Final integration checks pass at 94,741 upper vertices and 363,635 per shoe.
+  Seven proofs were inspected. The requested floating strips are removed, but
+  remeshing softened some toe perforations and a shallow toe ridge remains;
+  close-up surface polish and badge seating are still open before final imagery.
+
+## 2026-09-23 — Wrong layer merged; owner correction
+
+- Misread the owner's marked image and merged the warm-stone base instead of
+  the darker overlay. The prior entry's description of an "owner-requested
+  continuous warm-stone upper" was incorrect. The owner explicitly rejected
+  that interpretation: retain warm stone as before and connect only the darker
+  gray/suede layer above it. The rejected model and proofs are archived in
+  `qa/r16-rejected-warm-stone-integration/`.
+- Restored the warm-stone quarter and vamp geometry and added an independent
+  hash/transform/material comparison against the pre-merge R16. Combined only
+  the nine darker trim parts; the connectivity audit reports one component.
+- Boolean eyelet cuts created an empty material slot, initially causing the
+  audit to fail when reading its name. Corrected the audit's diagnostic handling
+  and normalized the finished overlay to the existing suede material only.
+- Full proof inspection found that merely joining the darker meshes retained
+  a stacked lower-strip ridge. Seated the connecting strip cages at a common
+  clearance over the unchanged base and lowered the bottom edge toward the rim.
+  The corrected result passes all current checks at 425,761 vertices per shoe;
+  dark overlay is one component and all warm-stone mesh checks match the
+  pre-merge model. Remaining border waviness, small toe-side step, and eyestay
+  shadow are recorded in the visual review; final close-up approval stays open.
+
+## 2026-09-23 — Separate pictured-version refinement trials
+
+- The saved owner R16 no longer matched the last rendered proof's source hash.
+  Paused instead of replacing that file. The owner explicitly chose to refine
+  the last pictured version in a new file. Reused its hash-pinned build sources
+  and created the separate `pair-r16-smooth-round` variant; the owner's saved
+  master and the R14 sources remain protected by hash checks.
+- A radial surface-projection trial made the toe-overlay border pull away from
+  the warm-stone vamp. An X-only projection then introduced visible dimples by
+  using local normals to distinguish the thin shell's inner and outer skins.
+  Both trials passed structural checks but failed visual review. Preserved
+  their models and proofs in named local QA trial archives, not release media.
+- Continued with a shared shell displacement instead of normal-based skin
+  classification. Visual acceptance remains separate from topology, contact,
+  layer-preservation, and proof-provenance checks.
+- Shared displacement alone also retained surface noise. Parameterizing
+  thickness between measured inner/outer shell intersections, followed by
+  all-axis and localized junction smoothing, produced a smoother surface.
+  Extending side projection around the front introduced toe creases; limited
+  it to the side joins and removed the trial's extra toe-roof lift. Rounded
+  only the shared plan outline. All intermediate candidates remain archived.
+- The separate final review candidate passes the reopened checks at 425,665
+  vertices per shoe and 120,818 overlay vertices. Its seven proofs were
+  inspected. Main dark-panel joins are blended, but fine edge waviness,
+  a raised eyelet transition and existing badge stand-off remain documented in
+  `qa/r16-smooth-round/visual-review.md`. This is not final visual approval.
+
+## 2026-09-24 — Separate court-toe and shell-seating refinement
+
+- Started from the owner's accepted `pair-r16-smooth-round` file, preserving
+  that input, the independently saved owner master, and both R14 files by hash.
+  The new work is isolated in `pair-r16-court-finish`; it is not public media.
+- The initial build stopped because Blender cannot apply a modifier to shared
+  mesh data. Corrected the helper to copy the editable master's mesh before
+  applying the modifier and relink both handed instances afterward.
+- The first saved trial contained empty stitch curves after a mistaken
+  longitudinal cutoff. Independent validation rejected them. Inspection showed
+  these were short transverse seams across the now-fused gray layer, so removed
+  those two redundant paths and their pair instances entirely. Six useful
+  editable perimeter paths remain.
+- The next trial passed topology, eyelet, lace, and seam checks, but its side
+  proof still showed a pinched toe/quarter transition. Independent lower-edge
+  measurements also found up to 1.06 mm of separation from the sole. This is
+  another case where mesh connectivity did not establish visual continuity.
+  Preserved both trials, proofs, and build scripts in named local QA archives.
+- Continued with a shared toe-side surface displacement and a measured lower
+  rim translation that moves both skins together. Final visual acceptance is
+  separate from the automated geometry and provenance checks.
+- Separate analytical toe-roof and shell remaps subsequently exposed the insert
+  through the shoulder. A smoothed side carrier did not solve that overlap and
+  introduced scalloping. Rejected those visual trials despite passing closed-
+  mesh checks. Replaced them with one shared coordinate transform for all
+  forefoot materials, preserving their mutual alignment.
+- Shared plan reshaping revealed the inherited upturned toe-wrap rim more
+  clearly in the side proof. Matched that rim's height to the actual insert.
+  Confined the sole-seating displacement to the bottom few millimeters after
+  a broader displacement exposed a small patch of the underlying layer.
+  Trials 01–05 remain archived with their models, scripts, and available proofs.
+- The rim-only lowering trial exposed the cool-gray lining at the front and
+  was also rejected (trial 06). Replaced it with a common monotonic crown taper
+  applied to all forefoot materials, so lowering the front does not separate
+  the shell, insert, and lining. No trial's topology PASS is treated as proof
+  that these visual defects were fixed.
+
+## 2026-09-25 — Lower-wall coverage check added
+
+- Final side-view review found a small warm-stone breakthrough above the sole
+  even though the lowest gray edge passed contact checks. Those checks proved
+  seating at the hem, not coverage of the visible wall above it.
+- Narrowed only the inward part of the hem displacement to the bottom 1.3 mm;
+  retained the smoother vertical seating adjustment. Added independent sampled
+  rays comparing the base, gray shell, and sole. The new candidate reports
+  zero visible lower-wall breakthrough samples and no sampled side/toe gaps.
+  The preceding candidate and its proofs remain in trial 07 for comparison.
+- The new saved candidate passes the reopened geometry/contact checks and
+  seven-proof provenance verification at 422,689 vertices per shoe. Inspected
+  all seven proofs and documented residual fine border waviness and existing
+  badge stand-off in `qa/r16-court-finish/visual-review.md`. Owner visual approval
+  remains separate; R17 images and website implementation have not started.
+
+## 2026-09-26 — Detail-refinement trials and macro regressions
+
+- Continued from the hash-pinned `pair-r16-court-finish` pictured source into
+  the separate `pair-r16-detail-refine` candidate. The source, independently
+  saved owner master, and both R14 files remain protected; no website or public
+  media change is part of this step.
+- The first trial read stale eyelet world transforms after switching view
+  layers. The reopened entry-distance check rejected it. Updated the dependency
+  graph before reading coordinates and moved the eyelet origins with their
+  geometry and linked pair instances.
+- A tiny central ring in the new toe panel combined with beveling to produce
+  numerical-zero faces. Replaced it with a proper center fan and cleaned only
+  coincident/degenerate microgeometry. Confined the proportion remap to the
+  forefoot after a broader map introduced one upper lace self-intersection.
+- New toe holes require corresponding lining openings. Added five aperture
+  rays per hole through both layers; the original bore-center check did not
+  establish clear ventilation geometry beneath the insert.
+- Close-up review found an inherited folded/overlapping toe stitch and thin
+  throat fins exposed by the collar-end taper. Rebuilt the two toe perimeter
+  paths and seated the quarter/gusset ends below the softened collar. Kept the
+  geometry/contact checks separate from this visual review.
+- A radial correction of the gray toe border passed topology/contact checks
+  but created a raised, wavy lip. Rejected it. A subsequent clean toe-surface
+  union had eleven nonmanifold edges and a visible shoulder step; it was also
+  rejected. Trials 01–05 and their available local proof/QA records are retained
+  in numbered `qa/r16-detail-refine-trial-*` folders. They are not approved assets.
+- Pair instances can retain an old modifier after replacing a master's mesh.
+  Cleared obsolete pair modifiers when replacing geometry and added independent
+  evaluated-vertex parity checks for both hands. Shared mesh data alone does
+  not prove that the displayed pair matches the editable master.
+- The fused clean-toe trial passed closed-mesh/contact checks but an independent
+  lower-wall grid found 37 base-breakthrough samples. Added a localized seating
+  allowance and an explicit toe opening. A subsequent exact Boolean left one
+  numerical-zero face; removed it with a bounded coincident/degenerate cleanup.
+  Trials 06–08 retain these intermediate states and available evidence.
+- Full-size visual review of trial 08 still found the warm-stone surface
+  breaking through the higher front-side transition, beyond the lower-wall
+  check's scope. Raw per-triangle seating offsets then created visible
+  corrugation (trial 09). A low-frequency field removed that noise, but its
+  eyelet-distance mask introduced small scallops (trial 10). These were not
+  accepted merely because automated topology/contact checks passed.
+- A repeat Boolean against the already-cut toe boundary introduced nonmanifold
+  edges and was stopped before saving. The next attempt uses a broad spatial
+  fade before the toe opening and pure vertex fairing of the lower sidewall,
+  rather than recutting a coincident boundary. The owner's source files remain
+  unchanged throughout these trials.
+- The final separate review candidate reopens and passes structural, retained-
+  topology, contact, sampled coverage, vent and pair-parity checks at 431,051
+  evaluated vertices per shoe and 150,393 shell vertices. All ten 16-bit proofs
+  were inspected and verified against model hash `15d4a4d7e81e2f0e154a43f023a301c55a2ef740d798759a2525028276d21b80`.
+  Fine border waviness, small eyelet-edge puckering, faint badge highlight
+  banding and a remaining lower contact-shadow irregularity are recorded in
+  `qa/r16-detail-refine/visual-review.md`; they are not marked visually closed.
+  Owner approval, R17 assets and website work remain separate gates.
+
+## 2026-09-26 — Owner-markup contour/tread refinement checks
+
+- The owner annotated the previous `r16-detail-refine` perspective and outsole
+  PNGs in place. Their old render receipts therefore no longer describe those
+  two files. Preserve the annotated bytes as owner references and create all
+  new proofs in `qa/r16-contour-tread`; do not overwrite the marked images or
+  call their superseded receipts valid.
+- Source inspection found that `R16_MASTER__DM_Bootie` in the pictured detail
+  model has zero vertices. This corrects the earlier claim above that the
+  ventilation test established clear holes through a valid lining: empty
+  geometry trivially passed the ray and zero-nonmanifold checks. New checks
+  explicitly require nonempty visible meshes before topology and vent tests.
+- Initial mask-projection attempts failed before saving because they assumed
+  every mesh had vertices. Added a bounds guard and separated the existing
+  visible layers from the missing internal liner when freezing the white-marked
+  area. No prior model or owner reference image was modified.
+- A read-only liner restoration trial first encountered Blender's multi-user
+  modifier restriction, then reproduced destructive exact-Boolean behavior:
+  the third individual vent cut reduced the prior 44,344-vertex lining to
+  three vertices despite closed edge topology. A bounded internal voxel repair
+  and reduction allowed all twenty cuts to retain a nonempty lining in the
+  next isolated test. The visible gray shell is not voxel-remeshed in this pass.
+- The first full contour/tread build was rejected before saving because a
+  perimeter strip extended past the outsole's bottom footprint. Sidewall rays
+  can hit a flared lip; added downward-footprint checks including strip width.
+  These tests are visual-model checks, not proof of traction or manufacturability.
+- The first two saved contour candidates passed sampled contact/connectivity
+  checks but had visibly folded connector edges; both were rejected and moved
+  intact to `qa/r16-contour-tread-trial-01` and `-02`. Replacing raw underlay-ray
+  displacements with a continuous field was insufficient by itself. The white
+  exclusion projection had also locked hidden back-side vertices and used a
+  hard constraint boundary. Added camera-visibility filtering and a spatial
+  transition around the protected vertices before the next visual check.
+- The visibility correction removed the sharp frozen-region tear. Subsequent
+  macro review still found a broad shoulder bump and shallow crease, so trials
+  03–04 were retained while the new candidate received bounded underlay-following
+  normalization and a localized smoothing pass. No source/owner master was
+  replaced and no proof was image-painted to hide a geometry problem.
+- The separate contour/tread candidate now reopens with 483,081 vertices/shoe,
+  a 150,393-vertex single connected shell, nonempty restored lining, and passing
+  structural, closed-topology, contact, mask, pair-parity and sampled coverage/
+  ventilation checks. All ten new 16-bit proofs were inspected and their hashes
+  bound to model `a1e035c4521aa97a9089f3449ff7beea8412ef91f31a08b7e03594f8890a89dc`.
+  Both annotated references and all protected masters match their prior hashes.
+- Do not summarize this pass as all historical polish resolved. The shallow
+  connector crease, fine gray/stone border waviness, some eyelet-edge puckering,
+  faint badge banding and small lower contact-shadow irregularity remain noted
+  in `qa/r16-contour-tread/visual-review.md`. The new file is an owner-review
+  candidate, not clean-quad production CAD, a traction-tested outsole, owner
+  approval, R17 imagery or a public-release asset.
+
+## 2026-09-26 — Localized eyelet-connector taper
+
+- Continued from the owner's pictured contour/tread candidate into a separate
+  `pair-r16-tapered-connector` file, limiting changes to the connected gray
+  shoulder and its two eyestay stitch paths. All earlier models remain intact.
+- The first scope-fingerprint audit assumed every curve material slot contained
+  a material and stopped on an intentionally empty slot. Updated the read-only
+  fingerprint to preserve/compare null slots; did not modify source materials.
+- The first taper passed structural, contact and preservation checks but still
+  appeared too block-like at the bend. It is retained with its available proofs
+  in `qa/r16-tapered-connector-trial-01`. Increased the lower contour's forward
+  taper and the upper contour's return toward the eyestay for a smoother rising
+  sweep, keeping the white-marked surface and bore neighborhoods constrained.
+- The second taper's stronger upper return pulled a visible notch into the
+  eyestay despite passing topology checks. Rejected it and retained the complete
+  candidate in `qa/r16-tapered-connector-trial-02`. The next version fixes the
+  upper eyelet strip and tapers the lower connector instead; visual review is
+  required in addition to manifold/contact checks.
+- Subsequent taper trials 03–05 improved the lower width but retained a stepped
+  bend; one smoothing trial also disturbed the neighboring gray toe border.
+  Each model and its available proofs are preserved in its numbered trial
+  directory. Added a distance-based toe-border exclusion and measured the
+  desired rising contour on the unchanged quarter surface before rebuilding.
+  These are rejected working candidates, not owner-approved revisions.
+- Trial 06's stronger taper exposed the stone through the gray connector,
+  above the original lower-wall sampling grid. Added a dedicated connector
+  coverage check and tighter local surface fitting. Trial 07 removed the
+  visible sliver but the new check found one extra 0.264 mm burial sample;
+  rejected both, retaining their saved models and proofs. Applied a bounded
+  submillimeter seating allowance before the next review. The test must not
+  equate closed manifold geometry with correct layer seating.
+- Final review candidate completed on 2026-09-27:
+  `pair-r16-tapered-connector.blend`, SHA-256
+  `29d4d087552d9c12410c5a8f50e745880339ccd240782d8e96dbe8263c2bbb74`.
+  All ten final 16-bit saved-model renders were inspected and hash-verified.
+  Reopened structural, contact, retained-topology, pair-parity, ventilation,
+  source-preservation and scope checks pass; 44 other master objects are exact.
+  The dedicated connector grid retains only the same single inherited throat
+  burial sample, with no added sample. It is not a zero-contact-issue claim.
+  Residual rounded shoulder flare and close-up surface limitations are recorded
+  in the new visual review. Owner acceptance remains pending; no R17, website,
+  public assets or deployment work began, and no protected source was replaced.
+
+## 2026-09-27 — Black And Red Connector Markup
+
+- The owner annotated the previous taper proof in place. Its PNG hash is now
+  `d3dea70b489ee9cafedd955a1d27058ac12e78e217ed750e76401b414105a324`;
+  preserve it as an owner reference, not as the original unmarked render. The
+  old proof receipt is historical and no longer matches that annotated file.
+- Restored the black-marked side band from the prior contour/tread geometry.
+  The first red-connector trial instead sharpened its flare and added nine
+  sampled layer-burial points; it was rejected and retained intact under
+  `qa/r16-straight-connector-trial-01`.
+- Direct surface measurements located the flare beside the old white-mask
+  exclusion. Carrying that mask forward unchanged conflicted with the owner's
+  new red-circle instruction. The new red shoulder is now allowed to change
+  in a bounded outer-side region, with retained exclusion vertices, eyelets,
+  laces and the complete toe insert still fixed. Do not claim the superseded
+  portion of the old white exclusion is unchanged in this refinement.
+- Connector trials 02–04 were also rejected and retained in numbered local
+  trial directories. Directional reshaping created a crease; local smoothing
+  then exposed the underlying layer at sampled points. Pointwise ray-based
+  reseating cleared those samples but introduced a visible short ridge in the
+  macro proof. Replaced that discontinuous correction with a spatially
+  smoothed seating field; topology and coverage tests alone cannot establish
+  that a leather surface looks smooth.
+- Trials 05–06 tested a smoothed radial seating field and a wider lower blend.
+  Trial 05 still added sampled underlay burial; trial 06 cleared those samples
+  but moved the visible crease into the lower join. Both are retained, not
+  approved. Switched to fitting the connector against a continuous surface
+  approximation of the unchanged quarter while carrying the shell's skin depth.
+- Trial 07 reduced the crease but worsened the inherited throat burial depth;
+  trial 08's radial smoothing improved the visible join but introduced two
+  smaller burial samples. Retained both candidates. Tightened the independent
+  scope audit to compare burial location and depth, not merely sample count,
+  matching the stronger final-evidence check. Added a smooth localized clearance
+  allowance at the upper connector before the next verification.
+- Final owner-review candidate: `pair-r16-straight-connector.blend`, SHA-256
+  `3ca5905f1ab559d23b72770fb28b35e5d2440d8bd3ba90607a034135ce52f845`.
+  The two black-marked side bands restore 6,089 prior vertices exactly. The
+  red connector is reshaped and fitted on both sides of the linked pair.
+  Reopened structural/contact tests, exact scope/restoration checks and all
+  ten native 16-bit proof receipts pass. The dedicated connector grid has
+  zero burial samples and the lower-wall grid has zero breakthroughs; these
+  remain sampled measurements, not exhaustive fit/manufacturing validation.
+  All 44 other master objects, retained exclusions, earlier models and owner
+  markups are preserved. Fine border waviness and a shallow lower-join shading
+  transition remain documented in the new visual review. No R17, website,
+  public-release or deployment work was started; owner acceptance is pending.
+
+## 2026-09-27 — Match Connector Neck Width To Its Middle
+
+- The owner clarified that thickness means widening the narrow neck directly
+  below the lowest eyelet, not changing the gray material's raised depth.
+  Started a separate `pair-r16-uniform-neck` revision from the unchanged
+  straight-connector model, retaining its restored side bands and middle.
+- First widening trial passed preservation/coverage checks but produced a
+  forked outline in the macro render. The curved toe insert's distance mask
+  suppressed neck movement more than movement above/below it. Retained the
+  rejected file and proofs under `qa/r16-uniform-neck-trial-01`; replaced that
+  constraint with a monotonic toe-side anchor and a height-dependent widening.
+
+## 2026-09-28–29 — Integrated Upper Overlay Contract Reconciliation
+
+- Planning capability discovery could not find the `game-dev` CLI. Blender
+  application selection through Computer Use also timed out by both app name
+  and bundle ID. The owner approved native Blender as the implementation path;
+  do not claim a canonical game-dev package or receipt for this work.
+- A planning `rg` command used an unmatched shell glob for QA Markdown files
+  and stopped before searching. Retried with directory arguments and `rg` glob
+  filtering. During implementation, searches also guessed nonexistent checker
+  and product-choice paths; switched to the actual filenames from `rg --files`
+  and the existing models/migration. No source changes resulted from these errors.
+- The first sandboxed background Blender inspection exited with signal 11
+  (exit 139) before loading the selected model. The same read-only command ran
+  successfully with approved sandbox escalation. It inspected the source and
+  exited without saving a Blender file.
+- The documentation patch initially combined deletion and addition of README
+  in one patch and was rejected for targeting the same path twice. Replaced it
+  with an Update File patch. The workbook patch later failed a context match;
+  reread the live block and applied the narrower update. Neither failed patch
+  changed a file.
+- Parallel Stage 1 work was interrupted by the account usage limit. Resumed
+  from the saved files on 2026-09-29 after the owner said `continue`; retained
+  completed artifact-operation markers and original-output backups instead of
+  repeating or overwriting them.
+- The inspected R16 source has 45 visual objects per shoe but no current module
+  ID tags. Schema v2 records external ownership: M09 owns the connected overlay,
+  its 14 eyelets and four overlay seam paths; M04–M08 and seven chassis objects
+  account for the rest. Report source metadata as pending, never as already
+  embedded. New candidate files must use the metadata helper and strict check.
+- The selected source pathname was independently saved after its planning
+  hash was recorded. The earlier bytes remain in `.blend1`; the current source
+  is `3201af51...`, and the planning backup is `a1b532e5...`. A read-only comparison
+  found matching raw geometry, transforms, material nodes/assignments, modifier
+  names/types, visibility, and collections; other modifier properties and
+  UI/session state were not compared. Both files stayed unchanged during the
+  audit. Added source-path/hash validation and three regression tests so a
+  renamed or newer same-name source cannot silently reuse a registry receipt.
+- Document review exposed ignored DOCX table-grid widths, an orphaned final
+  table row, and workbook auto-fit performed before column widths were set.
+  Corrected the generator sources and rerendered all seven pages and five
+  sheets. Kept the intermediate render as superseded QA, not current output.
+- The first exported-artifact preservation check failed because the unrelated
+  `docs/project-ideas.md` changed independently on September 29. This task has
+  not edited or reverted it. Record its initial and observed hashes instead of
+  assuming a shared-workspace file must remain static. The existing MISTAKES
+  prefix and migration 0008 still match their preservation checks.
+
+## 2026-09-29 — R16 Final Polish Preflight
+
+- An initial instruction-file search included absent `.agents`/`.codex` folders
+  and returned exit 2. Read the repository's actual root `AGENTS.md` and used
+  existing directory paths for subsequent inspection. No asset writes occurred.
+- The `game-dev` executable remains unavailable. Continue only through the
+  already approved native Blender fallback, with exact source/destination
+  authorization before the first file-writing Blender run.
+
+## 2026-09-29 — Stage 2 Final Polish Validation Iterations
+
+- The initial source-inspection helper assumed every material slot held a
+  material. Two unused slots are null; the inspection now reports those slots
+  explicitly. The diagnostic did not save or alter the source.
+- The first in-memory polish failed its pre-save checks: curve cap rings were
+  duplicated, seven lace/eyelet passages still intersected, three tail contacts
+  appeared, and two sampled connector locations penetrated the quarter. No
+  candidate was saved. Preserve failed reports under the trial's `attempts/`
+  directory rather than presenting them as accepted evidence.
+- Welded coincident curve cap rings, corrected lace profile orientation, lifted
+  the free tail ends locally, and used a smooth connector clearance field.
+  The second pre-save check passed topology, stitch seating, connector width,
+  sampled burial, and pair parity, but still failed lace/eyelet contact checks.
+  Radial centering alone does not establish a clear approach over the rim.
+- A broad in-memory rim-clearance experiment removed hardware intersections
+  but introduced lace self-intersections near previously clear upper eyelets.
+  Narrow the correction to failing passages and recheck both kinds of contact;
+  do not weaken the validator or save a numerically failing candidate.
+- The first saved Stage 2 candidate passed the defined numerical checks and
+  produced ten native proof images, but visual review rejected it: connector
+  edge waviness persisted and lace entries looked excessively pinched. Numeric
+  passage, width, and manifold checks are not visual acceptance. Preserve this
+  candidate and its build scripts as a rejected checkpoint; do not promote it.
+- Plain local smoothing retained the connector's scalloped contour. A
+  normal-based surface projection made local folds worse; an experimental
+  Boolean edge patch introduced one nonmanifold edge and 28 tiny faces. These
+  source-preserving diagnostic experiments were rendered only, not saved as
+  Blender candidates. Use measured inner/outer source surfaces for further
+  refinement instead of guessed shell offsets.
+- A sandboxed process-status command was denied; the escalated inventory was
+  too broad and its output truncated. A subsequent narrowed status request was
+  rejected when the approval service hit the account usage limit. No bypass
+  was attempted. After owner `continue`, the already-authorized render session
+  returned all ten completed proof renders normally.
+
+## 2026-09-30 — Stage 2 Second-Trial Lace Diagnostics
+
+- Separate straight-entry lace spans initially intersected two upper eyelets
+  and neighboring spans outside the documented join zones. Per-spline BVH
+  diagnostics localized the failures; no Blender file was saved by these tests.
+- An aperture-plane correction initially lacked a finite influence mask and
+  displaced distant points, creating many self-intersections. The diagnostic
+  caught this before saving. Bounded the influence and then restricted the
+  correction to the two failing upper spans; blanket corrections also disturbed
+  otherwise clear lower routes. Numerical passes still require visual review.
+- The authorized second-trial build was rejected before saving by the strict
+  module checker: the remeshed M09 contained disconnected mesh components.
+  Added an explicit component inventory and a fail-closed size bound before
+  removing any tiny cutter slivers; substantial detached pieces still reject
+  the build. Source and first-trial files remained unchanged.
+- The component inventory identified one eight-vertex cutter sliver with a
+  sub-micron bounding box. Removing only that isolated artifact restored the
+  one-component contract; the second candidate then passed pre-save and reopen
+  validation. Its close proofs still show overly sharp lace bends and fine
+  connector-edge ripples, so numerical success is not Stage 2 completion.
+- A diagnostic lookup initially used the package root for `module-registry.json`;
+  the actual registry is under `engineering/`. Corrected the read-only lookup.
+- Read-only outsole inspection found 371 nonadjacent tread triangle overlaps
+  above local Y=0.118 m, while the sampled inter-object tip rays found no
+  near-coincident sole surfaces. This supports investigating tread self-overlap
+  for the inherited tip artifact; it does not prove all overlaps are visible or
+  authorize redesigning the JOY ORBIT motif.
