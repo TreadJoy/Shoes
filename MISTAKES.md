@@ -2646,3 +2646,117 @@
   natural dimensions. Reloading and a shorter gallery alone did not fix it.
   Hash-versioned image URLs forced fresh decoding and restored the images;
   record this as a stale browser-image issue, not a failed Blender render.
+
+## 2026-10-06 — Project File Review Phase 1
+
+- The first local commerce check and migration-drift command set explicit
+  commerce mode without providing safe local Stripe placeholders. Both commands
+  correctly failed closed before running. No repository or database state was
+  changed. Rerun the baseline with explicit non-provider placeholder values and
+  `TREADJOY_RUNSERVER_DEFAULTS=1` so the local check uses SQLite rather than
+  assuming access to configured PostgreSQL.
+
+## 2026-10-06 — Project File Review Phase 2
+
+- An initial read-only one-line Python command intended to summarize text-file
+  hygiene embedded escaped newlines incorrectly and stopped with a syntax error.
+  It changed nothing. Use the tested repository-hygiene script rather than an
+  ad hoc inline command for the authoritative result.
+- The first development-lock compilation inherited a pip-tools cache path under
+  the user Library, which is not writable in the project sandbox, and stopped
+  before dependency resolution. Rerun with a task-specific cache under `/tmp`;
+  do not broaden filesystem permissions merely to use the default cache.
+- The first local Ruff pre-commit hook used an unqualified `python` command.
+  Pre-commit's system-language hook resolved that command to the host Anaconda
+  interpreter rather than the repository virtual environment, so Ruff was not
+  found. Point the local hook at `.venv/bin/python`; CI continues to invoke the
+  runner's hash-locked Python environment directly.
+- The first local `pip-audit` run could not bootstrap its isolated audit
+  environment while network access was restricted. It changed no project files.
+  Rerun the same hash-locked requirements audit with scoped package and advisory
+  access instead of weakening the audit or suppressing the failure.
+- A later inventory-summary command repeated the earlier escaped-newline error
+  in an inline Python expression and stopped without changing files. This was
+  avoidable after the first occurrence; use a straightforward tabular reader or
+  the maintained inventory tooling for subsequent summaries.
+
+## 2026-10-06 — R17 Companion Study Preparation
+
+- The initial instruction-file discovery included an absent workspace `.agents`
+  directory and returned exit 2. No files changed. Subsequent inspection used
+  the known development paths and supplied repository instructions instead of
+  assuming that optional directory exists. The `game-dev` CLI remains unavailable;
+  retain the approved native Blender path and exact-invocation approval gate.
+
+## 2026-10-06 — R17 Trial 03 Reopen Check
+
+- The confirmed companion build saved its isolated candidate, then stopped before
+  rendering because the original-object snapshot compared unevaluated world
+  matrices after reopening on a different active scene. Blender returned process
+  exit 0 despite the Python assertion; process exit alone is not success evidence.
+  Preserve the candidate and snapshots; do not overwrite or relax exact comparisons.
+- A read-only comparison initially reproduced identity world matrices for the
+  inactive Night Grid scene. Evaluating every scene before the comparison removed
+  all original object/collection differences. The only shader-record differences
+  were expected `ID.users` counts from new scene instances. Retain exact transforms,
+  original shader content and geometry gates; exclude only the documented reference
+  counts. Use `--python-exit-code 1` for the proposed render-only continuation.
+
+## 2026-10-07 — Project File Review Phase 3
+
+- The initial package rename used `git mv`, but the project sandbox permits
+  reading rather than writing the repository's `.git` metadata, so Git could
+  not create `index.lock`. The command moved nothing. A following shell glob
+  consequently had no match and also made no changes. Use a normal filesystem
+  move inside the writable project tree; Git can still recognize the deleted
+  and added paths as a rename when the owner later stages the change.
+- The first full research verification used repository-wide Django test
+  discovery. That imported commerce/account tests and migrations even though
+  those apps are deliberately uninstalled in research mode, producing expected
+  capability-boundary and missing-commerce-migration failures. No source or
+  persistent database state changed. Use the documented installed-app labels
+  (`web.core web.products web.survey web.waitlist`) for the authoritative
+  research suite, as CI and `docs/ci.md` require.
+- A final pre-commit verification set `PRE_COMMIT_HOME` to a new temporary
+  directory. That discarded access to the already-built local hook environment
+  and forced a network fetch for the pinned Gitleaks repository, which failed
+  under restricted DNS. The attempted run changed no project files. Reuse the
+  existing pre-commit cache for local verification; CI independently builds the
+  pinned hook in its network-enabled job.
+- The first post-refresh inventory summary queried a nonexistent `action`
+  column instead of the documented `disposition` column and stopped with a
+  `KeyError` after printing only the entry and byte totals. The inventory file
+  itself had already been written correctly. Rerun the read-only summary using
+  the actual TSV header; do not infer a failed inventory build from the summary
+  script's error.
+
+## 2026-10-07 — Project File Review Phase 4
+
+- The first active design-workspace contract test changed its working directory
+  to the design script folder but still invoked `.venv/bin/python` as though it
+  were at the repository root. The shell stopped before running the test and no
+  files changed. Use the absolute repository virtual-environment interpreter
+  when a validation command must run from a nested workspace directory.
+
+## 2026-10-07 — Project File Review Phase 5
+
+- A read-only attempt to verify the current apex, `www`, and private research
+  endpoints through the web inspection tool returned inaccessible-URL errors
+  for all three hosts. No external or repository state changed. The README was
+  corrected to date the available September evidence and explicitly leave all
+  current external state unverified rather than treating historical evidence as
+  a live-service assertion.
+
+## 2026-10-07 — Project File Review Phase 7
+
+- The first parallel final-suite orchestration did not retain the commerce
+  process session identifier after the command exceeded its initial output
+  window, so its final status could not be collected. A follow-up `ps` check was
+  also blocked by the project sandbox and changed no state. The commerce suite
+  was rerun once in a retained session and completed successfully; only that
+  complete 289-test result is used as final evidence.
+- The first two final `pip-audit` processes could not upgrade the isolated
+  audit environment while network access was restricted. They changed no
+  project files and produced no vulnerability result. The combined hash-locked
+  audit was rerun with scoped advisory/package access and reported no known
+  vulnerabilities.

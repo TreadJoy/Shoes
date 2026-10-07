@@ -19,11 +19,12 @@ installs only `requirements.txt`; it contains no development tools.
 | holidays | Commerce | United States business-day calculations for order operations. | `>=0.102,<1` accepts compatible pre-1.0 fixes. | github.com/vacanza/holidays / MIT |
 | Pillow | Both modes | Image metadata validation in the release-content check. | `>=12.1.1,<13` retains the current major line. | python-pillow.github.io / MIT-CMU |
 | psycopg[binary] | Both modes | PostgreSQL database adapter with reproducible binary wheels. | `>=3.3.4,<4` retains the current major line. | psycopg.org / LGPL-3.0-only, owner review required |
-| PyJWT[crypto] | Private research POC | Verifies Cloudflare Access RS256 application tokens, including signature, issuer, audience, lifetime, and owner identity. | `>=2.13,<3` starts at the 2.13 security release and retains the current major line. | pyjwt.readthedocs.io / MIT; `cryptography` extra uses Apache-2.0 OR BSD-3-Clause |
+| PyJWT[crypto] | Private research POC | Verifies Cloudflare Access RS256 application tokens, including signature, issuer, audience, lifetime, and owner identity. | `>=2.15.1,<3` includes the September 2026 security hardening and retains the current major line. | pyjwt.readthedocs.io / MIT; `cryptography` extra uses Apache-2.0 OR BSD-3-Clause |
 | python-decouple | Both modes | Environment-driven configuration. | `>=3.8,<4` retains its current major line. | github.com/henriquebastos/python-decouple / MIT |
 | resend | Research jobs/webhook | Confirmation delivery, contact/segment sync, broadcast send, and signed webhook verification behind a narrow adapter. | `>=2.42,<3` retains the reviewed major line. | github.com/resendlabs/resend-python / MIT |
 | stripe | Commerce only | Hosted Checkout and verified Stripe webhook processing. | `>=15.1,<16` retains the current major line. | stripe.com / MIT |
 | django-storages[s3] | Public environments | Django storage backend for R2-backed public media; its S3 extra provides boto3. | `>=1.14.6,<2` keeps the reviewed stable major line. | django-storages / BSD-3-Clause |
+| urllib3 | Both modes | Security floor for the transitive Requests/botocore HTTP transport; application code does not import it directly. | `>=2.8,<3` excludes the affected proxy-TLS and streaming implementations in 2.7.0. | urllib3.readthedocs.io / MIT |
 
 Mode-specific packages are installed from the same release lock. Research
 cannot initialize Stripe/allauth/commerce code; Resend is imported lazily only
@@ -39,6 +40,9 @@ for development and future CI. It adds only:
 - `pip-audit` to scan locked dependencies for known vulnerabilities.
 - `pip-licenses` to produce the auditable license inventory.
 - `pre-commit` for the existing secret-scan hook.
+- `ruff` for focused Python correctness checks.
+- `virtualenv` as an explicit security floor for pre-commit's environment
+  builder; project code does not import it.
 
 Use only the public PyPI simple index over HTTPS. Do not add private or extra
 indexes, `--trusted-host`, direct URLs, editable packages, or credentials to

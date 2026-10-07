@@ -1,9 +1,10 @@
 # Render Blueprint for the owner-scoped research staging POC.
-# The current POC deliberately uses Render's Free Postgres tier: it is
-# disposable, expires after 30 days, and must contain only synthetic/owner test
-# data. Review the current dashboard before applying it. No secrets are stored
-# here. A durable research deployment must use a separately approved paid
-# database tier and the same tested release commit.
+# This approved disposable POC shape uses Render's Free Postgres tier and must
+# contain only synthetic/owner test data. The database provisioned in September
+# 2026 had a recorded October 3, 2026 expiration; review the current dashboard
+# before applying or reusing this Blueprint. No secrets are stored here. A
+# durable research deployment must use a separately approved paid database tier
+# and the same tested release commit.
 
 services:
   - type: web
@@ -13,8 +14,9 @@ services:
     region: ohio
     autoDeployTrigger: "off"
     renderSubdomainPolicy: disabled
-    # Register the intended origin name without creating DNS; Cloudflare
-    # Access and the public edge route remain a later gated step.
+    # Register the intended origin name without creating DNS. September 2026
+    # evidence records a private Cloudflare Access/Worker edge, but its current
+    # external state must be reverified before reuse.
     domains:
       - research.tread-joy.com
     buildCommand: ./scripts/render_build.sh

@@ -2,7 +2,7 @@
 
 ## 1. Product mission and current status
 
-Shoes is the Django 5.2 application for **TreadJoy**, a public ecommerce business for modular shoes and accessories. The finished system will handle real customer accounts, personal information, inventory, orders, payments, shipping, returns, and operational history. Treat every production-facing change as work on a real commercial system, not a class project, portfolio demo, or disposable prototype.
+This repository contains the Django 5.2 application for **TreadJoy**, a public ecommerce business for modular shoes and accessories. The finished system will handle real customer accounts, personal information, inventory, orders, payments, shipping, returns, and operational history. Treat every production-facing change as work on a real commercial system, not a class project, portfolio demo, or disposable prototype.
 
 TreadJoy is pre-launch and still validating demand, positioning, and operations. It nevertheless has approved provisional launch policies recorded in this file. Those policies are authoritative until the project owner changes them; do not describe them as absent or silently replace them with generic ecommerce defaults.
 
@@ -69,7 +69,8 @@ These are approved decisions, not suggestions:
 - Continue using Stripe-hosted Checkout. TreadJoy must never collect or store raw payment-card data.
 
 `PROJECT_PLAN.md` distinguishes these approved targets from current implementation. Never present a planned invariant as already implemented.
-`MISTAKES.md` is a auditable historical log that is to be updated by the working agent which maintains what actions have been attempted and failed
+`MISTAKES.md` is an auditable historical log. The working agent must update it
+with attempted actions that failed.
 
 ### Customer thesis
 
@@ -124,7 +125,7 @@ Do not create final-sale categories or policy exceptions without explicit approv
 
 ## 4. Actual technical architecture
 
-- **Backend:** Django 5.2 project in `Shoes/` with domain apps under `web/`.
+- **Backend:** Django 5.2 project in `treadjoy/` with domain apps under `web/`.
 - **Rendering:** server-rendered Django templates. There is no public API or SPA architecture.
 - **Frontend:** semantic HTML, centralized CSS/design tokens, and three small referenced vanilla JavaScript enhancements. Phase 6 removed only browser-verified obsolete CSS and established the manual matrix in `docs/visual-regression.md`; this is not a production performance or accessibility certification.
 - **Database:** PostgreSQL is the authoritative transactional store. Correctness relies on transactions and row locking in high-risk workflows.
@@ -153,8 +154,8 @@ explicit configuration described above.
 
 ### Repository map
 
-- `Shoes/settings.py`: environment-driven Django and deployment-mode configuration.
-- `Shoes/urls.py`: mode-aware root routing.
+- `treadjoy/settings.py`: environment-driven Django and deployment-mode configuration.
+- `treadjoy/urls.py`: mode-aware root routing.
 - `web/core/`: homepage and general content pages.
 - `web/products/`: products, variants, compatibility/BOM data, availability, and preorder batches.
 - `web/cart/`: authenticated and guest carts plus cart context.
@@ -164,6 +165,7 @@ explicit configuration described above.
 - `templates/`: shared and app-namespaced Django templates; shared chrome belongs in `templates/base.html` and `templates/partials/`.
 - `static/`: five currently referenced CSS/JavaScript source files. No public image is currently committed; local development media stays ignored.
 - `media/`: local development uploads. Do not commit customer uploads or unapproved development imagery.
+- `design/`: tracked workspace guidance plus ignored active and archived private product-design sources; these are not runtime media or approved public assets.
 - `docs/visual-regression.md`: manual two-mode, mobile/desktop presentation-review matrix and evidence-handling rules.
 - `.github/workflows/`: separate PostgreSQL application CI, dependency-audit, and full-history secret-scanning workflows.
 - `PROJECT_PLAN.md`: evidence-based current-state assessment and dependency-ordered implementation roadmap.
@@ -391,7 +393,7 @@ Use the repository virtual environment and `.env.example`; never commit `.env`.
 python manage.py check
 python manage.py test
 python manage.py makemigrations --check --dry-run
-python -m compileall Shoes web
+python -m compileall treadjoy web
 ```
 
 Run mode-specific and PostgreSQL-backed commands required by the change. Before handoff, run `git diff --check`, inspect `git diff`, confirm only intended files changed, and report any check that could not run and why.

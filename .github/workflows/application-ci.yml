@@ -27,7 +27,7 @@ jobs:
     runs-on: ubuntu-24.04
     timeout-minutes: 25
     env:
-      DJANGO_SETTINGS_MODULE: Shoes.ci_settings
+      DJANGO_SETTINGS_MODULE: treadjoy.ci_settings
       TREADJOY_CI: "true"
       TREADJOY_ENVIRONMENT: ci
       TREADJOY_MODE: commerce
@@ -123,9 +123,9 @@ jobs:
       - name: Run compile, configuration, and static checks
         env: *blocked_provider_network
         run: |
-          python -m compileall -q Shoes web
+          python -m compileall -q treadjoy web
           python manage.py check
-          env DJANGO_SETTINGS_MODULE=Shoes.settings TREADJOY_ENVIRONMENT=staging TREADJOY_INGRESS=cloudflare-locked DJANGO_DEBUG=false ALLOWED_HOSTS=ci.invalid python manage.py check --deploy --fail-level WARNING
+          env DJANGO_SETTINGS_MODULE=treadjoy.settings TREADJOY_ENVIRONMENT=staging TREADJOY_INGRESS=cloudflare-locked DJANGO_DEBUG=false ALLOWED_HOSTS=ci.invalid python manage.py check --deploy --fail-level WARNING
           python manage.py collectstatic --noinput --clear
           test -f "$CI_STATIC_ROOT/css/style.css"
           test -f "$CI_STATIC_ROOT/js/navigation.js"
@@ -149,7 +149,7 @@ jobs:
     runs-on: ubuntu-24.04
     timeout-minutes: 25
     env:
-      DJANGO_SETTINGS_MODULE: Shoes.ci_settings
+      DJANGO_SETTINGS_MODULE: treadjoy.ci_settings
       TREADJOY_CI: "true"
       TREADJOY_ENVIRONMENT: ci
       TREADJOY_MODE: research
@@ -254,9 +254,9 @@ jobs:
       - name: Run compile, configuration, and static checks
         env: *blocked_provider_network
         run: |
-          python -m compileall -q Shoes web
+          python -m compileall -q treadjoy web
           python manage.py check
-          env DJANGO_SETTINGS_MODULE=Shoes.settings TREADJOY_ENVIRONMENT=staging TREADJOY_INGRESS=cloudflare-locked DJANGO_DEBUG=false ALLOWED_HOSTS=ci.invalid python manage.py check --deploy --fail-level WARNING
+          env DJANGO_SETTINGS_MODULE=treadjoy.settings TREADJOY_ENVIRONMENT=staging TREADJOY_INGRESS=cloudflare-locked DJANGO_DEBUG=false ALLOWED_HOSTS=ci.invalid python manage.py check --deploy --fail-level WARNING
           python manage.py collectstatic --noinput --clear
           test -f "$CI_STATIC_ROOT/css/style.css"
           test -f "$CI_STATIC_ROOT/js/navigation.js"
@@ -299,3 +299,9 @@ jobs:
         run: |
           python -m pip_audit --require-hashes --requirement requirements.txt
           python -m pip_audit --require-hashes --requirement requirements-dev.txt
+
+      - name: Run repository hygiene checks
+        run: |
+          python scripts/check_repository_hygiene.py
+          python -m ruff check manage.py treadjoy web scripts
+          python -m unittest scripts.tests.test_repository_hygiene scripts.tests.test_build_file_review_inventory

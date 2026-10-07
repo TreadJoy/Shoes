@@ -8,7 +8,7 @@ TreadJoy uses two independent settings axes:
   variables so deployment manifests must omit them entirely.
 - `TREADJOY_ENVIRONMENT` is `local`, `ci`, `staging`, or `production` and
   controls deployment hardening. `ci` is available only through
-  `Shoes.ci_settings` with `TREADJOY_CI=true`.
+  `treadjoy.ci_settings` with `TREADJOY_CI=true`.
 
 Only staging and production are public environments. They fail at Django
 startup unless every required configuration variable is set and valid. Errors

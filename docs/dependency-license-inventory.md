@@ -1,12 +1,12 @@
 # Dependency License Inventory
 
-Reverified on 2026-09-05 after adding PyJWT 2.13.0 with its cryptography extra
-for Cloudflare Access token validation and regenerating both CPython 3.12 hash
-locks. The resolved package metadata reports MIT for PyJWT, MIT-0 for cffi,
-Apache-2.0 OR BSD-3-Clause for cryptography, and BSD-3-Clause for pycparser.
-This inventory is factual package metadata, not a legal conclusion. No added
-package reported an unknown or custom license. `psycopg` and `psycopg-binary`
-report `LGPL-3.0-only`; owner review remains required before A0.3 is accepted.
+Reverified on 2026-10-06 after adding Ruff and raising security floors for
+PyJWT, urllib3, and development-only virtualenv. The resulting transitive
+python-discovery update is included below. The resolved package metadata
+reports MIT for each added or updated package. This inventory is factual
+package metadata, not a legal conclusion. No added package reported an unknown
+or custom license. `psycopg` and `psycopg-binary` report `LGPL-3.0-only`;
+owner review remains required before A0.3 is accepted.
 
 ## Runtime Lock
 
@@ -30,7 +30,7 @@ report `LGPL-3.0-only`; owner review remains required before A0.3 is accepted.
 | psycopg            | 3.3.4       | LGPL-3.0-only                        | https://psycopg.org/                                                 |
 | psycopg-binary     | 3.3.4       | LGPL-3.0-only                        | https://psycopg.org/                                                 |
 | pycparser          | 3.0         | BSD-3-Clause                         | https://github.com/eliben/pycparser                                  |
-| PyJWT              | 2.13.0      | MIT                                  | https://github.com/jpadilla/pyjwt                                    |
+| PyJWT              | 2.15.1      | MIT                                  | https://github.com/jpadilla/pyjwt                                    |
 | python-dateutil    | 2.9.0.post0 | Apache Software License; BSD License | https://github.com/dateutil/dateutil                                 |
 | python-decouple    | 3.8         | MIT License                          | http://github.com/henriquebastos/python-decouple/                    |
 | requests           | 2.34.2      | Apache Software License              | https://github.com/psf/requests                                      |
@@ -40,7 +40,7 @@ report `LGPL-3.0-only`; owner review remains required before A0.3 is accepted.
 | sqlparse           | 0.6.0       | BSD License                          | https://github.com/andialbrecht/sqlparse                             |
 | stripe             | 15.5.1      | MIT License                          | https://stripe.com/                                                  |
 | typing_extensions  | 4.16.0      | PSF-2.0                              | https://github.com/python/typing_extensions                          |
-| urllib3            | 2.7.0       | MIT                                  | https://github.com/urllib3/urllib3/blob/main/CHANGES.rst             |
+| urllib3            | 2.8.0       | MIT                                  | https://github.com/urllib3/urllib3/blob/main/CHANGES.rst             |
 
 ## Development Lock
 
@@ -93,15 +93,16 @@ report `LGPL-3.0-only`; owner review remains required before A0.3 is accepted.
 | psycopg-binary          | 3.3.4       | LGPL-3.0-only                        | https://psycopg.org/                                                 |
 | py-serializable         | 2.1.0       | Apache Software License              | https://github.com/madpah/serializable#readme                        |
 | pycparser               | 3.0         | BSD-3-Clause                         | https://github.com/eliben/pycparser                                  |
-| PyJWT                   | 2.13.0      | MIT                                  | https://github.com/jpadilla/pyjwt                                    |
+| PyJWT                   | 2.15.1      | MIT                                  | https://github.com/jpadilla/pyjwt                                    |
 | pyparsing               | 3.3.2       | MIT                                  | https://github.com/pyparsing/pyparsing/                              |
 | pyproject_hooks         | 1.2.0       | MIT License                          | https://github.com/pypa/pyproject-hooks                              |
 | python-dateutil         | 2.9.0.post0 | Apache Software License; BSD License | https://github.com/dateutil/dateutil                                 |
 | python-decouple         | 3.8         | MIT License                          | http://github.com/henriquebastos/python-decouple/                    |
-| python-discovery        | 1.5.3       | MIT License                          | https://github.com/tox-dev/python-discovery                          |
+| python-discovery        | 1.6.1       | MIT License                          | https://github.com/tox-dev/python-discovery                          |
 | requests                | 2.34.2      | Apache Software License              | https://github.com/psf/requests                                      |
 | resend                  | 2.42.0      | MIT License                          | https://github.com/resendlabs/resend-python                           |
 | rich                    | 15.0.0      | MIT License                          | https://github.com/Textualize/rich                                   |
+| ruff                    | 0.16.10     | MIT                                  | https://docs.astral.sh/ruff                                          |
 | s3transfer              | 0.19.2      | Apache Software License              | https://github.com/boto/s3transfer                                   |
 | setuptools              | 84.0.0      | MIT                                  | https://github.com/pypa/setuptools                                   |
 | six                     | 1.17.0      | MIT License                          | https://github.com/benjaminp/six                                     |
@@ -111,7 +112,7 @@ report `LGPL-3.0-only`; owner review remains required before A0.3 is accepted.
 | tomli                   | 2.4.1       | MIT                                  | https://github.com/hukkin/tomli                                      |
 | tomli_w                 | 1.2.0       | MIT License                          | https://github.com/hukkin/tomli-w                                    |
 | typing_extensions       | 4.16.0      | PSF-2.0                              | https://github.com/python/typing_extensions                          |
-| urllib3                 | 2.7.0       | MIT                                  | https://github.com/urllib3/urllib3/blob/main/CHANGES.rst             |
-| virtualenv              | 21.7.5      | MIT                                  | https://github.com/pypa/virtualenv                                   |
+| urllib3                 | 2.8.0       | MIT                                  | https://github.com/urllib3/urllib3/blob/main/CHANGES.rst             |
+| virtualenv              | 21.14.5     | MIT                                  | https://github.com/pypa/virtualenv                                   |
 | wcwidth                 | 0.8.2       | MIT                                  | https://github.com/jquast/wcwidth                                    |
 | wheel                   | 0.48.0      | MIT                                  | https://github.com/pypa/wheel                                        |

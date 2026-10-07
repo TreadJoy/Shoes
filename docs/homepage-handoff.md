@@ -17,7 +17,7 @@ as acceptance of the wider storefront.
 Configuration and documentation:
 
 - `.env.example`
-- `Shoes/settings.py`
+- `treadjoy/settings.py`
 - `docs/homepage-acceptance.md`
 - `docs/homepage-handoff.md`
 - `docs/homepage-implementation-decisions.md`
@@ -154,7 +154,7 @@ Representative commands:
 .venv/bin/python manage.py test web.core.tests.test_deployment_modes
 .venv/bin/python manage.py test web.core.tests.test_youtube
 .venv/bin/python manage.py makemigrations --check --dry-run
-.venv/bin/python -m compileall -q Shoes web
+.venv/bin/python -m compileall -q treadjoy web
 git diff --check
 ```
 

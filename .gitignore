@@ -10,6 +10,7 @@ env/
 
 # Python
 __pycache__/
+.ruff_cache/
 *.pyc
 *.pyo
 *.pyd
@@ -18,6 +19,10 @@ __pycache__/
 db.sqlite3
 media/
 staticfiles/
+
+# Private product-design workspace
+design/active/
+design/archive/
 
 # IDE/editor
 .idea/

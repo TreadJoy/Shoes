@@ -8,12 +8,12 @@ from django.http import HttpResponse
 from django.test import RequestFactory, SimpleTestCase, override_settings
 from jwt.exceptions import PyJWKClientConnectionError
 
-from Shoes.cloudflare_access import (
+from treadjoy.cloudflare_access import (
     AccessKeyServiceUnavailable,
     AccessTokenInvalid,
     verify_access_token,
 )
-from Shoes.middleware import CloudflareOriginLockMiddleware
+from treadjoy.middleware import CloudflareOriginLockMiddleware
 
 
 TEAM_DOMAIN = "https://unit-test.cloudflareaccess.com"
@@ -59,7 +59,7 @@ class CloudflareAccessTokenTests(SimpleTestCase):
         )
         return client
 
-    @patch("Shoes.cloudflare_access._jwks_client")
+    @patch("treadjoy.cloudflare_access._jwks_client")
     def test_valid_application_token_is_accepted(self, jwks_client):
         jwks_client.return_value = self.client_for()
 
@@ -68,7 +68,7 @@ class CloudflareAccessTokenTests(SimpleTestCase):
         self.assertEqual(claims["email"], OWNER_EMAIL)
         jwks_client.assert_called_once_with(TEAM_DOMAIN)
 
-    @patch("Shoes.cloudflare_access._jwks_client")
+    @patch("treadjoy.cloudflare_access._jwks_client")
     def test_invalid_claims_or_signature_are_rejected(self, jwks_client):
         other_key = rsa.generate_private_key(public_exponent=65537, key_size=2048)
         cases = (
@@ -99,7 +99,7 @@ class CloudflareAccessTokenTests(SimpleTestCase):
                 with self.assertRaises(AccessTokenInvalid):
                     verify_access_token(token)
 
-    @patch("Shoes.cloudflare_access._jwks_client")
+    @patch("treadjoy.cloudflare_access._jwks_client")
     def test_signing_key_outage_fails_closed_without_claiming_bad_identity(
         self, jwks_client
     ):
@@ -132,7 +132,7 @@ class CloudflareAccessMiddlewareTests(SimpleTestCase):
             HTTP_CF_ACCESS_JWT_ASSERTION=token,
         )
 
-    @patch("Shoes.middleware.verify_access_token")
+    @patch("treadjoy.middleware.verify_access_token")
     def test_requires_both_origin_secret_and_access_token(self, verify_token):
         def reject_missing_token(token):
             if not token:
@@ -140,7 +140,7 @@ class CloudflareAccessMiddlewareTests(SimpleTestCase):
             return {}
 
         verify_token.side_effect = reject_missing_token
-        with self.assertLogs("Shoes.security", level="WARNING") as captured:
+        with self.assertLogs("treadjoy.security", level="WARNING") as captured:
             missing_origin = self.middleware(
                 self.factory.get("/", HTTP_CF_ACCESS_JWT_ASSERTION="signed-token")
             )
@@ -156,7 +156,7 @@ class CloudflareAccessMiddlewareTests(SimpleTestCase):
         self.assertIn("cloudflare access token denied", captured.output[1])
         verify_token.assert_called_once_with("")
 
-    @patch("Shoes.middleware.verify_access_token")
+    @patch("treadjoy.middleware.verify_access_token")
     def test_valid_access_token_reaches_django(self, verify_token):
         verify_token.return_value = {"email": OWNER_EMAIL}
 
@@ -164,29 +164,29 @@ class CloudflareAccessMiddlewareTests(SimpleTestCase):
 
         self.assertEqual(response.status_code, 200)
 
-    @patch("Shoes.middleware.verify_access_token")
+    @patch("treadjoy.middleware.verify_access_token")
     def test_invalid_token_is_forbidden(self, verify_token):
         verify_token.side_effect = AccessTokenInvalid
 
-        with self.assertLogs("Shoes.security", level="WARNING") as captured:
+        with self.assertLogs("treadjoy.security", level="WARNING") as captured:
             response = self.middleware(self.request())
 
         self.assertEqual(response.status_code, 403)
         self.assertEqual(response.headers["Cache-Control"], "no-store")
         self.assertIn("cloudflare access token denied", captured.output[0])
 
-    @patch("Shoes.middleware.verify_access_token")
+    @patch("treadjoy.middleware.verify_access_token")
     def test_key_service_outage_is_unavailable(self, verify_token):
         verify_token.side_effect = AccessKeyServiceUnavailable
 
-        with self.assertLogs("Shoes.security", level="ERROR") as captured:
+        with self.assertLogs("treadjoy.security", level="ERROR") as captured:
             response = self.middleware(self.request())
 
         self.assertEqual(response.status_code, 503)
         self.assertEqual(response.headers["Cache-Control"], "no-store")
         self.assertIn("cloudflare access signing keys unavailable", captured.output[0])
 
-    @patch("Shoes.middleware.verify_access_token")
+    @patch("treadjoy.middleware.verify_access_token")
     def test_generic_health_paths_remain_directly_available(self, verify_token):
         response = self.middleware(self.factory.get("/health/ready/"))
 

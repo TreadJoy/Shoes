@@ -121,7 +121,7 @@ def main() -> int:
             environment.pop(key)
     environment.update(
         {
-            "DJANGO_SETTINGS_MODULE": "Shoes.settings",
+            "DJANGO_SETTINGS_MODULE": "treadjoy.settings",
             "TREADJOY_ENVIRONMENT": "local",
             "TREADJOY_MODE": "research",
             "TREADJOY_RUNSERVER_DEFAULTS": "1",

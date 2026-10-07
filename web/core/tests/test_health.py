@@ -32,7 +32,7 @@ class HealthEndpointTests(TestCase):
 
         with (
             patch("web.core.health.connections", {"default": database}),
-            self.assertLogs("Shoes.alert", level="CRITICAL") as captured,
+            self.assertLogs("treadjoy.alert", level="CRITICAL") as captured,
         ):
             response = self.client.get("/health/ready/")
 

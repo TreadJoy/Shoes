@@ -7,12 +7,13 @@ commerce remains disabled until its payment, inventory, fulfillment, legal,
 security, and operational gates pass.
 
 The owner confirmed on 2026-08-26 that `tread-joy.com` was purchased through
-Cloudflare as the intended base domain. The apex and `www` currently serve an
-asset-only, noindexed holding page. A private research POC now has a
-Render-managed Django origin and separate Render PostgreSQL database, but its
-provider hostname is disabled and `research.tread-joy.com` has no DNS record;
-there is no public research edge, Access policy, R2 bucket/custom domain, or
-transactional email service yet. `hello@tread-joy.com` and
+Cloudflare as the intended base domain. September 2026 evidence records an
+asset-only, noindexed holding page at the apex and `www`, plus a private
+research POC on Render behind a Cloudflare Access/Worker edge. Its Free
+PostgreSQL database had a recorded October 3, 2026 expiration, so all current
+external state must be re-verified before use and is not claimed here.
+There is still no approved public research launch, R2 bucket/custom domain, or
+transactional email service. `hello@tread-joy.com` and
 `noreply@tread-joy.com` are reserved future addresses, not active or monitored
 mailboxes.
 
@@ -164,7 +165,7 @@ env TREADJOY_ENVIRONMENT=local TREADJOY_MODE=research \
 env TREADJOY_ENVIRONMENT=local TREADJOY_MODE=research \
   TREADJOY_RUNSERVER_DEFAULTS=1 STRIPE_SECRET_KEY= STRIPE_WEBHOOK_SECRET= \
   .venv/bin/python manage.py test web.core web.products web.survey web.waitlist
-.venv/bin/python -m compileall -q Shoes web
+.venv/bin/python -m compileall -q treadjoy web
 .venv/bin/python -m pip check
 ```
 
@@ -180,8 +181,10 @@ After migrating a research database, run the read-only capability check:
 ```sh
 env TREADJOY_ENVIRONMENT=local TREADJOY_MODE=research \
   STRIPE_SECRET_KEY= STRIPE_WEBHOOK_SECRET= \
-.venv/bin/python manage.py check_research_boundary
-.venv/bin/python manage.py check_research_engagement
+  .venv/bin/python manage.py check_research_boundary
+env TREADJOY_ENVIRONMENT=local TREADJOY_MODE=research \
+  STRIPE_SECRET_KEY= STRIPE_WEBHOOK_SECRET= \
+  .venv/bin/python manage.py check_research_engagement
 ```
 
 The command must pass in PostgreSQL CI and the exact release environment. It

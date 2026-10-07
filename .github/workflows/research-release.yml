@@ -56,7 +56,7 @@ jobs:
       artifact_name: ${{ steps.identity.outputs.artifact_name }}
       content_profile: ${{ steps.identity.outputs.content_profile }}
     env:
-      DJANGO_SETTINGS_MODULE: Shoes.ci_settings
+      DJANGO_SETTINGS_MODULE: treadjoy.ci_settings
       TREADJOY_CI: "true"
       TREADJOY_ENVIRONMENT: ci
       TREADJOY_MODE: research
@@ -196,7 +196,7 @@ jobs:
 
       - name: Run public-like settings and manifest static checks
         env:
-          PUBLIC_DJANGO_SETTINGS_MODULE: Shoes.settings
+          PUBLIC_DJANGO_SETTINGS_MODULE: treadjoy.settings
           PUBLIC_TREADJOY_ENVIRONMENT: staging
           PUBLIC_TREADJOY_MODE: research
           PUBLIC_TREADJOY_INGRESS: cloudflare-locked

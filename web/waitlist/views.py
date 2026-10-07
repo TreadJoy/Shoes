@@ -13,7 +13,7 @@ from web.core.rate_limits import consume_session_limit, record_abuse_metric, thr
 from web.core.forms import focus_first_error
 
 from .forms import WaitlistSubscriptionForm
-from .models import ResearchOutboundEmail, ResendWebhookEvent, SubscriptionStatus, WaitlistSubscription
+from .models import ResearchOutboundEmail, ResendWebhookEvent, WaitlistSubscription
 from .providers import ResearchEmailProviderError, verify_webhook
 from .services import confirm_subscription, request_subscription, suppress_subscription, unsubscribe_subscription
 

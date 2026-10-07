@@ -19,7 +19,7 @@ database connection. A failed probe emits the deduplicable
 
 ## Correlation and redaction
 
-`Shoes.observability.RequestCorrelationMiddleware` runs before application
+`treadjoy.observability.RequestCorrelationMiddleware` runs before application
 middleware. It accepts only a UUID-shaped `X-Request-ID`; invalid or missing
 values are replaced with a new UUID. The response returns the normalized ID in
 the same header. A context variable makes the ID available to application log

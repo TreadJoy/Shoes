@@ -74,7 +74,7 @@ class RequestCorrelationMiddleware:
         request.request_id = request_id
         context_token = request_id_context.set(request_id)
         started = time.perf_counter()
-        logger = logging.getLogger("Shoes.request")
+        logger = logging.getLogger("treadjoy.request")
         try:
             response = self.get_response(request)
         except Exception:
@@ -196,7 +196,7 @@ def emit_alert(
         raise ValueError("alert_name must be a short lowercase identifier")
     if severity not in _ALERT_LEVELS:
         raise ValueError("severity must be info, warning, or critical")
-    logging.getLogger("Shoes.alert").log(
+    logging.getLogger("treadjoy.alert").log(
         _ALERT_LEVELS[severity],
         "alert emitted",
         extra={

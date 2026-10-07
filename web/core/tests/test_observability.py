@@ -5,7 +5,7 @@ from types import SimpleNamespace
 
 from django.test import SimpleTestCase, TestCase
 
-from Shoes.observability import (
+from treadjoy.observability import (
     RedactionFilter,
     JsonFormatter,
     RequestContextFilter,
@@ -109,7 +109,7 @@ class RequestCorrelationTests(TestCase):
     def test_valid_request_id_is_propagated_and_logged(self):
         request_id = "12345678-1234-5678-1234-567812345678"
 
-        with self.assertLogs("Shoes.request", level="INFO") as captured:
+        with self.assertLogs("treadjoy.request", level="INFO") as captured:
             response = self.client.get(
                 "/health/live/", HTTP_X_REQUEST_ID=request_id
             )
@@ -136,7 +136,7 @@ class RequestCorrelationTests(TestCase):
 
 class AlertDeliveryTests(SimpleTestCase):
     def test_synthetic_alert_is_delivered_as_structured_record(self):
-        with self.assertLogs("Shoes.alert", level="WARNING") as captured:
+        with self.assertLogs("treadjoy.alert", level="WARNING") as captured:
             emit_alert(
                 "synthetic.delivery",
                 "warning",

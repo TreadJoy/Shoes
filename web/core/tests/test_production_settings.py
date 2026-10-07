@@ -9,7 +9,7 @@ from django.middleware.clickjacking import XFrameOptionsMiddleware
 from django.middleware.security import SecurityMiddleware
 from django.test import RequestFactory, SimpleTestCase, override_settings
 
-from Shoes.middleware import CloudflareOriginLockMiddleware, ContentSecurityPolicyMiddleware
+from treadjoy.middleware import CloudflareOriginLockMiddleware, ContentSecurityPolicyMiddleware
 
 
 PUBLIC_SETUP_PROBE = r"""
@@ -81,7 +81,7 @@ class PublicSettingsProcessTests(SimpleTestCase):
                 environment.pop(name)
         environment.update(
             {
-                "DJANGO_SETTINGS_MODULE": "Shoes.settings",
+                "DJANGO_SETTINGS_MODULE": "treadjoy.settings",
                 "TREADJOY_ENVIRONMENT": "staging",
                 "TREADJOY_MODE": mode,
                 "TREADJOY_INGRESS": "cloudflare-locked",

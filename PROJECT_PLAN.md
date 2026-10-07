@@ -1,7 +1,7 @@
 # TreadJoy Production Roadmap
 
-- Last repository audit: 2026-09-05
-- Audited base commit: f7bd463f1e0cd5eb32140074b10969d0859d2482 (local; the worktree also contains uncommitted audit/holding-page changes; hosted CI and origin/main still require owner-authorized publication)
+- Last repository audit: 2026-10-07
+- Audited base commit: 8eac5397c483cd9a7b014d912134395f207b53fb (local; the worktree also contains the uncommitted project-file review, and hosted CI/origin publication remains owner-controlled)
 - Document purpose: living assessment, decision record, and dependency-ordered path from the current repository to research launch and then commerce launch.
 
 ## How to use this plan
@@ -18,9 +18,14 @@
 
 ### Heritage Court visual-development contract — 2026-09-28
 
+This section is a chronological record. Later dated entries supersede earlier
+statements about the current handoff. Relative `qa/`, `scripts/`, and `design/`
+paths in this section resolve from
+`design/active/treadjoy-heritage-court-v3/` unless stated otherwise.
+
 The owner approved six active module concepts for the private Heritage Court render master: M09 **Integrated Upper Overlay**, M04 **Back Panel and Heel**, M05 **Tongue**, M06 **Art Badge**, M07 **Laces**, and M08 **Sole**. M09 combines the connected dark shell, all 14 mounted eyelets, and overlay stitching per shoe; the warm-stone vamp and quarter remain permanent chassis surfaces. M01–M03 retire with `replaced_by: TJ-HC3-M09`. The durable decision and vocabulary are in `docs/adr/0001-integrated-upper-overlay.md` and `CONTEXT.md`.
 
-Stage 1 reconciles the private module registry to schema v2, current specifications, generators, and validators. Its review evidence is under `media/development/treadjoy-heritage-court-v3/qa/module-contract-v2/`. The selected R16 uniform-neck trial source remains unchanged; source object ownership is recorded in the registry and new candidate metadata is deferred to the next build. Physical interfaces and removal dependencies remain `TBC_ENGINEER`. This changes no Django schema, applied migration, catalog data, launch configurator policy, or finished-SKU inventory authority.
+Stage 1 reconciles the private module registry to schema v2, current specifications, generators, and validators. Its review evidence is under `design/active/treadjoy-heritage-court-v3/qa/module-contract-v2/`. The selected R16 uniform-neck trial source remains unchanged; source object ownership is recorded in the registry and new candidate metadata is deferred to the next build. Physical interfaces and removal dependencies remain `TBC_ENGINEER`. This changes no Django schema, applied migration, catalog data, launch configurator policy, or finished-SKU inventory authority.
 
 Stage 1 implementation checks passed on 2026-09-29: 27 contract tests, native read-only Blender ownership checks, seven inspected DOCX pages, and five inspected workbook sheets with formula/recalculation/export checks. The owner subsequently said `next` and explicitly authorized Stage 2. R16 geometry polish is in progress: `qa/r16-final-polish-trial-01/` contains one saved candidate and ten reviewed proof renders. It passes the defined numerical checks but failed visual review for connector waviness and pinched lace entries; it is not promoted. On 2026-09-30 the owner authorized the exact second-trial invocation in that trial's `REVIEW.md`, targeting isolated `qa/r16-final-polish-trial-02/`. The retry requires full numerical validation, overlay drift comparison, and close visual review; authorization is not acceptance. R17 materials and final rendering remain not started. The preserved Stage 1 handoff is `qa/module-contract-v2/REVIEW.md`. The selected pathname was independently saved after planning; the registered current hash and preserved `.blend1` planning hash are distinguished in the source-comparison report. This task has not saved either source Blender file. Stage 2 promotion still requires explicit visual approval.
 
@@ -30,7 +35,7 @@ Stage 1 implementation checks passed on 2026-09-29: 27 contract tests, native re
 
 **2026-10-02 trial-03 result:** saved/reopened trial 03 passes numerical checks; all 13 private 16-bit proofs (the existing ten views plus matched inside/outside/lace macros) were inspected and hash-verified. The inside shoulder follows the outside contour more closely, outsole-tip striping is removed, and gold-accent shading is improved. The outside neck/middle ratio is 1.001367; eight bilateral chord ratios are 0.934020–1.074431; maximum sampled stitch seating is 0.090007 mm. Thirty-eight protected objects remain geometrically exact to trial 02, with zero pair drift. Fine connector ripples/eyelet-junction notches and sharp or crumpled lace approaches remain visual blockers. `qa/r16-final-polish-trial-03/REVIEW.md` is the current handoff and proposes an unauthorized fourth correction; nothing is promoted and Stage 3/4 remain not started. The selected original, trial-02 input, owner review edit, and `docs/project-ideas.md` are unchanged. A provenance note distinguishes trial 01's later save from its `.blend1`, which still matches its historical proof hash; neither was altered or restored by this work.
 
-The later owner-gated stages are R16 geometry polish, four R17 material kits on the same geometry, and 23 private final renders using studio lineups instead of an unengineered detachment sequence. They are not completed by contract reconciliation. Hash-bound V2/R1–R15 records remain preserved and are superseded through living indexes. The development media tree stays private and ignored by Git; no render or physical-performance claim is approved for public release by this work.
+The later owner-gated stages are R16 geometry polish, four R17 material kits on the same geometry, and 23 private final renders using studio lineups instead of an unengineered detachment sequence. They are not completed by contract reconciliation. Hash-bound V2/R1–R15 records remain preserved and are superseded through living indexes. The private design workspace stays ignored by Git; no render or physical-performance claim is approved for public release by this work.
 
 **Trial-04 authorization:** the owner authorized the exact fourth-trial input, output, and native invocation proposed in trial 03's review. The correction is in progress from trial 03's verified `f9fef7c8…` checkpoint into isolated `qa/r16-final-polish-trial-04/`. Scope is remaining connector-edge/eyelet-junction and lace-approach cleanup while retaining the inside/outside match, chassis, hardware locations, badge silhouette, and cleaned JOY ORBIT tread. Numerical and visual gates remain required; no promotion or later stage is authorized by this correction.
 
@@ -54,11 +59,11 @@ The later owner-gated stages are R16 geometry polish, four R17 material kits on 
 
 **2026-10-05 trial-08 final handoff:** all thirteen full-size proofs are inspected and hash-verified, including the Trial 05/07/08 lateral comparison. The rounded side-panel curve is restored. Reopened numerical checks, all 27 module-contract tests and the independent 580,386-polygon preservation audit pass; fifteen scripts and three data inputs are archived. The build also preserves 583,128 shell coordinates and forty other master objects exactly. Fine edge waviness, the small lowest-eyelet notch/scallop, uneven stitch visibility and stiff lace drape still prevent visual acceptance. The current handoff is `qa/r16-final-polish-trial-08/REVIEW.md`; current-market recommendations are documented separately. Trial 08 is an improved but unfinished checkpoint, not completion of the broader cleanup brief. No promotion, new trial, material work, final masters or public use follows without owner review and authorization. Original/prior models, both owner-edited reviews and `docs/project-ideas.md` remain unchanged.
 
-**2026-10-05 owner priority change — Stage 3 authorized:** the owner explicitly elects to defer remaining Blender refinement and explore materials/render possibilities on the current Trial 08 geometry. This supersedes the earlier requirement to finish all Stage 2 visual corrections before material exploration, without falsely marking those corrections passed. The deferred refinement entry is now in `docs/project-ideas.md`. Trial 08 (`94f6de5b…`) is the provisional Stage 3 geometry authority; preserve it and all earlier review evidence. Prepared `design/r17-material-configurations.json` records Night Grid, Relief Contour, Blue Flowline, Intersection Mosaic and three whole-module mixed assignments. Keep geometry/marks identical and chassis, sole and hardware fixed across variants; use procedural/original materials only. Exact native invocation confirmation is pending in `qa/r17-material-trial-01/AUTHORIZATION.md`; no R17 model or previews have been generated. Stage 4, website use, publication and manufacturing remain outside this authorization. Stop for owner review after the Stage 3 material studies.
+**2026-10-05 owner priority change — Stage 3 authorized:** the owner explicitly elects to defer remaining Blender refinement and explore materials/render possibilities on the current Trial 08 geometry. This supersedes the earlier requirement to finish all Stage 2 visual corrections before material exploration, without falsely marking those corrections passed. The deferred refinement entry is now in `docs/project-ideas.md`. Trial 08 (`94f6de5b…`) is the provisional Stage 3 geometry authority; preserve it and all earlier review evidence. Prepared `design/active/treadjoy-heritage-court-v3/design/r17-material-configurations.json` records Night Grid, Relief Contour, Blue Flowline, Intersection Mosaic and three whole-module mixed assignments. Keep geometry/marks identical and chassis, sole and hardware fixed across variants; use procedural/original materials only. Exact native invocation confirmation is pending in `qa/r17-material-trial-01/AUTHORIZATION.md`; no R17 model or previews have been generated. Stage 4, website use, publication and manufacturing remain outside this authorization. Stop for owner review after the Stage 3 material studies.
 
 ### Current architecture
 
-TreadJoy is a Django 5.2 and PostgreSQL application rendered with Django templates, centralized CSS, and small vanilla JavaScript enhancements. It uses django-allauth account flows without Google/social authentication for now, Stripe-hosted Checkout and signed webhooks, database-backed authenticated/guest carts, order snapshots, shipment records, and Django admin. A private, development-team-only research POC is live on a Render-managed Django origin with a separate Render PostgreSQL database. The public research edge path, R2 bucket/custom media domain, and public CDN route are not provisioned; the apex/www holding Worker is a separate noindex asset-only surface. There is no SPA, public API, background queue, cache service, search service, or generalized CMS.
+TreadJoy is a Django 5.2 and PostgreSQL application rendered with Django templates, centralized CSS, and small vanilla JavaScript enhancements. It uses django-allauth account flows without Google/social authentication for now, Stripe-hosted Checkout and signed webhooks, database-backed authenticated/guest carts, order snapshots, shipment records, and Django admin. A private, development-team-only research POC was verified on a Render-managed Django origin behind a Cloudflare Access/Worker edge in September 2026. Its Free PostgreSQL database had a recorded October 3, 2026 expiration, so current external availability is unverified and no longer described as live. The apex/www holding Worker is a separate noindex asset-only surface; the public research launch and R2 bucket/custom media domain remain unprovisioned. There is no SPA, public API, background queue, cache service, search service, or generalized CMS.
 
 The codebase supports two fail-closed modes selected by TREADJOY_MODE:
 
@@ -94,12 +99,12 @@ The approved deployment architecture is one tested release commit deployed to se
 - New Stripe event/payment/refund writes retain bounded audit fields instead of raw payloads. Legacy raw fields remain temporarily for expand/backfill/verify/backup/contract safety; production retention approval, alerting, and controlled replay tooling remain open.
 - The reviewed dependency inputs and hash-locked runtime/development manifests are reproducible; Phase 1 removed the Google/social extra and refreshed both locks and the license inventory.
 - GitHub runs separate commerce/research PostgreSQL jobs, a dependency audit, and full-history secret scanning. The repository now includes a SHA-pinned research release workflow with immutable artifact metadata, protected staging/production promotion jobs, and explicit rollback operations. The latest hosted run failed in the research PostgreSQL job on a nullable-row lock query; the fix is verified locally but remains unpublished pending owner authorization to push to `main`.
-- Production configuration includes `STATIC_ROOT`, manifest static storage, and an R2 media backend contract. Repository health/readiness, structured logging, redaction, alert definitions, and incident runbooks are present. The private Render POC origin/database and apex holding Worker are live, but public research DNS/Access, R2 resources, provider monitoring, analytics, backup/PITR procedure, restore drill, migration release process, and rollback evidence are not yet verified.
+- Production configuration includes `STATIC_ROOT`, manifest static storage, and an R2 media backend contract. Repository health/readiness, structured logging, redaction, alert definitions, and incident runbooks are present. The private Render/Cloudflare POC was verified in September, but its database's recorded expiration has passed and current external state is unverified. Public research approval, R2 resources, provider monitoring, analytics, backup/PITR procedure, restore drill, migration release process, and rollback evidence remain incomplete.
 - The catalog has been quarantined to its safe empty state, while homepage and
   social sections remain explicitly labeled development placeholders that block
   release until approved factual replacements exist.
 - Product detail lacks production imagery, size/fit, materials, care, compatibility explanation, shipping/returns context, and other purchase-confidence content.
-- SEO support is deployment-aware but incomplete: the private research POC correctly emits noindex/robots controls and safe canonical/Open Graph/X metadata when public, while a public sitemap, approved structured data/content, verified social destinations, production error-page review, and measurement are still absent.
+- SEO support is deployment-aware but incomplete: recorded private-POC evidence showed noindex/robots controls and safe canonical/Open Graph/X metadata, while a public sitemap, approved structured data/content, verified social destinations, production error-page review, and measurement are still absent.
 
 ### Missing or intentionally deferred functionality
 
@@ -318,22 +323,22 @@ P1 storefront, email, accessibility, SEO, performance, monitoring, and admin-usa
 - **Testing requirements:** Exercise row locks, uniqueness, transaction rollback, research negative capability tests, and a deliberately failing check to prove the workflow blocks a merge.
 - **Acceptance criteria:** One commit produces green, separately visible commerce/research PostgreSQL jobs; concurrency tests execute rather than skip; required checks and troubleshooting instructions are documented.
 - **Implementation evidence (2026-08-26):** PR
-  [#1](https://github.com/TreadJoy/Shoes/pull/1) added explicit commerce and
+  [#1](https://github.com/TreadJoy/treadjoy/pull/1) added explicit commerce and
   research jobs against isolated digest-pinned PostgreSQL 17.11 services,
   restricted application roles, guarded CI settings, blank-database migration
   and drift checks, warning-fatal deployment checks, isolated static
   collection, hash-enforced dependency auditing, and a shared PostgreSQL
   uniqueness/atomic-rollback contract test. GitHub-hosted
-  [Application CI #5](https://github.com/TreadJoy/Shoes/actions/runs/33005044655)
+  [Application CI #5](https://github.com/TreadJoy/treadjoy/actions/runs/33005044655)
   passed 152 commerce tests (6 skipped), both explicit row-lock race classes,
   and 78 research tests (5 skipped); both modes passed the explicit database
-  contract. [Secret Scan #33](https://github.com/TreadJoy/Shoes/actions/runs/33005044653)
+  contract. [Secret Scan #33](https://github.com/TreadJoy/treadjoy/actions/runs/33005044653)
   passed with the official Gitleaks 8.30.1 image pinned to its Linux/AMD64
   digest and needed no license or secret. The private repository moved into the
   TreadJoy Enterprise organization so protection could be enforced. With no
   prior branch rule to preserve, `main` now requires the four documented checks
   and strict freshness. Commit `7676e4c` deliberately failed the required
-  commerce job in [Application CI #3](https://github.com/TreadJoy/Shoes/actions/runs/33004202293);
+  commerce job in [Application CI #3](https://github.com/TreadJoy/treadjoy/actions/runs/33004202293);
   GitHub disabled merging while research and the dependency audit remained
   green. The probe was removed without merging, and commit `91d9f4f` restored
   all four checks to green.
@@ -356,7 +361,7 @@ P1 storefront, email, accessibility, SEO, performance, monitoring, and admin-usa
 - **Current state:** The repository implements explicit local/CI/staging/production profiles, Cloudflare-locked ingress validation, exact hosts/origins, PostgreSQL TLS policy, SMTP/R2/static requirements, CSP, secure cookies, and staged HSTS checks. Owner acceptance and live provider/origin validation remain pending; repository configuration is not deployed infrastructure.
 - **Required work:** Keep the current settings architecture incremental; add typed environment parsing and mode-aware validation; require explicit ALLOWED_HOSTS/CSRF origins/database/email/storage values; configure secure cookies, SSL redirect, HSTS rollout, referrer/frame/content-type controls, CSP, proxy SSL header only for the locked origin path, trusted origins, production static/media storage, and a startup check that research rejects all Stripe configuration.
 - **Dependencies:** A0.3 and A1.1.
-- **Affected areas:** Shoes/settings.py or a narrowly split settings package, .env.example, deployment checks, tests.
+- **Affected areas:** treadjoy/settings.py or a narrowly split settings package, .env.example, deployment checks, tests.
 - **Security considerations:** Prevent direct-origin/proxy spoofing, DEBUG leakage, wildcard hosts/origins, insecure cookies, accidental console email, and secrets in error messages; document key rotation.
 - **Testing requirements:** Matrix tests for valid/invalid commerce and research environments, Django check --deploy, header/cookie integration tests, direct-origin simulation, and no-secret error assertions.
 - **Acceptance criteria:** Each environment either starts with the complete approved security contract or exits with a redacted actionable error; CI proves both success and fail-closed cases.
@@ -375,7 +380,7 @@ P1 storefront, email, accessibility, SEO, performance, monitoring, and admin-usa
 - **Security considerations:** Health endpoints must not reveal versions/configuration; logs exclude secrets, tokens, session IDs, full addresses, and unnecessary payloads; monitoring access follows least privilege.
 - **Testing requirements:** Redaction tests, health dependency-failure tests, correlation propagation tests, synthetic error/alert delivery in staging, and runbook tabletop.
 - **Acceptance criteria:** Operators can distinguish alive, ready, and degraded states; a staged failure creates a redacted searchable event and reaches the approved responder; runbooks name owner, severity, and next action.
-- **Implementation evidence (2026-09-02):** Added `GET /health/live/` and `GET /health/ready/` with generic no-store responses, database dependency checking, and a deduplicable readiness alert. Added `Shoes.observability` request-ID validation/propagation, allow-listed JSON stdout events, secret/token/email/waitlist-token redaction, provider-neutral alert emission, alert definitions, and the owner-scoped incident runbooks in `docs/observability.md` and `docs/incident-runbooks.md`. Focused health/observability tests pass (11 tests); the supported research and commerce suites also pass. Provider monitor routing, synthetic staging delivery, escalation, and tabletop evidence remain open.
+- **Implementation evidence (2026-09-02):** Added `GET /health/live/` and `GET /health/ready/` with generic no-store responses, database dependency checking, and a deduplicable readiness alert. Added `treadjoy.observability` request-ID validation/propagation, allow-listed JSON stdout events, secret/token/email/waitlist-token redaction, provider-neutral alert emission, alert definitions, and the owner-scoped incident runbooks in `docs/observability.md` and `docs/incident-runbooks.md`. Focused health/observability tests pass (11 tests); the supported research and commerce suites also pass. Provider monitor routing, synthetic staging delivery, escalation, and tabletop evidence remain open.
 
 ### A1.4 — Approve privacy, retention, and security operating policy
 
@@ -402,7 +407,7 @@ P1 storefront, email, accessibility, SEO, performance, monitoring, and admin-usa
 - **Current state:** Mode-aware installed apps/routes and subprocess tests are a strong base; shared product preview routes remain intentional; complete production-environment and dependency-import assertions are not yet in CI.
 - **Required work:** Add route/app/import/configuration assertions; test all known commerce URL patterns and crafted POSTs; verify templates/context never emit purchase controls or commerce endpoints; ensure research migrations/database lack commerce tables where intended; make Stripe packages/configuration unreachable at startup; document allowed research capabilities.
 - **Dependencies:** A1.1 and A1.2.
-- **Affected areas:** Shoes/settings.py, Shoes/urls.py, base/navigation/product templates, deployment-mode tests, release checklist.
+- **Affected areas:** treadjoy/settings.py, treadjoy/urls.py, base/navigation/product templates, deployment-mode tests, release checklist.
 - **Security considerations:** Test direct URLs rather than navigation only; reject credentials rather than ignore them; avoid sharing sessions, databases, caches, secrets, or media containing commerce/customer data.
 - **Testing requirements:** PostgreSQL research suite, URL enumeration, crafted order/payment requests, template link scan, import instrumentation, and production-like startup with/without forbidden Stripe variables.
 - **Acceptance criteria:** CI proves no registered/importable order-taking path, Stripe initialization, order creation, or commerce credential in research mode; allowed product previews remain read-only and documented.
@@ -429,7 +434,7 @@ P1 storefront, email, accessibility, SEO, performance, monitoring, and admin-usa
   owner cost/recovery decision (2026-09-04).
 - **Objective:** Deploy research mode through Cloudflare to a managed Django/PostgreSQL origin with repeatable release and recovery.
 - **Why it matters:** The research site is the first public validation surface and the production architecture rehearsal for commerce.
-- **Current state:** `tread-joy.com` has been purchased through Cloudflare as the intended base domain. The repository now contains a release workflow, Render staging Blueprint, WSGI/build/start/migration/job/backup scripts, rollback adapter, and a review-gated Cloudflare/R2 policy. A disposable Free Render Postgres 17 database is provisioned in Ohio with external access blocked, three least-privilege roles are verified, and the owner-approved Render research origin is live on the recorded release commit with migrations applied and provider readiness returning HTTP 200. Cloudflare Access/edge wiring, direct-origin proof, durable recovery, live monitoring, and public launch remain open. Repository health/observability foundations are documented under A1.3.
+- **Current state:** `tread-joy.com` has been purchased through Cloudflare as the intended base domain. The repository contains a release workflow, Render staging Blueprint, WSGI/build/start/migration/job/backup scripts, rollback adapter, and a review-gated Cloudflare/R2 policy. September evidence records a disposable Free Render Postgres 17 database in Ohio, three least-privilege roles, a migrated Render research origin, and a private Cloudflare Access/Worker edge. The database's recorded October 3 expiration has passed; current provider, DNS, certificate, and edge state must be re-verified before reuse. Durable recovery, monitoring, R2, public-launch approval, and current end-to-end acceptance remain open. Repository health/observability foundations are documented under A1.3.
 - **Required work:** Select an approved research hostname plus managed origin/vendor/region; provision a separate research database and least-privilege roles; configure Cloudflare DNS, Full strict TLS, WAF/rate rules, origin lock-down, static/media caching, and an R2 custom domain; configure secrets, email, logs, health checks, migrations, backups/PITR, restore and rollback; publish approved research privacy/terms/accessibility/contact content and basic canonical/robots/social metadata; complete keyboard, WCAG 2.2 AA, responsive, and performance launch checks; deploy one immutable release artifact and run launch/rollback rehearsals.
 - **Dependencies:** A0.1–A0.3, A1.1–A1.4, A2.1, and A2.2.
 - **Affected areas:** Hosting/IaC or deployment config, Cloudflare, R2/storage, database, CI/CD, settings, operations docs.
@@ -1137,6 +1142,19 @@ Review flags include low-contrast white branding, roomy lineup framing and the
 previously deferred geometry defects. These are private 96-sample material studies,
 not Stage 4 masters or approved commerce imagery. Owner material acceptance,
 promotion and Stage 4 remain pending; no further geometry work was performed.
+
+### 2026-10-07 — Companion Study Saved; Diagnostics Pending
+
+The owner-confirmed Trial 03 build saved the isolated companion-study candidate
+`qa/r17-material-trial-03/treadjoy-heritage-court-v3-r17-companions.blend`
+(`6b74ecee…`). Its first reopen check used unevaluated matrices from an inactive
+scene and stopped before rendering. The later read-only saved-candidate report
+passes after evaluating each scene and verifies the preserved original objects,
+collections, shaders, fixed material assignments, geometry records, module
+grouping, and zero measured assembly-endpoint matrix error. No diagnostic image
+or movie has been rendered. The corrected render-only command in Trial 03's
+`AUTHORIZATION.md` remains awaiting owner confirmation; it does not save either
+Blender file or authorize Stage 4, promotion, publication, or geometry changes.
 
 ## Launch gates at a glance
 

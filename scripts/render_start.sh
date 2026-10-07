@@ -8,7 +8,7 @@ set -euo pipefail
 python manage.py migrate --check
 python manage.py check --deploy --fail-level WARNING
 
-exec python -m gunicorn Shoes.wsgi:application \
+exec python -m gunicorn treadjoy.wsgi:application \
   --bind "0.0.0.0:${PORT:?PORT must be supplied by the origin}" \
   --workers "${WEB_CONCURRENCY:-2}" \
   --access-logfile - \

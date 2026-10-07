@@ -13,7 +13,7 @@ PostgreSQL service and process environment. The research job does not define
 any `STRIPE_*` variable, runs the read-only `check_research_boundary` command
 after migrating from zero, and explicitly selects only installed research apps.
 Normal application tests use the guarded `ci` environment profile. Each job
-also loads a synthetic staging profile with `Shoes.settings` and runs the
+also loads a synthetic staging profile with `treadjoy.settings` and runs the
 warning-fatal Django deployment check; its R2, SMTP, database, and hostname
 values are non-secret placeholders and no provider network call is permitted.
 
@@ -37,7 +37,7 @@ The bootstrap administrator creates those databases and transfers ownership
 to `treadjoy_ci`. Django uses only that login, which is explicitly
 `NOSUPERUSER`, `NOCREATEDB`, `NOCREATEROLE`, `NOINHERIT`, and
 `NOREPLICATION`. Django receives the pre-created test database through
-`Shoes.ci_settings` and uses `--keepdb` so the restricted login never needs to
+`treadjoy.ci_settings` and uses `--keepdb` so the restricted login never needs to
 create or drop databases. The PostgreSQL service is destroyed with the job;
 `--keepdb` does not persist data between workflow runs.
 
@@ -99,7 +99,7 @@ CREATE DATABASE treadjoy_ci_test OWNER treadjoy_ci;
 Set the normal Django database and deployment-mode variables, plus:
 
 ```sh
-export DJANGO_SETTINGS_MODULE=Shoes.ci_settings
+export DJANGO_SETTINGS_MODULE=treadjoy.ci_settings
 export TREADJOY_CI=true
 export TREADJOY_ENVIRONMENT=ci
 export TREADJOY_INGRESS=direct
@@ -122,9 +122,9 @@ python manage.py migrate --noinput
 python manage.py migrate --check
 python manage.py makemigrations --check --dry-run
 python manage.py check_research_boundary  # research mode only
-python -m compileall -q Shoes web
+python -m compileall -q treadjoy web
 python manage.py check
-env DJANGO_SETTINGS_MODULE=Shoes.settings \
+env DJANGO_SETTINGS_MODULE=treadjoy.settings \
   TREADJOY_ENVIRONMENT=staging \
   TREADJOY_INGRESS=cloudflare-locked \
   DJANGO_DEBUG=false \

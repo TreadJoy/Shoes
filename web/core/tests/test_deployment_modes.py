@@ -357,9 +357,34 @@ class DeploymentModeProcessTests(SimpleTestCase):
             msg=f"stdout:\n{result.stdout}\nstderr:\n{result.stderr}",
         )
 
+    def test_project_package_uses_canonical_name(self):
+        result = self.run_defaults_probe(
+            "import importlib.util; "
+            "assert importlib.util.find_spec('treadjoy') is not None; "
+            "assert importlib.util.find_spec('Shoes') is None"
+        )
+
+        self.assert_process_succeeded(result)
+
+    def test_manage_command_explains_a_missing_django_installation(self):
+        result = self.run_defaults_probe(
+            "import builtins, manage; "
+            "real_import = builtins.__import__; "
+            "builtins.__import__ = lambda name, *args, **kwargs: "
+            "(_ for _ in ()).throw(ImportError('synthetic missing Django')) "
+            "if name == 'django.core.management' else "
+            "real_import(name, *args, **kwargs); "
+            "\ntry:\n manage.main()\n"
+            "except ImportError as error:\n"
+            " assert \"Couldn't import Django\" in str(error)\n"
+            "else:\n raise AssertionError('manage.main() unexpectedly succeeded')"
+        )
+
+        self.assert_process_succeeded(result)
+
     def test_bare_runserver_uses_safe_local_defaults(self):
         result = self.run_defaults_probe(
-            "import os, sys; os.environ['DJANGO_SETTINGS_MODULE'] = 'Shoes.settings'; "
+            "import os, sys; os.environ['DJANGO_SETTINGS_MODULE'] = 'treadjoy.settings'; "
             "sys.argv = ['manage.py', 'runserver']; "
             "from manage import _configure_runserver_defaults; "
             "_configure_runserver_defaults(); import django; django.setup(); "
@@ -373,7 +398,7 @@ class DeploymentModeProcessTests(SimpleTestCase):
 
     def test_runserver_honors_complete_commerce_dotenv_database_profile(self):
         result = self.run_defaults_probe(
-            "import os, sys; os.environ['DJANGO_SETTINGS_MODULE'] = 'Shoes.settings'; "
+            "import os, sys; os.environ['DJANGO_SETTINGS_MODULE'] = 'treadjoy.settings'; "
             "sys.argv = ['manage.py', 'runserver']; "
             "from manage import _configure_runserver_defaults; "
             "_configure_runserver_defaults(); import django; django.setup(); "
@@ -400,7 +425,7 @@ class DeploymentModeProcessTests(SimpleTestCase):
 
     def test_runserver_honors_complete_research_dotenv_database_profile(self):
         result = self.run_defaults_probe(
-            "import os, sys; os.environ['DJANGO_SETTINGS_MODULE'] = 'Shoes.settings'; "
+            "import os, sys; os.environ['DJANGO_SETTINGS_MODULE'] = 'treadjoy.settings'; "
             "sys.argv = ['manage.py', 'runserver']; "
             "from manage import _configure_runserver_defaults; "
             "_configure_runserver_defaults(); import django; django.setup(); "
@@ -424,7 +449,7 @@ class DeploymentModeProcessTests(SimpleTestCase):
 
     def test_process_database_settings_override_dotenv(self):
         result = self.run_defaults_probe(
-            "import os, sys; os.environ['DJANGO_SETTINGS_MODULE'] = 'Shoes.settings'; "
+            "import os, sys; os.environ['DJANGO_SETTINGS_MODULE'] = 'treadjoy.settings'; "
             "sys.argv = ['manage.py', 'runserver']; "
             "from manage import _configure_runserver_defaults; "
             "_configure_runserver_defaults(); import django; django.setup(); "
@@ -456,7 +481,7 @@ class DeploymentModeProcessTests(SimpleTestCase):
     def test_partial_dotenv_database_profile_fails_closed(self):
         result = self.run_defaults_probe(
             "import os, sys\n"
-            "os.environ['DJANGO_SETTINGS_MODULE'] = 'Shoes.settings'\n"
+            "os.environ['DJANGO_SETTINGS_MODULE'] = 'treadjoy.settings'\n"
             "sys.argv = ['manage.py', 'runserver']\n"
             "from manage import _configure_runserver_defaults\n"
             "_configure_runserver_defaults()\n"
@@ -494,7 +519,7 @@ class DeploymentModeProcessTests(SimpleTestCase):
                 environment.pop(name)
         environment.update(
             {
-                "DJANGO_SETTINGS_MODULE": "Shoes.settings",
+                "DJANGO_SETTINGS_MODULE": "treadjoy.settings",
                 "TREADJOY_ENVIRONMENT": "local",
                 "TREADJOY_MODE": mode,
                 "TREADJOY_INGRESS": "direct",
@@ -615,7 +640,7 @@ class CISettingsProcessTests(SimpleTestCase):
                 environment.pop(name)
         environment.update(
             {
-                "DJANGO_SETTINGS_MODULE": "Shoes.ci_settings",
+                "DJANGO_SETTINGS_MODULE": "treadjoy.ci_settings",
                 "TREADJOY_CI": "true",
                 "TREADJOY_ENVIRONMENT": "ci",
                 "TREADJOY_MODE": "research",
@@ -678,7 +703,7 @@ assert settings.EMAIL_BACKEND == "django.core.mail.backends.locmem.EmailBackend"
 
         self.assert_failed_with(
             environment,
-            "Shoes.ci_settings requires TREADJOY_CI=true",
+            "treadjoy.ci_settings requires TREADJOY_CI=true",
         )
 
     def test_ci_settings_require_the_ci_environment(self):
@@ -687,7 +712,7 @@ assert settings.EMAIL_BACKEND == "django.core.mail.backends.locmem.EmailBackend"
 
         self.assert_failed_with(
             environment,
-            "Shoes.ci_settings requires TREADJOY_ENVIRONMENT=ci",
+            "treadjoy.ci_settings requires TREADJOY_ENVIRONMENT=ci",
         )
 
     def test_ci_settings_require_a_distinct_test_database(self):

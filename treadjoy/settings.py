@@ -27,10 +27,10 @@ IS_PUBLIC_ENVIRONMENT = TREADJOY_ENVIRONMENT in {"staging", "production"}
 
 if (
     TREADJOY_ENVIRONMENT == "ci"
-    and os.environ.get("DJANGO_SETTINGS_MODULE") != "Shoes.ci_settings"
+    and os.environ.get("DJANGO_SETTINGS_MODULE") != "treadjoy.ci_settings"
 ):
     raise ImproperlyConfigured(
-        "TREADJOY_ENVIRONMENT='ci' may only be used with Shoes.ci_settings."
+        "TREADJOY_ENVIRONMENT='ci' may only be used with treadjoy.ci_settings."
     )
 
 TREADJOY_MODE = environment.choice("TREADJOY_MODE", _VALID_TREADJOY_MODES)
@@ -191,10 +191,10 @@ if IS_COMMERCE_MODE:
 
 
 MIDDLEWARE = [
-    "Shoes.observability.RequestCorrelationMiddleware",
-    "Shoes.middleware.CloudflareOriginLockMiddleware",
+    "treadjoy.observability.RequestCorrelationMiddleware",
+    "treadjoy.middleware.CloudflareOriginLockMiddleware",
     "django.middleware.security.SecurityMiddleware",
-    "Shoes.middleware.ContentSecurityPolicyMiddleware",
+    "treadjoy.middleware.ContentSecurityPolicyMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
@@ -205,7 +205,7 @@ MIDDLEWARE = [
 if IS_COMMERCE_MODE:
     MIDDLEWARE.append("allauth.account.middleware.AccountMiddleware")
 
-ROOT_URLCONF = "Shoes.urls"
+ROOT_URLCONF = "treadjoy.urls"
 
 TEMPLATE_CONTEXT_PROCESSORS = [
     "django.template.context_processors.request",
@@ -225,7 +225,7 @@ TEMPLATES = [
     }
 ]
 
-WSGI_APPLICATION = "Shoes.wsgi.application"
+WSGI_APPLICATION = "treadjoy.wsgi.application"
 
 
 _use_bare_runserver_sqlite = (
@@ -656,11 +656,11 @@ LOGGING = {
     "version": 1,
     "disable_existing_loggers": False,
     "filters": {
-        "request_context": {"()": "Shoes.observability.RequestContextFilter"},
-        "redact_sensitive": {"()": "Shoes.observability.RedactionFilter"},
+        "request_context": {"()": "treadjoy.observability.RequestContextFilter"},
+        "redact_sensitive": {"()": "treadjoy.observability.RedactionFilter"},
     },
     "formatters": {
-        "json": {"()": "Shoes.observability.JsonFormatter"},
+        "json": {"()": "treadjoy.observability.JsonFormatter"},
     },
     "handlers": {
         "console": {
@@ -670,7 +670,7 @@ LOGGING = {
         },
     },
     "loggers": {
-        "Shoes": {"handlers": ["console"], "level": "INFO", "propagate": False},
+        "treadjoy": {"handlers": ["console"], "level": "INFO", "propagate": False},
         "web": {"handlers": ["console"], "level": "INFO", "propagate": False},
         "django": {"handlers": ["console"], "level": "INFO", "propagate": False},
     },

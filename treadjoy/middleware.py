@@ -14,7 +14,7 @@ from .cloudflare_access import (
 
 
 _ORIGIN_HEALTH_PATHS = frozenset({"/health/live/", "/health/ready/"})
-_security_logger = logging.getLogger("Shoes.security")
+_security_logger = logging.getLogger("treadjoy.security")
 
 
 class CloudflareOriginLockMiddleware:

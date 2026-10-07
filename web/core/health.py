@@ -6,7 +6,7 @@ from django.db import connections
 from django.http import JsonResponse
 from django.views.decorators.http import require_GET
 
-from Shoes.observability import emit_alert
+from treadjoy.observability import emit_alert
 
 
 def _response(status: str, status_code: int) -> JsonResponse:

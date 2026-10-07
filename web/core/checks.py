@@ -43,7 +43,7 @@ def check_public_settings_contract(app_configs, **kwargs):
         != "django.contrib.staticfiles.storage.ManifestStaticFilesStorage"
     ):
         errors.append(Error("Public TreadJoy static files must use a manifest backend.", id="treadjoy.E006"))
-    if "Shoes.middleware.ContentSecurityPolicyMiddleware" not in settings.MIDDLEWARE:
+    if "treadjoy.middleware.ContentSecurityPolicyMiddleware" not in settings.MIDDLEWARE:
         errors.append(Error("The TreadJoy CSP middleware must be enabled.", id="treadjoy.E007"))
     if "script-src 'self'" not in settings.CONTENT_SECURITY_POLICY:
         errors.append(Error("The TreadJoy CSP must restrict scripts to self.", id="treadjoy.E008"))

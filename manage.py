@@ -41,12 +41,14 @@ def _configure_runserver_defaults():
 
 def main():
     """Run administrative tasks."""
-    os.environ.setdefault("DJANGO_SETTINGS_MODULE", "Shoes.settings")
+    os.environ.setdefault("DJANGO_SETTINGS_MODULE", "treadjoy.settings")
     _configure_runserver_defaults()
     try:
         from django.core.management import execute_from_command_line
     except ImportError as exc:
         raise ImportError(
+            "Couldn't import Django. Confirm it is installed and available on "
+            "PYTHONPATH, and that the project virtual environment is active."
         ) from exc
     execute_from_command_line(sys.argv)
 

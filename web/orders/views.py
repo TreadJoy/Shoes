@@ -439,7 +439,7 @@ def stripe_webhook(request):
     logger.debug("Stripe webhook secret configured: %s", bool(endpoint_secret))
 
     try:
-        event = stripe.Webhook.construct_event(
+        stripe.Webhook.construct_event(
             payload,
             sig_header,
             endpoint_secret,
