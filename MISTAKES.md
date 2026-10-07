@@ -2333,3 +2333,316 @@
   near-coincident sole surfaces. This supports investigating tread self-overlap
   for the inherited tip artifact; it does not prove all overlaps are visible or
   authorize redesigning the JOY ORBIT motif.
+
+## 2026-10-01 — Trial 03 Bilateral Fit And Sweep Diagnostics
+
+- The first explicit-frame lace test cleared all eyelets but produced six
+  unintended self-intersections near upper approaches. Smoothed the sampled
+  centerlines before sweeping; the follow-up in-memory test reported zero
+  hardware, tongue, and unintended self contacts without expanding exclusions.
+- Exact self-union of the inherited tread initially left 76 zero-area faces.
+  Applied bounded 0.0001 mm duplicate/degenerate cleanup; the follow-up mesh
+  passed manifold, zero-area, normal-consistency, and positive-volume checks.
+  Visible-surface preservation and rendered artifact removal still require
+  separate checks before acceptance.
+- A combined instruction/source read was truncated. Re-read the omitted
+  instruction ranges separately before implementation; do not infer missing
+  repository requirements from truncated output.
+- The first full trial-03 pass stopped at module validation because replacing
+  the lace object with a mesh violated its existing CURVE type contract.
+  No candidate was saved. Preserve the curve controls/type and provide the
+  explicit sweep through a source-bound geometry helper instead; track evaluated
+  changes as well as raw datablock changes. Do not relax the type validator.
+- Bilateral width measurements passed, but mirrored inside/outside previews
+  exposed a remaining visible step on the inside boundary. Extending the lower
+  deformation fade did not remove it. Keep trial 03 unsaved and trace that
+  visible transition to actual surface coordinates instead of declaring the
+  owner's style-and-fit requirement met from width samples alone.
+- The trace-targeted smoothing rounded the inside step but reduced one sampled
+  inside/outside width ratio to 0.8966, below the 0.90 visual-review proxy.
+  The pre-save gate correctly refused the candidate. Compensate the bounded
+  lower-band width and recheck; retain the threshold and the failed report.
+
+## 2026-10-02 — Trial 03 Resume And Visual Gate
+
+- The October 1 native Blender launch was rejected by the approval service's
+  account usage limit. No alternative execution path was used to bypass it.
+  After the owner's October 2 `continue`, the same authorized invocation was
+  accepted. Source and owner-edited review hashes were checked before resuming.
+- Attempt 06 passed numerical checks, including bilateral chord ratios of
+  0.9340–1.0744, but its inside macro still showed a wavy shoulder. Stopped at
+  the interactive pre-save gate without saving a Blender candidate. Numerical
+  width agreement alone does not satisfy the continuous-boundary requirement.
+- A preservation check found that trial 01's current `.blend` no longer matches
+  its old proof hash. The untouched `.blend1` does match it exactly. Recorded
+  both hashes and the later save's timestamp in trial 03's source-provenance
+  note rather than relabeling old evidence or restoring over the later file.
+  An initial lookup for trial 01's nonexistent `evidence-verification.json`
+  failed; its `build-record.json`, review, and matching backup establish the
+  historical hash. Trial 03 continues to use the verified trial-02 input.
+- An optional status search assumed a package `docs/CONTEXT.md` path that does
+  not exist. Do not infer that a domain document is missing from an unverified
+  path; no contract documentation was changed from this failed lookup.
+- Attempt 07's lower-shoulder profile warp removed the conspicuous inside step
+  while passing numerical gates, allowing an isolated saved/reopened trial 03.
+  All 13 larger proof views nevertheless show remaining fine boundary ripples
+  and sharp/crumpled lace approaches. Recorded a visual rejection and proposed
+  a separate, as-yet unauthorized fourth correction; numerical success does
+  not authorize promotion or Stage 3.
+
+## Trial 04 — Preparation
+
+- A combined instruction read exceeded the tool output limit. Re-read the
+  omitted repository instruction ranges before implementation.
+- An initial source lookup guessed `build_r16_final_polish_trial02.py`; that
+  file does not exist. Used the actual script inventory and inspected the
+  shared `build_r16_final_polish.py` and `refine_r16_lace_entries.py` instead.
+- Confirmed the new trial-04 directory was absent before creating it; the
+  negative existence check is expected and no prior candidate was replaced.
+- Trial-04 attempt 01 lowered crossing spans too far and produced 64 detected
+  unintended triangle intersections. Strong edge fairing also created a small
+  visible medial toe-edge shadow gap. The diagnostic gate prevented a save.
+  Restore more vertical separation and bound connector displacement; keep
+  collision exclusions and numerical thresholds unchanged.
+- Attempt 02 cleared lace collisions and removed the new shadow gap, but one
+  bilateral chord ratio reached 1.10256 against the unchanged 1.10 ceiling.
+  No candidate was saved. Reduce smoothing displacement to preserve the
+  accepted proportions and retain the longitudinal ribbon axis on crossing
+  spans while transporting the knot/lead frames separately.
+- Attempt 03 passed the unchanged checks and produced a saved/reopened trial 04
+  with thirteen verified proofs. The complete visual review still found fine
+  boundary waviness and raised/pointed lace approaches. The bounded smoothing
+  and frame correction improved the asset but did not meet the full brief.
+  Keep the checkpoint unpromoted and obtain owner direction for explicitly
+  controlled local contours; do not repeat general smoothing or move into
+  materials while describing those findings as resolved.
+
+## 2026-10-03 — Trial 05 Controlled Contours
+
+- The reported terminal invocation preceded creation of the trial-05 builder;
+  inspection found neither that script nor its output directory. Supplied the
+  authorized builder without claiming the owner's terminal run succeeded.
+- A combined source read was truncated; required instruction/source portions
+  were read separately. Future inspection should keep outputs bounded.
+- Attempt 01 stopped before geometry changes or a model save because the
+  rear-edge sampler unnecessarily required the unrelated forward edge to fit
+  within its scan range. Retained the rear-edge bracketing check and removed
+  only the irrelevant forward-boundary assertion. The failed helper is archived.
+- Attempt 02's explicit rear contours passed the unchanged geometry checks,
+  but the shortened lace-entry curves intersected upper hardware and a lower
+  crossing. No candidate was saved. Retain the seated bore legs, preserve the
+  accepted central lane separation, and account for ribbon width above tilted
+  rims before attempting another saved checkpoint. A source search also named
+  an absent uniform-neck builder; used the actual script inventory instead.
+- Attempt 03 stopped without saving because a fixed 2.8 mm entry threshold
+  exceeded the shorter incoming bore legs. Bound the threshold by each existing
+  leg's own normal-axis extent; retain diagnostic failures and script snapshots.
+- Attempt 04 cleared all hardware but created 385 detected lace self-crossings:
+  the normal-clearance correction and transition blending were too aggressive.
+  No model was saved. Preserve the bottom return span, reduce the normal offset,
+  and test bounded reconstruction strengths against the same collision checks;
+  failed search strengths remain evidence, not waived validation failures.
+- Attempt 05's five global reconstruction strengths all failed lace contact
+  checks. No candidate was saved. Replace global blending with explicit span
+  attribution: keep source sweep bytes on the knot and any affected crossing
+  spans, and validate the remaining local revisions without contact waivers.
+- Attempt 06's span attribution isolated self-folds within eight reconstructed
+  crossing spans. Retaining those spans exactly produced a numerical pass with
+  four improved crossing spans, but it was not saved while testing a narrower
+  clearance correction. The prior correction could affect unchanged/below-rim
+  controls; restrict it to altered, outward-facing bend points.
+- Attempt 07 passed numerically after preserving seven problematic spans, but
+  previews exposed new small creases at some entry joins. Stopped without a
+  save. Match the actual source tangent at both cubic endpoints and remove
+  the post-curve clearance clamp; retain collision-prone source spans instead
+  of introducing a new derivative break to force clearance.
+- Attempt 08's tangent-matched curves eliminated all detected self-folds, but
+  seven upper spans still needed source preservation for hardware clearance.
+  The pass was left unsaved to test smooth interior clearance controls on those
+  spans, retaining the same endpoint tangents and strict collision gates.
+- Attempt 09's smooth interior controls cleared all twelve revised crossing
+  spans without any additional source-span rollback. Pre-save/reopen checks
+  pass, but the full thirteen-view review still finds fine edge-wall waviness,
+  lower-eyelet notches and raised/angular lace approaches. Saved the isolated
+  checkpoint as unpromoted, not as completion of the strict visual brief.
+- A proof-manifest lookup ran before the renderer had emitted the final index;
+  deferred verification until all images completed. The reused comparison
+  renderer also emits an inherited trial-03 text label. The trial-05 verifier
+  corrects only this new manifest and binds it to the actual candidate hash;
+  no earlier manifest or hash-bound evidence is edited.
+
+## 2026-10-03 — Trial 06 Edge-Wall Replacement
+
+- Attempt 01 replaced actual connector edge-wall faces using rounded analytic
+  cut volumes and retained all 602,359 protected shell vertex coordinates.
+  Width, bilateral match, clearance and lace checks passed, but one nonmanifold
+  edge remained after Boolean cleanup. The gate prevented any model save.
+  Inspect the edge and permit deletion only for bounded submicron wire debris;
+  do not waive nonmanifold validation or change protected geometry.
+- Attempt 02 identified the defect as a 0.044 mm edge with four linked faces,
+  not loose wire debris; it was not deleted or split to hide the defect. No
+  candidate was saved. Adjust the cutter's upper fade to avoid that pinched
+  junction and rerun the unchanged manifold/clearance checks.
+- Attempt 03 retained the exact same four-face edge despite the cutter change.
+  This points to the subsequent global duplicate/degenerate cleanup rather
+  than the cut transition; test the raw Boolean result without that cleanup.
+  Lowering entry arches also caused ten contacts between bottom spans 12/13;
+  preserving the affected spans restored zero contacts without exclusions.
+- Attempt 04 removed global duplicate/degenerate cleanup, but the same
+  four-face edge remained, along with one zero-area face. This disproved the
+  cleanup hypothesis from attempt 03. No candidate was saved. Trace the
+  source and each Boolean separately before attempting a bounded repair.
+- Per-operation diagnostics traced the four-face edge to the first Boolean,
+  which generated an opposite-facing duplicate of a source sliver triangle
+  on the other side. Explicitly triangulating three nearby source ngons
+  eliminated that defect without moving vertices. Attempt 05 passes the
+  unchanged checks after bounded cleanup of one zero-area Boolean artifact.
+  No global merge/remesh or nonmanifold-edge splitting was used. The saved
+  candidate remains unpromoted pending the full proof review.
+- A manifest lookup used the nonexistent `manifest.json`; the actual package
+  index is `package-manifest.json`. No file was created at the wrong path.
+- Full thirteen-view review, completed 2026-10-04, still rejects forward-edge
+  undulation/lowest-eyelet notches, fine rear-edge serration and raised/angular
+  lace entries. Rear-wall replacement and local entry cleanup are not a full
+  visual solution. Preserve this numerically passing checkpoint as unpromoted;
+  do not describe the brief as complete or start a seventh trial without owner
+  approval. Thirteen proofs and thirteen archived scripts are hash-verified.
+
+## 2026-10-04 — Trial 07 Forward Wall And Lace Entries
+
+- Attempt 01 stopped before saving: the Boolean result contained a zero-area
+  artifact outside the permitted connector edit region. The bounded cleanup
+  assertion correctly rejected it. Record exact coordinates and operation
+  provenance; do not silently expand the permitted region or relax validation.
+- Attempt 02 identified the off-region artifact at the inherited rear cutter
+  boundary (y=0.005 m), unrelated to the new forward cut. No model was saved.
+  Confine incidental Boolean retessellation by restoring exact source polygons
+  outside support, then rerun the same connectivity/winding, manifold and
+  clearance gates. This is source restoration, not an expanded edit region.
+- Attempt 03 passed topology, protected geometry and collision checks after
+  restoring six exact source polygons in place of nine incidental Boolean
+  polygons. Its neck/middle ratio was 1.071005, above 1.05, so no model was
+  saved. Previews also showed an overly visible washer-like lowest-eyelet
+  support; fit that support to the measured shell surface and reduce the
+  forward inset instead of changing acceptance limits. Two upper lace spans
+  were retained because their reconstructed sweeps clipped hardware.
+- The next confirmed native launch did not start because automatic permission
+  review timed out. This was a tool timeout, not a geometry result or safety
+  determination; retry the same authorized invocation once as permitted.
+- Attempt 04 improved the width ratio to 1.036053 and cleared all twelve
+  revised lace crossings without source-span rollback. It nevertheless left
+  three nonmanifold shell edges, so no model was saved. Trace these edges
+  through each cut/union and protected-polygon restoration before repair.
+- Read-only operation tracing found a 3.725 nanometre open triangular slit
+  introduced by the final medial union. Close only near-coincident vertices
+  on that local open boundary; do not split faces or perform a global weld.
+  Also test per-span minimum clearance controls so safe entries are not all
+  lifted by the same amount merely to clear two upper rings.
+- Attempt 05 passed all numerical checks with twelve revised lace spans and
+  per-span clearance controls, but pre-save review still found shallow forward
+  edge dents. It was deliberately not saved. Pure subtraction cannot fill
+  those inherited recesses; test a narrow surface-fitted two-skin union before
+  the rounded trim, while retaining all existing preservation and visual gates.
+- Attempt 06 blocked the lowest medial eyelet bore and produced visible filler
+  lips. It was not saved. Inspection on 2026-10-05 traced the approximately
+  3 mm surface-fit residual to samples hitting the aperture interior at
+  z=0.064–0.065 m. Exclude the hole region, fit measured outer-skin sections
+  locally with a 0.15 mm residual gate, and taper the filler below the opening;
+  do not drill through a visibly distorted patch merely to pass the bore test.
+- Attempt 07 stopped at the new section-sampling assertion before any Boolean
+  or model save. Read-only inspection showed an intact outward-facing source
+  sample with normal-x 0.29753, narrowly excluded by the 0.3 sampling heuristic.
+  Use outward-facing first hits below the aperture and retain the 0.15 mm
+  fit-residual check. This adjusts sample selection, not acceptance checks.
+- Attempt 08 reduced local fit residuals to 0.020892 mm lateral and 0.017017 mm
+  medial and cleared all fourteen bores, but still failed: three nonmanifold
+  edges, neck/middle ratio 1.056116, and bilateral ratios reaching 1.131740.
+  The previews show abrupt filler lips. No model was saved. Reject this filler
+  method rather than relax the gates or treat its improved fit as visual success.
+  Restore the exact attempt-05 helper for a numerically passing, explicitly
+  unfinished review checkpoint. This rollback does not resolve the previously
+  documented shallow edge dents or grant visual approval.
+- Attempt 09 repeated the exact numerically passing attempt-05 helper and saved
+  one isolated Trial 07 review checkpoint. Reopen checks, the independent
+  782,854-polygon preservation audit and all thirteen proof hashes pass. Full
+  visual review still rejects edge dents, lowest-eyelet junction notches and
+  peaked/rigid lace approaches. Saving the checkpoint is not completion or
+  promotion. All rejected filler attempts remain archived; recommend a shared-
+  boundary surface reconstruction instead of another additive-strip iteration.
+
+## 2026-10-05 — Trial 08 Scope Preparation
+
+- A read-only image lookup assumed the original uniform-neck trial had the
+  standard `proofs/pair-lateral.png`; that file does not exist there. No file was
+  created or modified. The verified Trial 05 and Trial 07 lateral proofs provide
+  the needed curve-versus-step comparison instead.
+- Direct web image fetches for Nike and adidas failed. The Nike reference was
+  inspected in the existing browser; the adidas view was partly obscured by a
+  cookie notice. Keep detailed claims tied to inspected imagery and official
+  descriptions, and do not imply current stock or measured market popularity.
+- The prior Trial 07 side-view review called the stepped panel boundary
+  deliberate. The owner now requests its removal, and comparison with Trial 05
+  shows that iteration's smooth curve. Trial 06's fixed cutter termination is a
+  plausible cause. Treat this as a repair target, not a design feature to preserve
+  or an excuse to weaken unrelated protected-geometry checks.
+- During the confirmed execution, a read-only check requested `validation.json`
+  before the saved-file reopen validation had finished writing it. The check
+  returned file-not-found; no data was modified. Wait for the relevant build
+  phase before consuming its final report. The later reopened report passed.
+- Trial 08 attempt 01 restores the missing continuous side-panel curve and
+  passes all unchanged numerical gates, but full thirteen-view inspection still
+  rejects macro edge waviness, the small lowest-eyelet notch/scallop, uneven
+  stitch visibility and stiff lace drape. The localized cutter fixes the broad
+  termination artifact; reusing the forward cut/support construction does not
+  complete the shared-boundary outer-skin/bevel cleanup. Preserve this visibly
+  improved but unfinished checkpoint without promotion. Do not describe the
+  step repair as completion of the owner's broader waviness/realism request.
+
+## 2026-10-05 — Stage 3 Preparation
+
+- Capability recheck still finds no `game-dev` executable on PATH. Retain the
+  previously approved native Blender fallback and do not claim canonical CLI
+  receipts. Stage 3 scope is owner-authorized; its new exact file-writing
+  invocation still requires confirmation before execution under the skill.
+
+## 2026-10-05 — R17 Material Study Execution
+
+- The first studio proof overexposed Night Grid toward gray and the warm-stone
+  chassis toward white. Numerical geometry/material checks passed, but did not
+  establish the intended palette under lighting. Stop the remaining first-pass
+  previews; preserve the saved model and completed images. Use a separate
+  render-only exposure study with an explicit diagnostic gate and recorded
+  exposure override before producing the remaining review set.
+- A sandboxed process-status check was denied. An approved, narrowly filtered
+  process lookup identified only this task's Blender process for interruption.
+  The interrupted render returned before writing its image, so the original
+  builder's subsequent hash read reported file-not-found. No source or saved
+  candidate was lost; the first-pass preview set is incomplete, not a pass.
+- The sandbox denied binding a localhost-only review server. Request the scoped
+  permission needed for that private review surface; do not expose the folder
+  on a LAN interface or treat a local inspection page as website publication.
+- The owner rejected the Night Grid lattice while liking the rest of the shoe.
+  The corrected-exposure batch was interrupted after its two Night Grid proofs;
+  the next cancelled render triggered the same missing-image hash error. Source
+  and saved candidate remain intact. Prepare a separate grid-free material
+  derivative, remove both lattice color and bump, and preserve other finishes.
+  The new script must not be described as an executed Blender correction before
+  exact invocation confirmation and saved/reopened validation.
+- The separate read-only Trial 02 material audit crashed during sandboxed Blender
+  startup (exit 139, before reading the model or running the audit). Request a
+  scoped native execution for that audit; do not treat a startup crash as material
+  preservation evidence or overwrite either saved model. The authorized build
+  and render process remains separate.
+- The first material fingerprint included Blender's per-load `session_uid` and
+  therefore falsely flagged every material. A diagnostic isolated those runtime
+  identities rather than shader differences. Exclude only that non-content
+  property and rerun the saved-file comparison; retain all node, input, color-ramp,
+  link and other material-property comparisons.
+- A batch of three native-resolution PNG previews exceeded the tool's 64 MB
+  transport limit. No assets were lost; inspect one full-resolution image per
+  call. The verifier in the same orchestration had completed independently and
+  its saved report was checked before proceeding.
+- The browser showed blank mixed-look images despite completed PNGs and valid
+  natural dimensions. Reloading and a shorter gallery alone did not fix it.
+  Hash-versioned image URLs forced fresh decoding and restored the images;
+  record this as a stale browser-image issue, not a failed Blender render.

@@ -9,6 +9,7 @@ planning list, not evidence that an item is complete or approved for release.
 - **Not started** — idea captured; no meaningful work completed.
 - **In progress** — active work is underway.
 - **Blocked** — progress depends on a decision, person, resource, or external event.
+- **Deferred** — intentionally paused for a higher-priority task; existing work is retained.
 - **Complete** — the intended scope is finished and verified.
 
 ## Backlog
@@ -22,6 +23,7 @@ planning list, not evidence that an item is complete or approved for release.
 | Not started | Create a new logo with an artist | Identify the artist, agree on scope/usage rights, and collect approved final assets. |
 | Not started | Take brand and product photos | Plan the shot list, subjects, location, styling, usage rights, and required product details. |
 | Not started | Learn CAD and begin work on the product | Define a learning milestone, choose the CAD workflow, and document the first product-development deliverable. |
+| Deferred | Finish Blender shoe refinement | Owner deferred further geometry cleanup on 2026-10-05 to explore Stage 3 materials using Trial 08. Revisit connector edge-wall/bevel waviness, lowest-eyelet notches, stitch visibility/terminations, and natural lace drape; inspect toe, badge, collar/pull-loop and sole transitions. Preserve the restored side-panel curve, inside/outside consistency, fixed branding and JOY ORBIT tread. Use a new isolated candidate with the existing preservation, topology, vent, seating, clearance, parity and visual-review gates. See the private `media/development/treadjoy-heritage-court-v3/qa/r16-final-polish-trial-08/REVIEW.md`. This is deferred visual polish, not CAD, print preparation or manufacturing validation. |
 | Not started | Add Blender and other 3D models to the website | Decide which pages need 3D assets, choose the web format and interaction level, optimize files for performance, and confirm ownership/licensing. |
 
 ## Subscriptions and services
