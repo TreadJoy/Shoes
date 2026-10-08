@@ -359,6 +359,29 @@
 - Resolution: reran the exact npm-runner download with scoped approved network
   access, generated the lock, completed `npm ci`, and recorded zero known
   vulnerabilities.
+
+## 2026-10-07 — R17 Diagnostic Continuation Path Check
+
+- The first continuation preflight used the old `media/development/` path after
+  the project file review had relocated the private design workspace. Reading
+  and updating its authorization file failed before Blender was launched; no
+  assets changed. Located the current `design/active/` workspace, read its path
+  policy, and verified unchanged source/candidate/script hashes. The authorization
+  document already contained the relocated pending command, which is the command
+  used for the owner's confirmed continuation. Preserve earlier executed-path
+  transcripts rather than rewriting historical evidence.
+- Trial 03's rendered diagnostics exposed an additional placement-validation gap:
+  all 45 left/right object pairs coincide in every new assembled scene. The build
+  copied source world transforms without first evaluating the source presentation
+  scene. Preserved raw/evaluated geometry and a zero-error return to the candidate's
+  own assembled pose do not prove correct source-relative placement. Add explicit
+  per-hand source-world-matrix comparisons to the next candidate; do not reinterpret
+  the overlap as an intentional single-shoe composition or weaken the geometry gate.
+- The two exploded layouts and motion midpoint render successfully but fail visual
+  review: components are small, the top background is dark, and the legend is hard
+  to read. A studio setup for an assembled shoe does not automatically light a tall
+  exploded composition. Improve composition-specific lighting, camera framing and
+  flat readable annotations before authorizing a movie batch; preserve diagnostics.
 - Impact: no global package, provider, credential, infrastructure, database,
   DNS, or public deployment state changed.
 

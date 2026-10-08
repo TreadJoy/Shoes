@@ -245,11 +245,13 @@
                 <a class="mobile-nav-link" href="{% url 'waitlist:join_waitlist' %}">Waitlist</a>
             {% endif %}
 
-            <div class="mobile-social-placeholder" aria-label="TreadJoy social destinations">
-                <strong>TreadJoy social</strong>
-                <span>X · YouTube · Instagram · TikTok</span>
-                <span>Profile links will be added after handles are verified.</span>
-            </div>
+            <nav class="mobile-social-links" aria-label="TreadJoy social media">
+                <strong>Follow TreadJoy</strong>
+                <a href="https://www.instagram.com/treadjoy/" target="_blank" rel="noopener noreferrer">Instagram</a>
+                <a href="https://x.com/TreadJoy" target="_blank" rel="noopener noreferrer">X</a>
+                <a href="https://www.youtube.com/@TreadJoy" target="_blank" rel="noopener noreferrer">YouTube</a>
+                <a href="https://www.tiktok.com/@realtreadjoy" target="_blank" rel="noopener noreferrer">TikTok</a>
+            </nav>
 
             {% if is_commerce_mode %}
                 <div class="mobile-account-links">

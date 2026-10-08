@@ -1141,6 +1141,7 @@
 
 .research-learning-grid {
     display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 16rem), 1fr));
     gap: var(--space-3);
 }
 
@@ -1153,7 +1154,6 @@
 
 .research-learning-grid article:nth-child(2) {
     background: var(--color-brand-secondary);
-    transform: translateY(var(--space-3));
 }
 
 .research-learning-grid article:nth-child(3) {
@@ -1273,7 +1273,6 @@
 
     .research-learning-grid {
         grid-column: 3;
-        grid-template-columns: repeat(3, minmax(0, 1fr));
     }
 
     .research-story {
@@ -1342,10 +1341,6 @@
 
     .research-preview-teaser::before {
         inset: var(--space-3);
-    }
-
-    .research-learning-grid article:nth-child(2) {
-        transform: none;
     }
 
     .research-waitlist {

@@ -9,6 +9,20 @@ from web.waitlist.models import ResearchOutboundEmail, WaitlistSubscription
 
 
 class HomepageModeTests(TestCase):
+    def test_social_profiles_render_in_shared_navigation_and_footer(self):
+        response = self.client.get(reverse("core:home"))
+
+        self.assertEqual(response.status_code, 200)
+        for profile_url in (
+            "https://www.instagram.com/treadjoy/",
+            "https://x.com/TreadJoy",
+            "https://www.youtube.com/@TreadJoy",
+            "https://www.tiktok.com/@realtreadjoy",
+        ):
+            with self.subTest(profile_url=profile_url):
+                self.assertContains(response, f'href="{profile_url}"', count=2)
+        self.assertContains(response, 'rel="noopener noreferrer"', count=8)
+
     @skipUnless(settings.IS_COMMERCE_MODE, "Commerce-mode homepage test")
     def test_commerce_home_prioritizes_categories_without_waitlist(self):
         response = self.client.get(reverse("core:home"))

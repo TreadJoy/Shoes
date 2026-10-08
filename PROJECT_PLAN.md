@@ -1156,6 +1156,21 @@ or movie has been rendered. The corrected render-only command in Trial 03's
 `AUTHORIZATION.md` remains awaiting owner confirmation; it does not save either
 Blender file or authorize Stage 4, promotion, publication, or geometry changes.
 
+### 2026-10-07 — Companion Diagnostics Complete; Presentation Repair Required
+
+The confirmed render-only Trial 03 continuation completed nine private 1280×720,
+24-sample diagnostics under `design/active/treadjoy-heritage-court-v3/qa/r17-material-trial-03/`.
+Two new kits (Cobalt Haze and Warm Signal), four two-kit mixes, two conceptual
+component views and an animation midpoint are available in its `REVIEW.md`.
+All output hashes, dimensions/16-bit settings and source/candidate hashes pass;
+original source objects/materials and raw/evaluated shoe geometry remain preserved.
+The visual/presentation gate fails: all 45 left/right pairs overlap in each new
+assembled scene, and exploded components/labels need better scale and lighting.
+The earlier geometry/endpoint checks did not validate source-relative placement.
+No movie has rendered. Correct staging in an isolated candidate before full-size
+proofs or animation; no new write invocation, Stage 4, promotion or publication
+is authorized by this record. Color directions remain pending owner review.
+
 ## Launch gates at a glance
 
 Research launch requires A0.1–A0.3, A1.1–A1.4, and A2.1–A2.3. A2.2–A2.3 contain its minimum privacy, legal-content, accessibility, metadata, and measured-performance gates; later A7–A8 work completes and re-audits the shared commerce experience.
