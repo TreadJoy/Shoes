@@ -1407,7 +1407,6 @@ input[type="radio"] {
 
 .waitlist-form button {
     width: 100%;
-    border: none;
     cursor: pointer;
     font-size: 1rem;
 }

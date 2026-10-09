@@ -40,6 +40,12 @@
     text-decoration-color: transparent;
 }
 
+.home-page .btn-primary,
+.home-page .btn-secondary {
+    border-radius: 0;
+    box-shadow: none;
+}
+
 .home-hero,
 .home-statement,
 .home-categories,
@@ -680,25 +686,6 @@
     margin: 0;
 }
 
-.home-waitlist-form .btn-primary {
-    border-color: var(--color-text);
-    background: var(--color-text);
-    color: var(--color-brand-primary);
-}
-
-.home-waitlist-form .btn-primary:hover,
-.home-waitlist-form .btn-primary:focus-visible {
-    background: var(--color-brand-primary);
-    color: var(--color-text);
-}
-
-.home-waitlist-form .btn-primary:disabled {
-    border-color: var(--color-disabled);
-    background: var(--color-disabled-surface);
-    color: var(--color-disabled);
-    cursor: not-allowed;
-}
-
 @media (min-width: 480px) {
     .modular-system-steps {
         grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -976,15 +963,6 @@
     flex-wrap: wrap;
     gap: var(--space-3);
     margin-top: var(--space-6);
-}
-
-.research-primary-action {
-    box-shadow: 0.35rem 0.35rem 0 var(--color-text);
-}
-
-.research-primary-action:hover,
-.research-primary-action:focus-visible {
-    box-shadow: none;
 }
 
 .research-hero-mark {

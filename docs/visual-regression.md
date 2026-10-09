@@ -41,6 +41,12 @@ negative-capability tests that prove cart and order routes, models, context,
 and Stripe initialization are absent; a screenshot of a 404 page is not
 sufficient boundary evidence.
 
+For both homepage modes, compare primary and secondary calls to action for
+consistent shape, sizing, typography, and hover, keyboard-focus, pressed,
+disabled, and busy states. Confirm that editorial text links, category entries,
+and the video play control retain their distinct link, card, and media-control
+treatments.
+
 ## Phase 6 baseline
 
 The 2026-08-30 cleanup review captured and inspected all shared surfaces in

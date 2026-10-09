@@ -83,7 +83,7 @@ The approved deployment architecture is one tested release commit deployed to se
 - Paid-order inventory allocation uses row locks, is idempotent, and records shortage/refund-review exceptions.
 - Shipment records drive fulfillment state and guard against shipping an inventory-review order.
 - The automated suite covers meaningful catalog, preorder, cart, checkout, webhook, inventory, order, shipment, and deployment-mode behavior.
-- The current homepage/navigation shell is distinctive, responsive, and substantially aligned with the approved visual direction.
+- The current homepage/navigation shell is distinctive, responsive, and substantially aligned with the approved visual direction. Homepage primary/secondary CTAs now share squared corners, sizing, typography, and a blue/gold color hierarchy; one-off waitlist/research-button overrides were removed, and dual-mode state checks are recorded in `docs/visual-regression.md`.
 
 ### Major problems and production risks
 

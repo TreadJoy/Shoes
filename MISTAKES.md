@@ -2794,3 +2794,59 @@
   numerical serialization, not visible geometry drift. Use a documented
   two-float32-ULP (`2e-7`) comparison threshold and obtain fresh authorization
   for the revised script before retrying the write invocation.
+
+## 2026-10-08 — R17 Trial 05 Expanded Colorways
+
+- The first authorized Trial 05 Blender invocation was terminated with exit 137
+  before saving or rendering. The builder had duplicated every complete kit,
+  crossover, and six-look lineup into separate retained scenes while also
+  evaluating geometry across the already scene-heavy Trial 04 source. This
+  exceeded the process memory available on the host. The Trial 04 source hash
+  remained unchanged and Trial 05 still contained only its three preparation
+  records. Replace the retained-scene design with a compact saved four-kit
+  material lineup plus one unsaved reusable pair scene and one unsaved shortlist
+  scene for diagnostic rendering. Revalidate the revised builder and obtain fresh
+  exact-command authorization; do not retry the failed invocation unchanged.
+- The first attempt to replace the memory-heavy builder used one `apply_patch`
+  payload with both delete and add operations targeting the same path. The patch
+  tool rejected that structure before changing the file. Delete and recreate the
+  agent-authored builder in separate `apply_patch` calls instead.
+- The first validation command for the memory-bounded replacement invoked the
+  sibling-importing module-contract test from the repository root. Python could
+  not resolve `apply_current_module_contract`, so that test module failed to
+  import while all eight Trial 05 brief tests passed. The builder and tests had
+  already parsed successfully and no project output changed. Run the combined
+  suite from the design `scripts/` directory, where its existing sibling imports
+  are intentionally resolved.
+
+## 2026-10-08 — Homepage CTA Browser Capture
+
+- The first browser screenshot attempt timed out after ten seconds while waiting
+  for fonts; a selector screenshot then returned a blank viewport while the
+  browser retained cached stylesheet state after local edits. No repository
+  artifact or application data was changed. Reapply a cache-busting query to
+  the local stylesheets before browser verification and prefer the dedicated
+  screenshot tool for capture.
+- One interaction-state probe referenced `document` outside the browser-page
+  evaluation context and stopped with a harness `ReferenceError`; temporary
+  control states had been reset before the error. Keep DOM inspection inside
+  `page.evaluate` and confirm reset state on the final pass.
+- A later dedicated screenshot request received no response from the capture
+  service; the page remained accessible through the browser snapshot and
+  computed-style checks. Do not spend further time retrying the screenshot tool
+  for this CSS-only change.
+- The first native-resolution visual-inspection request tried to transfer all
+  eight Trial 05 crossover PNGs in one tool response and exceeded the tool's
+  64 MiB IPC frame limit. The read-only request changed no files and does not
+  indicate an image defect. Inspect the same originals in smaller batches.
+- The first post-run Trial 05 hash-verification script ran from the nested design
+  `scripts/` directory but constructed the visual-review path as though its
+  working directory were the repository root. It stopped with `FileNotFoundError`
+  before checking hashes; the independently chained 35-test suite still passed
+  and no files changed. Use the absolute Trial 05 directory for final evidence
+  verification.
+- The corrected Trial 05 hash checker assumed each diagnostic-manifest preview
+  used the older `path` key. The current render helper's preview records use a
+  different filename field, so the read-only check stopped with `KeyError` after
+  confirming the review's image count and hashes. Inspect the current manifest
+  keys and compare against the field actually emitted by this builder.
