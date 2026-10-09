@@ -181,8 +181,50 @@ When Figma MCP access returns:
 - Browser verification passed at 390x844, 768x1024, and 1440x900. The gallery
   uses one, two, and asymmetric 12-column arrangements respectively, has no
   horizontal overflow, and retains a visible keyboard focus indicator.
-- The complete local `web.core` suite passed all 112 tests in commerce and all
-  112 in research, with 23 and 4 intentional mode/vendor skips respectively.
+
+## Night Grid Exploded Slot 00 — 2026-10-09
+
+### Approved Scope and Meaning
+
+- The owner requested a Night Grid exploded study that clearly highlights the
+  tongue, laces, front piece, back panel, logo holder, bootie, and back loop,
+  then authorized its use in landing-page slot 00.
+- The accepted source is isolated Trial 02. It preserves the final-render
+  source, shares the original mesh datablocks, and changes only art-directed
+  object transforms, annotations, studio framing, and lighting presentation.
+- The exploded offsets are not engineering removal vectors or an assembly
+  sequence. The image does not establish that any highlighted group is
+  removable or verify attachment interfaces, manufacturing feasibility, CAD
+  readiness, or printability.
+
+### Homepage Treatment
+
+- The same semantic figure replaces the commerce hero-media placeholder and
+  the research hero's former numeric slot 00 panel. The visible caption retains
+  the `00` marker and repeats all seven part names so the concept remains clear
+  when embedded render labels become small on narrow screens.
+- The image is a high-priority hero asset with intrinsic dimensions and a
+  responsive 960/1600 WebP source set. It is eagerly loaded rather than added
+  to the gallery's lazy-load budget.
+- Both derivatives are fresh RGB exports with no EXIF, XMP, XML, IPTC, ICC, or
+  comment payload and are individually hashed in the release-content inventory.
+- The remaining homepage development placeholders and unrelated release
+  blockers are unchanged.
+
+### Verification
+
+- Trial 02 passed native and 25-percent visual review; its seven callouts remain
+  legible, the fixed base remains identifiable, and every annotation stays
+  inside the 16:9 frame.
+- Browser verification passed in commerce and research at 390x844, 768x1024,
+  and 1440x900 with no horizontal overflow or console errors. The caption and
+  qualification remain visible at every size, and the browser selects only an
+  inventoried 960px or 1600px derivative.
+- The complete local `web.core` suite passed all 113 tests in commerce and all
+  113 in research, with 23 and 4 intentional mode/vendor skips respectively.
 - Django checks in both modes, migration-drift detection, Python compilation,
   diff whitespace validation, image/inventory equality, and the strict frontend
   audit pass. PostgreSQL-backed CI/staging validation remains a launch gate.
+- The release-content scan reports only the pre-existing
+  `homepage-development-media` and `pending-social-links` blockers; neither new
+  exploded derivative creates an asset-level blocker.

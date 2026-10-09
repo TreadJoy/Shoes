@@ -2906,3 +2906,40 @@
   closed during settings import before discovering or running tests. Re-run
   with clearly non-production `sk_test_` and `whsec_` verification values; do
   not weaken the commerce configuration contract.
+
+## 2026-10-09 — Night Grid Exploded Trial 01
+
+- Trial 01 passed source preservation, saved/reopened geometry, object
+  accounting, and render-hash gates, but failed the visual-admission gate. The
+  black title loses contrast against the dark upper studio gradient, and the
+  upper callouts become marginal at the required 960x540 review size. The
+  master was not copied into public static assets and landing-page slot 00 was
+  not changed. Correct presentation in a new isolated Trial 02 with a light
+  title, high-contrast label plates, larger type, and tighter framing; do not
+  overwrite or silently promote the first master.
+- The first Trial 02 static test expected the design brief's revision reason to
+  contain the word `visual`, while the text described the exact legibility
+  failure without that classification word. No Blender command ran and no
+  candidate was created. Clarify the brief as a visual-gate failure, then rerun
+  the unchanged source/geometry contract tests.
+- The Trial 02 wrapper reused Trial 01's base renderer, so Blender printed the
+  inherited `R17_NIGHT_GRID_EXPLODED_TRIAL01_COMPLETE` completion label and
+  retained the inherited scene name. The isolated Trial 02 destination,
+  candidate/master hashes, design brief, authorization record, geometry
+  validation, and render manifest are all correctly Trial 02, so this is a
+  reporting-label defect rather than an asset-integrity failure. Parameterize
+  the shared renderer's display identifiers before another revision.
+- The first final `check_release_content` invocation omitted the documented
+  local-mode environment and therefore tried to reach the sandbox-blocked
+  loopback PostgreSQL service before completing its read-only scan. No database
+  or repository content changed. Rerun the command with the explicit research
+  mode and local SQLite defaults used by the verified test suite.
+
+## 2026-10-09 — Night Grid Exploded Trial 03
+
+- Owner review rejected Trial 02's layout, lighting, and component labeling.
+  The front-piece label represented only the vamp and left the integrated dark
+  overlay on the base. Trial 03 groups the overlay, all eyelets, and its stitches
+  together, and shows the permanent vamp/quarters with the bootie and upper.
+- Native Blender crashed during restricted startup before producing a candidate.
+  Retried the same isolated preview through the approved host execution path.

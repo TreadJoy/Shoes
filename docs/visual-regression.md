@@ -87,3 +87,20 @@ to both homepage-mode captures:
 - The release-content command must report no error for any Heritage Court
   derivative. Existing unrelated blocked surfaces remain launch blockers until
   separately approved and resolved.
+
+## Slot 00 Exploded Hero Addendum
+
+For the owner-authorized Night Grid exploded hero in both homepage modes:
+
+- Capture at `390x844`, `768x1024`, and `1440x900`. Confirm the full 16:9 image
+  is visible, the figure stays inside its grid column, and no horizontal
+  overflow or layout shift occurs.
+- Confirm the embedded title and seven label plates remain distinct at tablet
+  and desktop widths. At phone width, confirm the adjacent caption visibly
+  repeats all seven names even when the embedded callouts are too small to read.
+- Confirm slot marker `00`, the visual-separation qualification, and the
+  unverified-interface/removal-mechanics notice remain visible.
+- Confirm the browser selects only an inventoried 960px or 1600px WebP and the
+  hero is eager/high-priority while the six lower gallery images remain lazy.
+- Confirm meaningful alternative text names the visual as an exploded concept,
+  not a verified removal or assembly diagram.

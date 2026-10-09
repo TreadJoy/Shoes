@@ -491,7 +491,7 @@ class ReleaseContentCommandTests(TestCase):
         }
 
         self.assertEqual(repository_static_paths, inventoried_static_paths)
-        self.assertEqual(len(repository_static_paths), 12)
+        self.assertEqual(len(repository_static_paths), 14)
         self.assertFalse(
             product_media_root.exists() and any(product_media_root.glob("*.JPG"))
         )

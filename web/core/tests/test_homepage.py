@@ -150,6 +150,43 @@ class HomepageModeTests(TestCase):
         self.assertEqual(displayed_names, expected_names)
         self.assertEqual(len(displayed_names), 6)
 
+    def test_home_renders_the_approved_slot_zero_exploded_study(self):
+        response = self.client.get(reverse("core:home"))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(
+            response,
+            '<figure class="night-grid-exploded-hero">',
+            count=1,
+        )
+        self.assertContains(
+            response,
+            "images/heritage-court/night-grid-exploded-960.webp",
+            count=2,
+        )
+        self.assertContains(
+            response,
+            "images/heritage-court/night-grid-exploded-1600.webp",
+            count=2,
+        )
+        self.assertContains(response, 'loading="eager"', count=1)
+        self.assertContains(response, 'fetchpriority="high"', count=1)
+        self.assertContains(response, "Night Grid / Exploded Study")
+        self.assertContains(
+            response,
+            "Front Shell · Bootie &amp; Sole · Tongue · Laces · Back Panel · Logo Holder · Back Loop",
+        )
+        self.assertContains(
+            response,
+            "Attachment interfaces and removal mechanics are not represented or verified.",
+        )
+        self.assertContains(
+            response,
+            "Exploded TreadJoy Heritage Court Night Grid concept showing seven labeled visual parts",
+        )
+        self.assertNotContains(response, "Campaign Lifestyle")
+        self.assertNotContains(response, "Research / 01")
+
     def test_home_renders_six_heritage_court_visual_studies(self):
         response = self.client.get(reverse("core:home"))
 

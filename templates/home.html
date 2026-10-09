@@ -41,11 +41,8 @@
             </div>
         </div>
 
-        {# Replace with approved <picture> media and intentional alt text. #}
-        <div class="home-hero-media media-placeholder media-placeholder-hero" data-final-alt-required="true">
-            <span class="placeholder-kicker">Development Placeholder</span>
-            <strong>Campaign Lifestyle<br>Photography / Video</strong>
-            <span>Approved media and final alt text required before launch.</span>
+        <div class="home-hero-media">
+            {% include "partials/night_grid_exploded_hero.html" %}
         </div>
     </section>
 
@@ -361,11 +358,8 @@
                 <a href="{% url 'products:product_list' %}" class="btn-secondary">See Product Preview <span aria-hidden="true">→</span></a>
             </div>
         </div>
-        <div class="research-hero-mark" aria-hidden="true">
-            <span class="registration-mark registration-mark-large">00</span>
-            <span class="registration-label">Research / 01</span>
-            <span class="registration-cross registration-cross-horizontal"></span>
-            <span class="registration-cross registration-cross-vertical"></span>
+        <div class="research-hero-media">
+            {% include "partials/night_grid_exploded_hero.html" %}
         </div>
     </section>
 

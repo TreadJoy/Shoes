@@ -207,6 +207,75 @@
         var(--color-surface-strong);
 }
 
+/* Approved slot 00 visual: clear at thumbnail scale, with a text fallback for
+   the embedded labels at narrow widths. */
+.night-grid-exploded-hero {
+    margin: 0;
+    border: var(--border-width-strong) solid var(--color-text);
+    background: var(--color-text);
+    box-shadow: var(--shadow-md);
+    color: var(--color-bg);
+}
+
+.night-grid-exploded-frame {
+    overflow: hidden;
+    aspect-ratio: 16 / 9;
+    background: var(--color-surface-strong);
+}
+
+.night-grid-exploded-frame picture,
+.night-grid-exploded-frame img {
+    display: block;
+    width: 100%;
+    height: 100%;
+}
+
+.night-grid-exploded-frame img {
+    object-fit: cover;
+}
+
+.night-grid-exploded-caption {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr);
+    gap: var(--space-3);
+    align-items: start;
+    padding: var(--space-3);
+}
+
+.night-grid-exploded-index {
+    color: var(--color-brand-primary);
+    font-family: var(--font-display);
+    font-size: clamp(2.5rem, 6vw, 4.5rem);
+    font-weight: 700;
+    line-height: 0.82;
+    letter-spacing: -0.08em;
+}
+
+.night-grid-exploded-copy {
+    display: grid;
+    gap: var(--space-1);
+    min-width: 0;
+}
+
+.night-grid-exploded-copy strong {
+    font-family: var(--font-display);
+    font-size: clamp(1.05rem, 0.92rem + 0.6vw, 1.4rem);
+    line-height: 1;
+}
+
+.night-grid-exploded-copy > span {
+    color: var(--color-on-dark);
+    font-size: var(--font-size-xs);
+    font-weight: 700;
+    line-height: 1.45;
+}
+
+.night-grid-exploded-copy small {
+    color: var(--color-on-dark-muted);
+    font-size: 0.7rem;
+    line-height: 1.4;
+}
+
 /* Brand statement and category gateways */
 .home-statement {
     position: relative;
@@ -1172,20 +1241,6 @@
     margin-top: var(--space-6);
 }
 
-.research-hero-mark {
-    position: relative;
-    display: grid;
-    min-height: 17rem;
-    align-content: center;
-    justify-items: center;
-    overflow: hidden;
-    border: var(--border-width-strong) solid var(--color-text);
-    background:
-        linear-gradient(135deg, transparent 0 48%, var(--color-text) 48% 49%, transparent 49% 100%),
-        var(--color-surface);
-    transform: rotate(1.5deg);
-}
-
 .registration-mark {
     display: block;
     color: var(--color-text);
@@ -1194,12 +1249,6 @@
     font-weight: 700;
     line-height: 0.85;
     letter-spacing: -0.08em;
-}
-
-.registration-mark-large {
-    font-size: clamp(6rem, 20vw, 15rem);
-    letter-spacing: -0.12em;
-    opacity: 0.9;
 }
 
 .registration-label {
@@ -1211,19 +1260,9 @@
     text-transform: uppercase;
 }
 
-.registration-cross {
-    position: absolute;
-    background: var(--color-text);
-}
-
-.registration-cross-horizontal {
-    width: 5rem;
-    height: var(--border-width-strong);
-}
-
-.registration-cross-vertical {
-    width: var(--border-width-strong);
-    height: 5rem;
+.research-hero-media {
+    min-width: 0;
+    transform: rotate(1deg);
 }
 
 .research-section {
@@ -1376,10 +1415,6 @@
         align-items: center;
     }
 
-    .research-hero-mark {
-        min-height: 24rem;
-    }
-
     .research-section {
         grid-template-columns: minmax(4rem, 1fr) minmax(0, 4fr) minmax(0, 7fr);
         align-items: start;
@@ -1449,10 +1484,6 @@
 
     .research-hero-actions a {
         width: 100%;
-    }
-
-    .research-hero-mark {
-        min-height: 14rem;
     }
 
     .research-waitlist {
