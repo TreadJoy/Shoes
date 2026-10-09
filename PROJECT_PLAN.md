@@ -1171,6 +1171,23 @@ No movie has rendered. Correct staging in an isolated candidate before full-size
 proofs or animation; no new write invocation, Stage 4, promotion or publication
 is authorized by this record. Color directions remain pending owner review.
 
+### 2026-10-08 — Companion Staging Corrected; Owner Review Pending
+
+The owner-confirmed Trial 04 retry saved/reopened the isolated staging candidate
+`qa/r17-material-trial-04/treadjoy-heritage-court-v3-r17-staging.blend`
+(`6d0e32df…`) and rendered ten private 1920×1080, 24-sample diagnostics. The six
+pair studies now match the original evaluated left/right poses. Two component
+layouts have readable flat labels, brighter staging and whole-module separation;
+Flowline/Haze start, midpoint and assembled-end stills were inspected. Source and
+candidate hashes, 91 original materials, shared raw/evaluated shoe geometry, M09
+ownership, and all 144 motion-frame placement/framing checks pass. The first retry
+attempt stopped before writing because a `1e-7` gate was one float32 step too
+tight; the owner authorized a documented `2e-7` numerical-only threshold and the
+failure is logged in `MISTAKES.md`. Trial 04 passes the private diagnostic staging
+review, but owner material/motion acceptance remains pending. No movie, Stage 4
+master, promotion, public imagery, manufacturing claim, or further geometry work
+is authorized.
+
 ## Launch gates at a glance
 
 Research launch requires A0.1–A0.3, A1.1–A1.4, and A2.1–A2.3. A2.2–A2.3 contain its minimum privacy, legal-content, accessibility, metadata, and measured-performance gates; later A7–A8 work completes and re-audits the shared commerce experience.

@@ -1031,6 +1031,10 @@ input[type="radio"] {
     margin-top: var(--space-7);
 }
 
+.site-main:has(.research-home) + .site-footer {
+    margin-top: 0;
+}
+
 .footer-inner {
     max-width: var(--container-content);
     margin: 0 auto;

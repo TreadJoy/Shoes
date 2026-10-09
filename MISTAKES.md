@@ -2783,3 +2783,14 @@
   project files and produced no vulnerability result. The combined hash-locked
   audit was rerun with scoped advisory/package access and reported no known
   vulnerabilities.
+
+## 2026-10-08 — R17 Trial 04 Presentation Repair
+
+- The first authorized Trial 04 Blender invocation stopped before saving or
+  rendering because its source-pose gate required matrix-component error below
+  `1e-7`; Blender's single-precision transform round-trip measured exactly
+  `1.1920928955078125e-7` for Cobalt Haze. The Trial 03 source hash remained
+  unchanged and no Trial 04 candidate or diagnostic was created. Treat this as
+  numerical serialization, not visible geometry drift. Use a documented
+  two-float32-ULP (`2e-7`) comparison threshold and obtain fresh authorization
+  for the revised script before retrying the write invocation.

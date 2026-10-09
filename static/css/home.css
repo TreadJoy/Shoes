@@ -1227,8 +1227,12 @@
 
 .research-waitlist {
     position: relative;
-    margin: clamp(3.5rem, 8vw, 7rem) auto;
+    margin: 0 auto clamp(3.5rem, 8vw, 7rem);
     background: var(--color-brand-secondary);
+}
+
+.research-home .research-waitlist {
+    margin-bottom: 0;
 }
 
 .research-waitlist .home-waitlist-copy > p:not(.eyebrow) {
@@ -1344,8 +1348,7 @@
     }
 
     .research-waitlist {
-        margin-top: var(--space-7);
-        margin-bottom: var(--space-7);
+        margin: 0 auto var(--space-7);
     }
 }
 
