@@ -20,6 +20,222 @@
         "kind": "not-public",
         "text": "When shown in local development, it is the TreadJoy brand mark."
       }
+    },
+    {
+      "id": "heritage-court-night-grid-960",
+      "path": "static/images/heritage-court/night-grid-960.webp",
+      "source_type": "original-3d-render",
+      "rights_status": "TreadJoy-owned 3D model and original procedural materials; owner-authorized website use in the current task; not third-party or AI-generated imagery.",
+      "allowed_environments": ["research", "commerce"],
+      "public_release": true,
+      "approval_status": "approved",
+      "sha256": "5c74ecef8a88593b4fc754087f2c5041147790c7de52d0fb2ec34b02971571f0",
+      "metadata_review": {
+        "status": "clean",
+        "notes": "Fresh 960x540 WebP derivative; EXIF/XMP/XML/IPTC/comment metadata is absent."
+      },
+      "alt_text_decision": {
+        "kind": "meaningful",
+        "text": "Pair of TreadJoy Heritage Court concept shoes with near-black overlays, charcoal laces, warm-stone panels, and off-white soles."
+      }
+    },
+    {
+      "id": "heritage-court-night-grid-1600",
+      "path": "static/images/heritage-court/night-grid-1600.webp",
+      "source_type": "original-3d-render",
+      "rights_status": "TreadJoy-owned 3D model and original procedural materials; owner-authorized website use in the current task; not third-party or AI-generated imagery.",
+      "allowed_environments": ["research", "commerce"],
+      "public_release": true,
+      "approval_status": "approved",
+      "sha256": "cb92b19b71182f871475639d2e7f2f0b8e9b6cb70963b8aa416326d9bea668cf",
+      "metadata_review": {
+        "status": "clean",
+        "notes": "Fresh 1600x900 WebP derivative; EXIF/XMP/XML/IPTC/comment metadata is absent."
+      },
+      "alt_text_decision": {
+        "kind": "meaningful",
+        "text": "Pair of TreadJoy Heritage Court concept shoes with near-black overlays, charcoal laces, warm-stone panels, and off-white soles."
+      }
+    },
+    {
+      "id": "heritage-court-relief-contour-960",
+      "path": "static/images/heritage-court/relief-contour-960.webp",
+      "source_type": "original-3d-render",
+      "rights_status": "TreadJoy-owned 3D model and original procedural materials; owner-authorized website use in the current task; not third-party or AI-generated imagery.",
+      "allowed_environments": ["research", "commerce"],
+      "public_release": true,
+      "approval_status": "approved",
+      "sha256": "7d41632f0c5f182bed2f5129ac77474729436db656d6a95c2273c4422e3b9011",
+      "metadata_review": {
+        "status": "clean",
+        "notes": "Fresh 960x540 WebP derivative; EXIF/XMP/XML/IPTC/comment metadata is absent."
+      },
+      "alt_text_decision": {
+        "kind": "meaningful",
+        "text": "Pair of TreadJoy Heritage Court concept shoes in white-on-white contour-pattern overlays with warm-stone panels."
+      }
+    },
+    {
+      "id": "heritage-court-relief-contour-1600",
+      "path": "static/images/heritage-court/relief-contour-1600.webp",
+      "source_type": "original-3d-render",
+      "rights_status": "TreadJoy-owned 3D model and original procedural materials; owner-authorized website use in the current task; not third-party or AI-generated imagery.",
+      "allowed_environments": ["research", "commerce"],
+      "public_release": true,
+      "approval_status": "approved",
+      "sha256": "6d7b51531357f7040f1e029df03fb5364308848efa8cda72ef0025239bc86ae8",
+      "metadata_review": {
+        "status": "clean",
+        "notes": "Fresh 1600x900 WebP derivative; EXIF/XMP/XML/IPTC/comment metadata is absent."
+      },
+      "alt_text_decision": {
+        "kind": "meaningful",
+        "text": "Pair of TreadJoy Heritage Court concept shoes in white-on-white contour-pattern overlays with warm-stone panels."
+      }
+    },
+    {
+      "id": "heritage-court-evergreen-route-960",
+      "path": "static/images/heritage-court/evergreen-route-960.webp",
+      "source_type": "original-3d-render",
+      "rights_status": "TreadJoy-owned 3D model and original procedural materials; owner-authorized website use in the current task; not third-party or AI-generated imagery.",
+      "allowed_environments": ["research", "commerce"],
+      "public_release": true,
+      "approval_status": "approved",
+      "sha256": "c6dfd74ac9eeb4070056a458dd9438bbd50084249af200a67fa68ac8f38a31bc",
+      "metadata_review": {
+        "status": "clean",
+        "notes": "Fresh 960x540 WebP derivative; EXIF/XMP/XML/IPTC/comment metadata is absent."
+      },
+      "alt_text_decision": {
+        "kind": "meaningful",
+        "text": "Pair of TreadJoy Heritage Court concept shoes with forest-green route-textured overlays, cream laces, and gold logos."
+      }
+    },
+    {
+      "id": "heritage-court-evergreen-route-1600",
+      "path": "static/images/heritage-court/evergreen-route-1600.webp",
+      "source_type": "original-3d-render",
+      "rights_status": "TreadJoy-owned 3D model and original procedural materials; owner-authorized website use in the current task; not third-party or AI-generated imagery.",
+      "allowed_environments": ["research", "commerce"],
+      "public_release": true,
+      "approval_status": "approved",
+      "sha256": "ec9d3a130015051b0cbced9a430942b99963a1d6edc6ceba490ca678a7cd81d6",
+      "metadata_review": {
+        "status": "clean",
+        "notes": "Fresh 1600x900 WebP derivative; EXIF/XMP/XML/IPTC/comment metadata is absent."
+      },
+      "alt_text_decision": {
+        "kind": "meaningful",
+        "text": "Pair of TreadJoy Heritage Court concept shoes with forest-green route-textured overlays, cream laces, and gold logos."
+      }
+    },
+    {
+      "id": "heritage-court-relief-noir-960",
+      "path": "static/images/heritage-court/relief-noir-960.webp",
+      "source_type": "original-3d-render",
+      "rights_status": "TreadJoy-owned 3D model and original procedural materials; owner-authorized website use in the current task; not third-party or AI-generated imagery.",
+      "allowed_environments": ["research", "commerce"],
+      "public_release": true,
+      "approval_status": "approved",
+      "sha256": "2222bc682154a267c4ae37d82e488e2627a988358915ad472c203cecc5f364e1",
+      "metadata_review": {
+        "status": "clean",
+        "notes": "Fresh 960x540 WebP derivative; EXIF/XMP/XML/IPTC/comment metadata is absent."
+      },
+      "alt_text_decision": {
+        "kind": "meaningful",
+        "text": "Pair of TreadJoy Heritage Court concept shoes combining white contour overlays with black tongues, laces, heels, and badges."
+      }
+    },
+    {
+      "id": "heritage-court-relief-noir-1600",
+      "path": "static/images/heritage-court/relief-noir-1600.webp",
+      "source_type": "original-3d-render",
+      "rights_status": "TreadJoy-owned 3D model and original procedural materials; owner-authorized website use in the current task; not third-party or AI-generated imagery.",
+      "allowed_environments": ["research", "commerce"],
+      "public_release": true,
+      "approval_status": "approved",
+      "sha256": "87122c7987a52dd712281b0c3768c310c3f6d5a53947099f6a15f76afe7731a7",
+      "metadata_review": {
+        "status": "clean",
+        "notes": "Fresh 1600x900 WebP derivative; EXIF/XMP/XML/IPTC/comment metadata is absent."
+      },
+      "alt_text_decision": {
+        "kind": "meaningful",
+        "text": "Pair of TreadJoy Heritage Court concept shoes combining white contour overlays with black tongues, laces, heels, and badges."
+      }
+    },
+    {
+      "id": "heritage-court-forest-noir-960",
+      "path": "static/images/heritage-court/forest-noir-960.webp",
+      "source_type": "original-3d-render",
+      "rights_status": "TreadJoy-owned 3D model and original procedural materials; owner-authorized website use in the current task; not third-party or AI-generated imagery.",
+      "allowed_environments": ["research", "commerce"],
+      "public_release": true,
+      "approval_status": "approved",
+      "sha256": "7b5b618b213437aeae81c5022bf227aba7205d5ef79466ebd870edf133c7f9fa",
+      "metadata_review": {
+        "status": "clean",
+        "notes": "Fresh 960x540 WebP derivative; EXIF/XMP/XML/IPTC/comment metadata is absent."
+      },
+      "alt_text_decision": {
+        "kind": "meaningful",
+        "text": "Pair of TreadJoy Heritage Court concept shoes combining forest-green route-textured overlays with black tongues, laces, and heels."
+      }
+    },
+    {
+      "id": "heritage-court-forest-noir-1600",
+      "path": "static/images/heritage-court/forest-noir-1600.webp",
+      "source_type": "original-3d-render",
+      "rights_status": "TreadJoy-owned 3D model and original procedural materials; owner-authorized website use in the current task; not third-party or AI-generated imagery.",
+      "allowed_environments": ["research", "commerce"],
+      "public_release": true,
+      "approval_status": "approved",
+      "sha256": "40ce87ddb23ca385cea7a2b98106d3c6cb2e396486ed94b0d6442021f422c57d",
+      "metadata_review": {
+        "status": "clean",
+        "notes": "Fresh 1600x900 WebP derivative; EXIF/XMP/XML/IPTC/comment metadata is absent."
+      },
+      "alt_text_decision": {
+        "kind": "meaningful",
+        "text": "Pair of TreadJoy Heritage Court concept shoes combining forest-green route-textured overlays with black tongues, laces, and heels."
+      }
+    },
+    {
+      "id": "heritage-court-relief-joyfront-960",
+      "path": "static/images/heritage-court/relief-joyfront-960.webp",
+      "source_type": "original-3d-render",
+      "rights_status": "TreadJoy-owned 3D model and original procedural materials; owner-authorized website use in the current task; not third-party or AI-generated imagery.",
+      "allowed_environments": ["research", "commerce"],
+      "public_release": true,
+      "approval_status": "approved",
+      "sha256": "68fcc0ad6655328a41a5b59ab407ea17e3bd68e2eef22623db782fb7c9fc1a2b",
+      "metadata_review": {
+        "status": "clean",
+        "notes": "Fresh 960x540 WebP derivative; EXIF/XMP/XML/IPTC/comment metadata is absent."
+      },
+      "alt_text_decision": {
+        "kind": "meaningful",
+        "text": "Pair of white TreadJoy Heritage Court concept shoes with sky-blue toe panels featuring the black, gold, and coral Joy Step mascot."
+      }
+    },
+    {
+      "id": "heritage-court-relief-joyfront-1600",
+      "path": "static/images/heritage-court/relief-joyfront-1600.webp",
+      "source_type": "original-3d-render",
+      "rights_status": "TreadJoy-owned 3D model and original procedural materials; owner-authorized website use in the current task; not third-party or AI-generated imagery.",
+      "allowed_environments": ["research", "commerce"],
+      "public_release": true,
+      "approval_status": "approved",
+      "sha256": "da199e9f49a0648214e95e925d17cd4fdffbaf34bd938e47b3805d2ada5148bc",
+      "metadata_review": {
+        "status": "clean",
+        "notes": "Fresh 1600x900 WebP derivative; EXIF/XMP/XML/IPTC/comment metadata is absent."
+      },
+      "alt_text_decision": {
+        "kind": "meaningful",
+        "text": "Pair of white TreadJoy Heritage Court concept shoes with sky-blue toe panels featuring the black, gold, and coral Joy Step mascot."
+      }
     }
   ],
   "content_surfaces": [
@@ -28,7 +244,7 @@
       "paths": [
         "templates/home.html"
       ],
-      "reason": "Homepage media, video, community, impact, and roadmap slots are explicitly labeled development placeholders.",
+      "reason": "The Heritage Court render-study gallery is approved and inventoried; lifestyle, category, community, impact, video, and roadmap media slots remain explicit development placeholders.",
       "public_release": false
     },
     {

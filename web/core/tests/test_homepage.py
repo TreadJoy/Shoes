@@ -150,6 +150,50 @@ class HomepageModeTests(TestCase):
         self.assertEqual(displayed_names, expected_names)
         self.assertEqual(len(displayed_names), 6)
 
+    def test_home_renders_six_heritage_court_visual_studies(self):
+        response = self.client.get(reverse("core:home"))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, '<figure class="render-study', count=6)
+        self.assertContains(response, 'loading="lazy"', count=6)
+        self.assertContains(response, "Rendered concepts only.")
+        self.assertContains(response, "do not prove production attachment")
+        self.assertContains(response, "Night Grid")
+        self.assertContains(response, "Relief Contour")
+        self.assertContains(response, "Evergreen Route")
+        self.assertContains(response, "Relief / Noir")
+        self.assertContains(response, "Forest / Noir")
+        self.assertContains(response, "Relief Joyfront")
+
+        for slug in (
+            "night-grid",
+            "relief-contour",
+            "evergreen-route",
+            "relief-noir",
+            "forest-noir",
+            "relief-joyfront",
+        ):
+            with self.subTest(slug=slug):
+                self.assertContains(
+                    response,
+                    f"images/heritage-court/{slug}-960.webp",
+                    count=2,
+                )
+                self.assertContains(
+                    response,
+                    f"images/heritage-court/{slug}-1600.webp",
+                    count=1,
+                )
+
+        if settings.IS_COMMERCE_MODE:
+            self.assertContains(response, "Six Looks. One Shared Shape.")
+            self.assertContains(response, "Read the Compatibility Concept")
+            self.assertNotContains(response, "Share Your Reaction")
+        else:
+            self.assertContains(response, "Which Direction Deserves Another Look?")
+            self.assertContains(response, "Share Your Reaction")
+            self.assertNotContains(response, "Read the Compatibility Concept")
+
     @skipIf(not settings.IS_COMMERCE_MODE, "Commerce-mode homepage video test")
     @override_settings(
         HOMEPAGE_YOUTUBE_VIDEO_ID="https://www.youtube.com/live/dQw4w9WgXcQ",

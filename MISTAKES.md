@@ -2850,3 +2850,59 @@
   different filename field, so the read-only check stopped with `KeyError` after
   confirming the review's image count and hashes. Inspect the current manifest
   keys and compare against the field actually emitted by this builder.
+
+## 2026-10-09 — Final Render Trial 01 Monitoring
+
+- A nonessential `ps` diagnostic used to inspect the live Blender process was
+  denied by macOS with `operation not permitted`. The authorized Blender job
+  remained attached to its existing terminal session and was unaffected. Use
+  that session's output and written render artifacts as the authoritative
+  progress evidence instead of retrying process enumeration.
+- The first Trial 01 visual-inspection request bundled three native-resolution
+  4K PNGs and exceeded the viewer's 64 MiB IPC frame limit. The read-only request
+  changed no files and did not indicate an image defect. Inspect these masters
+  individually, then use smaller 25% review derivatives for collection-level
+  comparison.
+- The first Trial 01 manifest hash-check changed its working directory to the
+  trial folder but still supplied the repository-relative manifest path. `jq`
+  therefore found no file and `shasum` received no checksums; no project file
+  changed. Use `render-manifest.json` directly when running from the trial
+  directory.
+- The first local Django browser-verification server could not bind to
+  `127.0.0.1:8765` inside the restricted sandbox and exited with
+  `Operation not permitted`. No repository or database state changed. The same
+  local-only command was rerun through the approved host execution path and
+  started normally.
+- The in-app browser's read-only DOM wrapper reported `img.decode is not a
+  function` when asked to await lazy-image painting for a mobile screenshot.
+  The page and files were unchanged. Use a fresh screenshot, DOM load metrics,
+  and direct derivative inspection instead of relying on that unavailable
+  browser method.
+- The same browser wrapper did not expose `element.focus()` during a read-only
+  focus-visibility probe. The gallery link was not activated and no state
+  changed. Use the locator keyboard API, which focuses the target before
+  sending its key, for the actual focus check.
+- The first broad commerce `web.core` run failed one legacy assertion that
+  required `static/images` to remain completely empty. That contract predated
+  the owner-approved, metadata-clean, fully inventoried Heritage Court assets.
+  Replace the obsolete absence assertion with an exact equality check between
+  repository static-image paths and the release-content inventory, while
+  retaining the existing prohibition on legacy uppercase product JPG files.
+- The first broad research `web.core` run failed one legacy metadata assertion
+  that required the former "profile links will be added" placeholder. The
+  current shared header and footer already contain the four configured TreadJoy
+  destinations, and the homepage contract independently tests each URL. Replace
+  the obsolete placeholder check with exact verified-link assertions while
+  retaining the prohibition on fake `href="#"` destinations.
+- The first two attempts to rerun the corrected research suite omitted the
+  documented local SQLite flag. The sandboxed attempt could not reach the
+  configured loopback PostgreSQL service; the approved host retry reached it
+  but the restricted runtime role correctly lacked `CREATE DATABASE`. No
+  database was created or changed. Re-run local verification with
+  `TREADJOY_RUNSERVER_DEFAULTS=1` as documented; PostgreSQL acceptance remains
+  the CI/staging gate and must not be bypassed by broadening runtime privileges.
+- The first final commerce-suite command supplied the local SQLite flag but
+  omitted the required synthetic Stripe test configuration, so Django failed
+  closed during settings import before discovering or running tests. Re-run
+  with clearly non-production `sk_test_` and `whsec_` verification values; do
+  not weaken the commerce configuration contract.

@@ -63,3 +63,27 @@ evidence. It separately verified the three-query catalog budget, local response
 timings, static byte counts, both-mode tests, and rendered layouts. Capture a
 real production-like DevTools/Lighthouse baseline under the A8.3 performance
 task before launch.
+
+## Heritage Court Gallery Addendum
+
+For the owner-authorized Heritage Court render-study gallery, add these checks
+to both homepage-mode captures:
+
+- Capture at `390x844`, `768x1024`, and a desktop viewport at or above
+  `1280px`. Confirm the one-column, two-column, and 12-column editorial
+  compositions respectively, with no horizontal overflow or clipped caption.
+- Confirm exactly six visible figures and labels: Night Grid, Relief Contour,
+  Evergreen Route, Relief / Noir, Forest / Noir, and Relief Joyfront.
+- Confirm each crop remains 16:9, preserves both shoes, and loads the expected
+  960px or 1600px source without layout shift.
+- Inspect Relief Contour for lost tonal detail, Evergreen Route for texture
+  moire, both Noir crossovers for accidental color clashes, and Relief Joyfront
+  for mascot readability at mobile width.
+- Verify the render-only disclaimer remains visible as text and that commerce
+  links to the compatibility explanation while research links to the survey.
+- Verify keyboard focus reaches only the section link—not the noninteractive
+  figures—and that its focus indication remains visible on the near-black
+  surface.
+- The release-content command must report no error for any Heritage Court
+  derivative. Existing unrelated blocked surfaces remain launch blockers until
+  separately approved and resolved.

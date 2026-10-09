@@ -68,6 +68,8 @@
         <a href="{% url 'core:how_it_works' %}" class="editorial-link">How Compatibility Works →</a>
     </section>
 
+    {% include "partials/heritage_court_render_studies.html" %}
+
     <section class="home-categories" aria-labelledby="home-categories-title">
         <div class="home-section-heading">
             {% if is_commerce_mode %}
@@ -385,21 +387,7 @@
         </div>
     </section>
 
-    <section class="research-preview-teaser" aria-labelledby="research-preview-title">
-        <div class="research-preview-teaser-copy">
-            <p class="eyebrow">02 / Product Preview</p>
-            <h2 id="research-preview-title">A Catalog Shell, Ready for the Next Pass.</h2>
-            <p>
-                Product previews are being prepared. Browse the empty catalog
-                structure, then use the survey to tell us what belongs in it.
-            </p>
-            <a href="{% url 'products:product_list' %}" class="editorial-link">Open Product Preview <span aria-hidden="true">→</span></a>
-        </div>
-        <div class="research-preview-teaser-mark" aria-hidden="true">
-            <span class="registration-mark">02</span>
-            <span class="registration-ring"></span>
-        </div>
-    </section>
+    {% include "partials/heritage_court_render_studies.html" %}
 
     <section class="research-section research-learning" aria-labelledby="research-learning-title">
         <div class="research-section-marker" aria-hidden="true">03</div>

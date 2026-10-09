@@ -131,3 +131,58 @@ When Figma MCP access returns:
   media crops remain owner acceptance items. Source-level reduced-motion and
   deferred-player behavior are implemented and covered where automatable.
 - Figma MCP access remained quota-limited and no reconciliation is claimed.
+
+## Heritage Court Render Studies — 2026-10-09
+
+### Approved Scope and Provenance
+
+- The owner requested six final Heritage Court render directions and their
+  implementation on the website: Night Grid, Relief Contour, Evergreen Route,
+  Relief / Noir, Forest / Noir, and Relief Joyfront.
+- The source is the TreadJoy-owned Heritage Court Blender model with original
+  procedural materials. Relief Joyfront adds the original procedural Joy Step
+  mascot to a sky-blue permanent vamp; it does not replace the fixed TreadJoy
+  badge.
+- Private 3840x2160 16-bit PNG masters remain under the ignored design tree.
+  The public static files are new 1600x900 and 960x540 WebP derivatives. They
+  contain no EXIF, XMP, XML, IPTC, or comment metadata and are individually
+  hashed in `docs/release-content-inventory.json`.
+
+### Homepage Treatment
+
+- One shared semantic partial renders in both deployment modes. This keeps the
+  imagery, alt text, source sets, and render-only qualification identical while
+  allowing the heading and destination link to remain mode-appropriate.
+- The section is a near-black editorial contact sheet, not a generic product
+  card grid. Its asymmetric 12-column composition uses the established sky,
+  gold, background, typography, and spacing tokens without adding a new global
+  visual system.
+- All six figures have meaningful alt text, explicit intrinsic dimensions,
+  responsive 960/1600 source sets, asynchronous decoding, and lazy loading.
+  Figures are noninteractive; the sole section action is an ordinary text link.
+- Copy calls the images visual studies and explicitly states that they do not
+  prove production attachment mechanics, manufacturing readiness, or current
+  availability. No price, inventory, engineering, or sale claim was added.
+- Commerce links to the existing compatibility explanation. Research links to
+  the existing survey so the gallery supports the current learning loop.
+
+### Release Boundary
+
+- The new assets pass the release-content command's per-asset checks in both
+  modes. The command still fails closed on the existing
+  `homepage-development-media` and `pending-social-links` surfaces; this gallery
+  does not make the complete homepage or either deployment release-ready.
+
+### Verification
+
+- Native and 25-percent visual reviews passed for all six master renders; Night
+  Grid is grid-free, Relief Contour remains legible, and Joy Step stays readable
+  on both shoes without replacing the fixed TreadJoy badge.
+- Browser verification passed at 390x844, 768x1024, and 1440x900. The gallery
+  uses one, two, and asymmetric 12-column arrangements respectively, has no
+  horizontal overflow, and retains a visible keyboard focus indicator.
+- The complete local `web.core` suite passed all 112 tests in commerce and all
+  112 in research, with 23 and 4 intentional mode/vendor skips respectively.
+- Django checks in both modes, migration-drift detection, Python compilation,
+  diff whitespace validation, image/inventory equality, and the strict frontend
+  audit pass. PostgreSQL-backed CI/staging validation remains a launch gate.

@@ -1,0 +1,140 @@
+{% load static %}
+
+<section class="home-render-studies" aria-labelledby="render-studies-title">
+    <div class="render-studies-intro">
+        <div>
+            <p class="eyebrow">{% if is_commerce_mode %}Heritage Court / Render Studies{% else %}02 / Product Preview{% endif %}</p>
+            <h2 id="render-studies-title">{% if is_commerce_mode %}Six Looks. One Shared Shape.{% else %}Which Direction Deserves Another Look?{% endif %}</h2>
+        </div>
+        <div class="render-studies-copy">
+            <p>
+                These visual studies explore coordinated surfaces across the
+                same current Heritage Court model—from tonal foundations to
+                mixed component palettes and the Joy Step mascot front.
+            </p>
+            <p class="render-studies-note">
+                Rendered concepts only. They do not prove production attachment
+                mechanics, manufacturing readiness, or current availability.
+            </p>
+        </div>
+    </div>
+
+    <div class="render-studies-grid" aria-label="Heritage Court material directions">
+        <figure class="render-study render-study-night">
+            <img
+                src="{% static 'images/heritage-court/night-grid-960.webp' %}"
+                srcset="{% static 'images/heritage-court/night-grid-960.webp' %} 960w, {% static 'images/heritage-court/night-grid-1600.webp' %} 1600w"
+                sizes="(min-width: 1536px) 960px, (min-width: 1024px) 62vw, (min-width: 768px) 66vw, 100vw"
+                width="960"
+                height="540"
+                loading="lazy"
+                decoding="async"
+                alt="Pair of TreadJoy Heritage Court concept shoes with near-black overlays, charcoal laces, warm-stone panels, and off-white soles."
+            >
+            <figcaption>
+                <span>01</span>
+                <strong>Night Grid</strong>
+                <small>Tonal black foundation</small>
+            </figcaption>
+        </figure>
+
+        <figure class="render-study render-study-relief">
+            <img
+                src="{% static 'images/heritage-court/relief-contour-960.webp' %}"
+                srcset="{% static 'images/heritage-court/relief-contour-960.webp' %} 960w, {% static 'images/heritage-court/relief-contour-1600.webp' %} 1600w"
+                sizes="(min-width: 1024px) 30vw, (min-width: 768px) 34vw, 100vw"
+                width="960"
+                height="540"
+                loading="lazy"
+                decoding="async"
+                alt="Pair of TreadJoy Heritage Court concept shoes in white-on-white contour-pattern overlays with warm-stone panels."
+            >
+            <figcaption>
+                <span>02</span>
+                <strong>Relief Contour</strong>
+                <small>White-on-white topography</small>
+            </figcaption>
+        </figure>
+
+        <figure class="render-study render-study-evergreen">
+            <img
+                src="{% static 'images/heritage-court/evergreen-route-960.webp' %}"
+                srcset="{% static 'images/heritage-court/evergreen-route-960.webp' %} 960w, {% static 'images/heritage-court/evergreen-route-1600.webp' %} 1600w"
+                sizes="(min-width: 1024px) 38vw, (min-width: 768px) 50vw, 100vw"
+                width="960"
+                height="540"
+                loading="lazy"
+                decoding="async"
+                alt="Pair of TreadJoy Heritage Court concept shoes with forest-green route-textured overlays, cream laces, and gold logos."
+            >
+            <figcaption>
+                <span>03</span>
+                <strong>Evergreen Route</strong>
+                <small>Forest route texture</small>
+            </figcaption>
+        </figure>
+
+        <figure class="render-study render-study-relief-noir">
+            <img
+                src="{% static 'images/heritage-court/relief-noir-960.webp' %}"
+                srcset="{% static 'images/heritage-court/relief-noir-960.webp' %} 960w, {% static 'images/heritage-court/relief-noir-1600.webp' %} 1600w"
+                sizes="(min-width: 1024px) 54vw, (min-width: 768px) 50vw, 100vw"
+                width="960"
+                height="540"
+                loading="lazy"
+                decoding="async"
+                alt="Pair of TreadJoy Heritage Court concept shoes combining white contour overlays with black tongues, laces, heels, and badges."
+            >
+            <figcaption>
+                <span>04</span>
+                <strong>Relief / Noir</strong>
+                <small>Relief shell, Noir supports</small>
+            </figcaption>
+        </figure>
+
+        <figure class="render-study render-study-forest-noir">
+            <img
+                src="{% static 'images/heritage-court/forest-noir-960.webp' %}"
+                srcset="{% static 'images/heritage-court/forest-noir-960.webp' %} 960w, {% static 'images/heritage-court/forest-noir-1600.webp' %} 1600w"
+                sizes="(min-width: 1024px) 54vw, (min-width: 768px) 58vw, 100vw"
+                width="960"
+                height="540"
+                loading="lazy"
+                decoding="async"
+                alt="Pair of TreadJoy Heritage Court concept shoes combining forest-green route-textured overlays with black tongues, laces, and heels."
+            >
+            <figcaption>
+                <span>05</span>
+                <strong>Forest / Noir</strong>
+                <small>Evergreen shell, Noir supports</small>
+            </figcaption>
+        </figure>
+
+        <figure class="render-study render-study-joyfront">
+            <img
+                src="{% static 'images/heritage-court/relief-joyfront-960.webp' %}"
+                srcset="{% static 'images/heritage-court/relief-joyfront-960.webp' %} 960w, {% static 'images/heritage-court/relief-joyfront-1600.webp' %} 1600w"
+                sizes="(min-width: 1024px) 38vw, (min-width: 768px) 42vw, 100vw"
+                width="960"
+                height="540"
+                loading="lazy"
+                decoding="async"
+                alt="Pair of white TreadJoy Heritage Court concept shoes with sky-blue toe panels featuring the black, gold, and coral Joy Step mascot."
+            >
+            <figcaption>
+                <span>06</span>
+                <strong>Relief Joyfront</strong>
+                <small>Relief shell, Joy Step front</small>
+            </figcaption>
+        </figure>
+    </div>
+
+    <div class="render-studies-footer">
+        <p>One visual model, tested through coordinated complete-shoe combinations.</p>
+        {% if is_commerce_mode %}
+            <a href="{% url 'core:how_it_works' %}" class="editorial-link">Read the Compatibility Concept <span aria-hidden="true">→</span></a>
+        {% else %}
+            <a href="{% url 'survey:survey_welcome' %}" class="editorial-link">Share Your Reaction <span aria-hidden="true">→</span></a>
+        {% endif %}
+    </div>
+</section>

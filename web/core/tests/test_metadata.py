@@ -124,12 +124,15 @@ class ResearchContentAndMetadataTests(TestCase):
                 self.assertContains(response, pending_copy)
                 self.assertContains(response, "ethan@tread-joy.com")
 
-    def test_social_destinations_are_named_without_unverified_links(self):
+    def test_social_destinations_use_configured_links_without_fake_targets(self):
         response = self.client.get(reverse("core:home"))
 
-        for platform in ("X", "YouTube", "Instagram", "TikTok"):
-            self.assertContains(response, platform)
-        self.assertContains(
-            response, "Profile links will be added after handles are verified."
-        )
+        for profile_url in (
+            "https://www.instagram.com/treadjoy/",
+            "https://x.com/TreadJoy",
+            "https://www.youtube.com/@TreadJoy",
+            "https://www.tiktok.com/@realtreadjoy",
+        ):
+            with self.subTest(profile_url=profile_url):
+                self.assertContains(response, f'href="{profile_url}"', count=2)
         self.assertNotContains(response, 'href="#"')

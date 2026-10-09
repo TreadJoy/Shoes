@@ -470,14 +470,28 @@ class ReleaseContentCommandTests(TestCase):
         self.assertIn("unapproved-product-image:unapproved-image-product", output)
         self.assertNotIn("Sensitive Product Display Name", output)
 
-    def test_removed_public_images_are_not_in_the_repository_tree(self):
+    def test_repository_static_images_are_exactly_the_inventoried_assets(self):
         repository_root = Path(settings.BASE_DIR)
         public_images_root = repository_root / "static" / "images"
         product_media_root = repository_root / "media" / "products"
-
-        self.assertFalse(
-            public_images_root.exists() and any(public_images_root.iterdir())
+        inventory = json.loads(
+            (repository_root / "docs" / "release-content-inventory.json").read_text(
+                encoding="utf-8"
+            )
         )
+        inventoried_static_paths = {
+            asset["path"]
+            for asset in inventory["assets"]
+            if asset["path"].startswith("static/images/")
+        }
+        repository_static_paths = {
+            path.relative_to(repository_root).as_posix()
+            for path in public_images_root.rglob("*")
+            if path.is_file()
+        }
+
+        self.assertEqual(repository_static_paths, inventoried_static_paths)
+        self.assertEqual(len(repository_static_paths), 12)
         self.assertFalse(
             product_media_root.exists() and any(product_media_root.glob("*.JPG"))
         )
