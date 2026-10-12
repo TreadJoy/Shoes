@@ -885,6 +885,10 @@
     margin: 0;
 }
 
+.home-waitlist-form #id_email {
+    background-color: #fff;
+}
+
 .home-waitlist-form label {
     display: block;
     margin-bottom: var(--space-2);

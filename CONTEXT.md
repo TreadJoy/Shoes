@@ -12,6 +12,10 @@ _Avoid_: Separate forefoot module, eyestay module, quarter module, three-piece o
 The structural base intended to retain and support the foot independently of replaceable styling assemblies; the warm-stone vamp and quarter belong to this base.
 _Avoid_: Extra module, removable quarter base
 
+**Permanent Core Assembly**:
+The non-customer-removable union of sole, carrier, bootie, structural chassis, and fit-critical reinforcement. The sole remains an internal BOM subassembly; it is not an interchangeable module.
+_Avoid_: Sole module, removable sole, seventh module, sole release
+
 **Module**:
 A named product assembly intended to be interchangeable as a unit; the term alone does not establish a working attachment or approved removal method.
 _Avoid_: Proven removable part, individual mesh

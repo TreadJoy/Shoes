@@ -1,5 +1,20 @@
 # Verification Limitations
 
+## 2026-10-12 — P2S calibration preparation
+
+- Opening the 3MF via macOS `open -a BambuStudio` returned success but left
+  Bambu Studio on its home screen, including on retry. Opening the same file
+  through the app's File/Open dialog succeeded; visual inspection confirmed
+  the coupon layout and P2S/PLA defaults. Process exit status was insufficient
+  evidence of an imported document.
+
+- Two documentation patches used unmatched context in PROJECT_PLAN.md and
+  MISTAKES.md and were rejected atomically. A subsequent existence check
+  confirmed no calibration directory was created. Reapply with exact headings.
+- Homebrew's initial Bambu Studio metadata lookup hit restricted DNS before
+  refreshing its cache. Retry the required installation through the approved
+  host path, using the official Bambu package referenced by the cask.
+
 ## 2026-09-15 — R13 marked front trim
 
 - The first R13 footprint was evaluated in side-view Y/Z coordinates without
@@ -2943,3 +2958,71 @@
   together, and shows the permanent vamp/quarters with the bootie and upper.
 - Native Blender crashed during restricted startup before producing a candidate.
   Retried the same isolated preview through the approved host execution path.
+
+## 2026-10-11 — Heritage Court V3 Engineering CAD Rev A
+
+- Native Blender 5.2.1 exited with signal 11 during a read-only background
+  inspection of the selected Trial 08 source; the crash report identified the
+  Metal backend during restricted startup. The source file was not modified.
+  Continue from preserved Blender evidence and use native GUI/approved-host
+  execution only when another source-bound query is necessary.
+- Initial GUI navigation probes returned `noWindowsAvailable` and rejected one
+  unsupported key name before the Blender window was selectable. No document
+  was opened or changed. Prefer file-system evidence and purpose-built CAD
+  tooling for the engineering track instead of spending more time on UI-only
+  navigation.
+- The installed `uv` distribution exposes `uv tool run` but does not install a
+  separate `uvx` executable. The first exact-skill command therefore stopped
+  before invoking cadgen. Use the equivalent pinned `uv tool run` form for this
+  environment unless `uvx` is installed later.
+- The first mesh-export build saved STEP successfully but the existing cadgen
+  daemon could not see a Node.js executable and stopped before STL/3MF export.
+  The geometry source was unchanged. Re-run without the stale daemon and point
+  `CADGEN_NODE` at the bundled Node 24 runtime.
+- The first retained STEP check tried to resolve the authored assembly label,
+  but the saved STEP document owns the root name and exposes only the component
+  labels as aliases. The check stopped before a verdict. Select the single
+  document root from `scene.roots` and keep label assertions on its leaves.
+- The first explicit mated-pose check found 3.76 mm³ of interference in the
+  0.15 mm eyelet-key lane. The T-key head intentionally overlapped its stem by
+  0.05 mm for a robust fuse, but the matching receiver cut began above that
+  overlap. Extend the receiver head-slot cut 0.10 mm downward; do not weaken the
+  key or dismiss a small exact-kernel collision as numerical noise.
+- After the eyelet repair, the mated-pose check found 1.485 mm³ of quarter-key
+  interference: both detent tops clipped the underside of the guarded receiver
+  lips. Raise the lips above the detent travel envelope while preserving the
+  side-window web; do not solve this by reducing the release detents.
+- The first FreeCAD 1.1.4 script invocation exited successfully but created no
+  FCStd file because FreeCAD executes a supplied Python file as
+  `__FreeCADMain__`, not `__main__`. Accept both entrypoint names and verify the
+  archive exists after rerunning; a zero exit code alone is not artifact proof.
+- A second direct `freecadcmd` file invocation still returned zero without
+  executing the retained importer. The bundled Python executable also could not
+  import `FreeCAD` outside the initialized application runtime. Use FreeCAD's
+  console and execute the retained file with an explicit `__file__`/`__main__`
+  context; verify the resulting FCStd archive and imported solids separately.
+- The first interactive FreeCAD execution omitted the explicit `__file__`
+  context and stopped with `NameError` before reading the STEP. Rerun the same
+  retained importer through `compile`/`exec` with the source path supplied; no
+  geometry or existing output was changed by the failed attempt.
+- A diagnostic mistakenly asked `sed` to read the FreeCAD executable itself,
+  producing unusable binary terminal output. No file changed. Use
+  `freecadcmd --help` and retained source files for command diagnostics; never
+  treat an executable as text.
+- The first native-document verification queried a nonexistent `SchemaVersion`
+  property after confirming 34 document objects and Rev A. The retained
+  FreeCAD metadata intentionally stores project, revision, artifact, status,
+  units, and source STEP; schema v3 remains authoritative in the adjacent JSON
+  contract. Verify only fields the native document claims to contain.
+- The first retained FCStd checker summed every shape's solids and reported 48
+  because FreeCAD exposes both 24 single-solid leaf objects and their
+  24-solid parent compound. Count leaf shapes with exactly one solid and no
+  nested compound; retain the parent compound as useful assembly structure.
+- The first final `py_compile` command referenced `lib/coupon_geometry.py` from
+  the CAD root instead of its actual `src/lib/` path. The command stopped
+  without compiling any geometry or modifying outputs. Rerun with the retained
+  source-tree path; keep exchange-file checks independent from lint commands.
+- The final exact-kernel check could not read uv's managed cache from the
+  restricted sandbox and stopped before loading cadgen. No artifact changed.
+  Rerun the same read-only retained check through the approved host execution
+  path; do not relocate or duplicate the dependency cache.

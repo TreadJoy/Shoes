@@ -61,6 +61,18 @@ The later owner-gated stages are R16 geometry polish, four R17 material kits on 
 
 **2026-10-05 owner priority change — Stage 3 authorized:** the owner explicitly elects to defer remaining Blender refinement and explore materials/render possibilities on the current Trial 08 geometry. This supersedes the earlier requirement to finish all Stage 2 visual corrections before material exploration, without falsely marking those corrections passed. The deferred refinement entry is now in `docs/project-ideas.md`. Trial 08 (`94f6de5b…`) is the provisional Stage 3 geometry authority; preserve it and all earlier review evidence. Prepared `design/active/treadjoy-heritage-court-v3/design/r17-material-configurations.json` records Night Grid, Relief Contour, Blue Flowline, Intersection Mosaic and three whole-module mixed assignments. Keep geometry/marks identical and chassis, sole and hardware fixed across variants; use procedural/original materials only. Exact native invocation confirmation is pending in `qa/r17-material-trial-01/AUTHORIZATION.md`; no R17 model or previews have been generated. Stage 4, website use, publication and manufacturing remain outside this authorization. Stop for owner review after the Stage 3 material studies.
 
+### Engineering CAD calibration — 2026-10-12
+
+The private CAD track is at Rev A with schema-v3 Permanent Core C01 and five
+interchangeable modules (M09/M04/M05/M06/M07), recorded in ADR 0002. M08 is
+retired as interchangeable in this track. The initial M09 coupon kit contains
+STEP, STL, unsliced 3MF and an imported-solid FCStd review document; prior
+geometric checks passed. The owner authorized calibration with PLA Basic at
+Milwaukee Public Library. The twelve pending trials and nominal dimensions are
+in `design/active/treadjoy-heritage-court-v3/cad/calibration/RUN-001.md`.
+Actual nozzle, plate, slicing and physical results remain pending. Full shoe
+CAD is incomplete; a reviewed right US men's 9 last is required before fit freeze.
+
 ### Current architecture
 
 TreadJoy is a Django 5.2 and PostgreSQL application rendered with Django templates, centralized CSS, and small vanilla JavaScript enhancements. It uses django-allauth account flows without Google/social authentication for now, Stripe-hosted Checkout and signed webhooks, database-backed authenticated/guest carts, order snapshots, shipment records, and Django admin. A private, development-team-only research POC was verified on a Render-managed Django origin behind a Cloudflare Access/Worker edge in September 2026. Its Free PostgreSQL database had a recorded October 3, 2026 expiration, so current external availability is unverified and no longer described as live. The apex/www holding Worker is a separate noindex asset-only surface; the public research launch and R2 bucket/custom media domain remain unprovisioned. There is no SPA, public API, background queue, cache service, search service, or generalized CMS.
