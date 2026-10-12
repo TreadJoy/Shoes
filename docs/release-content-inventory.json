@@ -29,14 +29,14 @@
       "allowed_environments": ["research", "commerce"],
       "public_release": true,
       "approval_status": "approved",
-      "sha256": "66d1078430a8a938dba6eaf46e0c5b35815ef32e55eb7d938a1b812b52bd12ad",
+      "sha256": "d57442808be40c1f421d286812b02d7da55d0b778def8cfd9f3f494904021c89",
       "metadata_review": {
         "status": "clean",
         "notes": "Fresh 960x540 RGB WebP derivative; EXIF, XMP, XML, IPTC, ICC, and comment metadata are absent."
       },
       "alt_text_decision": {
         "kind": "meaningful",
-        "text": "Exploded TreadJoy Heritage Court Night Grid concept showing seven labeled visual parts: tongue, laces, front piece, back panel, logo holder, bootie, and back loop."
+        "text": "Exploded TreadJoy Heritage Court Night Grid concept showing seven labeled visual parts: front shell with eyelets, combined bootie and sole, tongue, laces, back panel, logo holder, and back loop."
       }
     },
     {
@@ -47,14 +47,14 @@
       "allowed_environments": ["research", "commerce"],
       "public_release": true,
       "approval_status": "approved",
-      "sha256": "cffd730775bbb532c3e9efd5b0f21624c8b907f2570859fa017c337ec68df11a",
+      "sha256": "d44faaa21fe7e17ded3170fa2261d994edd16553f006f065062fee1bc201d237",
       "metadata_review": {
         "status": "clean",
         "notes": "Fresh 1600x900 RGB WebP derivative; EXIF, XMP, XML, IPTC, ICC, and comment metadata are absent."
       },
       "alt_text_decision": {
         "kind": "meaningful",
-        "text": "Exploded TreadJoy Heritage Court Night Grid concept showing seven labeled visual parts: tongue, laces, front piece, back panel, logo holder, bootie, and back loop."
+        "text": "Exploded TreadJoy Heritage Court Night Grid concept showing seven labeled visual parts: front shell with eyelets, combined bootie and sole, tongue, laces, back panel, logo holder, and back loop."
       }
     },
     {

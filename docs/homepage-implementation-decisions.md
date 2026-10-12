@@ -184,6 +184,18 @@ When Figma MCP access returns:
 
 ## Night Grid Exploded Slot 00 — 2026-10-09
 
+### Revision — 2026-10-10
+
+The owner rejected Trial 02's composition and component mapping. Slot 00 now
+uses Trial 03's combined-foundation render. Seven locally labeled component
+views replace crossing leader lines. The front shell includes the dark overlay,
+all 14 eyelets, and its stitching. The bootie, permanent upper panels, and sole
+remain together as one foundation, as explicitly requested by the owner.
+Large soft lights expose dark surface detail against a uniform stone background.
+Parts are framed individually; the badge and pull loop are labeled 3.5x details.
+This updates the visual grouping only, not the engineering module registry.
+The earlier Trial 02 acceptance below is historical and superseded.
+
 ### Approved Scope and Meaning
 
 - The owner requested a Night Grid exploded study that clearly highlights the
