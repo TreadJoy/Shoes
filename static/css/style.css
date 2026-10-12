@@ -1646,6 +1646,89 @@ input[type="radio"] {
     line-height: 1.7;
 }
 
+.how-it-works-hero {
+    display: grid;
+    gap: var(--space-6);
+    text-align: left;
+}
+
+.how-it-works-hero-copy > p:not(.eyebrow) {
+    margin-left: 0;
+    margin-right: 0;
+}
+
+/* Shared by the homepage and How It Works hero. */
+.night-grid-exploded-hero {
+    width: min(100%, 52rem);
+    min-width: 0;
+    margin: 0 auto;
+    border: var(--border-width-strong) solid var(--color-text);
+    background: var(--color-text);
+    box-shadow: var(--shadow-md);
+    color: var(--color-bg);
+}
+
+.night-grid-exploded-frame {
+    overflow: hidden;
+    aspect-ratio: 16 / 9;
+    background: var(--color-surface-strong);
+}
+
+.night-grid-exploded-frame picture,
+.night-grid-exploded-frame img {
+    display: block;
+    width: 100%;
+    height: 100%;
+}
+
+.night-grid-exploded-frame img {
+    object-fit: contain;
+    object-position: center;
+    background: #f5f5f2;
+}
+
+.night-grid-exploded-caption {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr);
+    gap: var(--space-3);
+    align-items: start;
+    padding: var(--space-3);
+}
+
+.night-grid-exploded-index {
+    color: var(--color-brand-primary);
+    font-family: var(--font-display);
+    font-size: clamp(2.5rem, 6vw, 4.5rem);
+    font-weight: 700;
+    line-height: 0.82;
+    letter-spacing: -0.08em;
+}
+
+.night-grid-exploded-copy {
+    display: grid;
+    gap: var(--space-1);
+    min-width: 0;
+}
+
+.night-grid-exploded-copy strong {
+    font-family: var(--font-display);
+    font-size: clamp(1.05rem, 0.92rem + 0.6vw, 1.4rem);
+    line-height: 1;
+}
+
+.night-grid-exploded-copy > span {
+    color: var(--color-on-dark);
+    font-size: var(--font-size-xs);
+    font-weight: 700;
+    line-height: 1.45;
+}
+
+.night-grid-exploded-copy small {
+    color: var(--color-on-dark-muted);
+    font-size: 0.7rem;
+    line-height: 1.4;
+}
+
 .content-card {
     border: var(--border-width) solid var(--color-border);
     border-radius: var(--radius-xl);
@@ -2640,6 +2723,11 @@ input[type="radio"] {
 }
 
 @media (min-width: 768px) {
+    .how-it-works-hero {
+        grid-template-columns: minmax(0, 7fr) minmax(14rem, 5fr);
+        align-items: center;
+    }
+
     .research-page-hero {
         grid-template-columns: minmax(0, 7fr) minmax(14rem, 5fr);
         align-items: center;

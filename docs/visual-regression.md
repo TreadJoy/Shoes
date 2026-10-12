@@ -26,6 +26,7 @@ functional tests, accessibility testing, or a browser performance trace.
 | Surface | Commerce | Research | Authentication state |
 | --- | --- | --- | --- |
 | Homepage | `/` | `/` | Guest |
+| How It Works | `/how-it-works/` | `/how-it-works/` | Guest |
 | Catalog | `/products/` | `/products/` | Guest |
 | Product detail | `/products/<approved-fixture-slug>/` | Same | Guest |
 | Cart | `/cart/` | Route must be absent | Guest and account |
@@ -46,6 +47,10 @@ consistent shape, sizing, typography, and hover, keyboard-focus, pressed,
 disabled, and busy states. Confirm that editorial text links, category entries,
 and the video play control retain their distinct link, card, and media-control
 treatments.
+
+For How It Works in both modes, confirm the Night Grid exploded-study image
+loads responsively, retains its descriptive alternative text and figure
+caption, and does not obscure or crowd the hero copy at mobile widths.
 
 ## Phase 6 baseline
 

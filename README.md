@@ -1,104 +1,74 @@
 # TreadJoy
 
-TreadJoy is a pre-launch Django 5.2 application for modular shoes and
-accessories. It is a real-commerce codebase under active hardening, not a
-production-ready storefront. The public research deployment launches first;
-commerce remains disabled until its payment, inventory, fulfillment, legal,
-security, and operational gates pass.
+TreadJoy is a Django 5.2 application for a modular shoe concept and supporting research/commerce workflows. It is an active development codebase focused on product, policy, and operational validation rather than a finished public storefront.
 
-The owner confirmed on 2026-08-26 that `tread-joy.com` was purchased through
-Cloudflare as the intended base domain. September 2026 evidence records an
-asset-only, noindexed holding page at the apex and `www`, plus a private
-research POC on Render behind a Cloudflare Access/Worker edge. Its Free
-PostgreSQL database had a recorded October 3, 2026 expiration, so all current
-external state must be re-verified before use and is not claimed here.
-There is still no approved public research launch, R2 bucket/custom domain, or
-transactional email service. `hello@tread-joy.com` and
-`noreply@tread-joy.com` are reserved future addresses, not active or monitored
-mailboxes.
+The repository intentionally keeps the public-facing description high level. It documents the system architecture, development workflow, and release gates without exposing internal infrastructure, operational secrets, or live environment details.
 
-## Source of Truth
+## Project goals
 
-Use evidence in this order: reproduced behavior, current source, schema and
-migrations, automated tests, configuration, repository documentation, then
-assumptions. In particular:
+- Explore a modular footwear system built around compatible, interchangeable components.
+- Support a research-first product preview before any commerce launch.
+- Keep customer-facing, payment, inventory, and fulfillment logic conservative and auditable.
+- Maintain a clear separation between research-only features and commerce capabilities.
+- Treat product, policy, and operational decisions as explicit requirements rather than assumptions.
 
-- `AGENTS.md` contains the approved product, commerce, security, and working
-  policies.
-- `PROJECT_PLAN.md` is the living current-state assessment and launch roadmap.
-- `docs/project-ideas.md` is the living owner backlog for broader product and brand ideas.
-- `MISTAKES.md` is the append-only record of failed attempts and verification
-  limitations.
-- `docs/production-configuration.md`, `docs/ci.md`, and
-  `docs/dependencies.md` are the detailed operating references.
-- `docs/research-capability-boundary.md` defines the allowed research surface
-  and the fail-closed runtime/database release check.
-- `docs/research-engagement-boundary.md` defines the A2.2 consent, provider,
-  staff, abuse, retention, and still-blocked activation contract.
-- `docs/privacy/` contains the draft A1.4 data register, operating policy,
-  request/incident procedures, validation evidence, and approval gates. It is
-  not in force until its approval record is complete.
-- `docs/visual-regression.md` defines the manual commerce/research and
-  mobile/desktop presentation-review matrix.
+## Source of truth
 
-Do not treat a roadmap target or configured provider backend as implemented
-live infrastructure.
+When evidence conflicts, use this order:
 
-## Architecture and Deployment Modes
+1. Reproduced behavior
+2. Current source code
+3. Schema and migrations
+4. Automated tests
+5. Current configuration
+6. Repository documentation
+7. Assumptions
 
-- Django templates provide the UI; there is no SPA or public API.
+Important repository references:
+
+- `AGENTS.md` defines the approved product, commerce, security, and working policies.
+- `PROJECT_PLAN.md` is the living project assessment and roadmap.
+- `MISTAKES.md` records failed attempts and verification limitations.
+- `docs/` contains detailed product, privacy, deployment, CI, and review guidance.
+
+## Architecture
+
+- Django templates provide the UI; there is no public SPA or general-purpose API.
 - PostgreSQL is the authoritative transactional database.
-- `web/products` owns catalog, variants, compatibility/BOM, availability, and
-  preorder batches.
-- `web/cart` and `web/orders` are installed only in commerce mode.
-- `web/survey` stores anonymous responses (with session drafts only during completion), and
-  `web/waitlist` owns email-only double opt-in, consent, suppression, bounded
-  provider delivery records, and aggregate abuse signals. Research installs no
-  django-allauth/sites/accounts apps or public account routes.
-- Commerce cart mutations are server-side transactional operations. Each cart has one
-  principal, and signing in merges the guest cart with availability-cap notices.
-- Stripe-hosted Checkout is the payment boundary; TreadJoy must never collect
-  or store raw card data. Checkout attempts quote current variants and create
-  expiring server-side reservation records before redirecting to Stripe.
-- Reconciled orders snapshot currency and shipping/contact facts independently
-  of mutable accounts and address rows. One row-locking transition service
-  owns fulfillment/refund status changes and append-only history.
-- Public settings use manifest static files and configure R2-backed public
-  media. These settings have automated coverage; the live holding page is
-  deployed separately, while research R2/media and public origin resources
-  remain unprovisioned.
+- `web/products` owns catalog, variants, compatibility data, availability, and preorder logic.
+- `web/cart` and `web/orders` are commerce-only components.
+- `web/survey` stores anonymous research engagement, while `web/waitlist` owns consented delivery and suppression workflows.
+- Stripe-hosted Checkout is the payment boundary; raw card data is never collected or stored.
+- Research mode and commerce mode are intentionally distinct and must not be mixed.
 
-`TREADJOY_MODE` is required and must be `commerce` or `research`.
-`TREADJOY_ENVIRONMENT` is required and must be `local`, `ci`, `staging`, or
-`production`. Research excludes commerce apps/routes and rejects every
-nonempty `STRIPE_*` variable; public research manifests must omit all
-`STRIPE_*` variable names, including empty values. Research and commerce must
-use separate PostgreSQL databases.
+`TREADJOY_MODE` is required and must be set to `commerce` or `research`.
+`TREADJOY_ENVIRONMENT` is required and must be set to `local`, `ci`, `staging`, or `production`.
 
-## Local Setup
+## Deployment modes
 
-TreadJoy targets CPython 3.12. Create a dedicated virtual environment and
-install the reviewed development lock:
+TreadJoy runs in two deployment modes, built from the same codebase:
+
+- `research`: public research preview, no commerce routes or Stripe initialization.
+- `commerce`: commerce functionality with cart, checkout, orders, and payment workflows.
+
+The project is designed to fail closed if configuration is missing or invalid.
+
+## Local development
+
+TreadJoy targets CPython 3.12.
+
+Create a dedicated virtual environment and install the reviewed development dependencies:
 
 ```sh
 python3.12 -m venv .venv
 .venv/bin/python -m pip install --require-hashes -r requirements-dev.txt
 ```
 
-If no local `.env` exists, create one from `.env.example`, replace placeholders
-locally, and never commit it. Use a local PostgreSQL database and a role with
-only the privileges needed by the application. Do not point research at the
-commerce database for convenience.
+If no local `.env` exists, create one from `.env.example` and replace placeholders locally. Do not commit `.env`.
 
-The bare `.venv/bin/python manage.py runserver` convenience supplies only
-missing local defaults. With no configured mode or database profile, it uses
-the safe research deployment and local SQLite; an explicitly configured mode
-is preserved. A database profile—including one supplied by `.env`—uses
-PostgreSQL and fails closed if the profile is incomplete. The command never
-applies migrations automatically.
+The repository supports both local SQLite-safe preview usage and a configured PostgreSQL profile.
 
-To initialize the isolated SQLite preview without changing `.env`, run the
-explicit migration once, then start the same profile:
+SQLite preview (safe local-only convenience):
 
 ```sh
 env TREADJOY_ENVIRONMENT=local TREADJOY_MODE=research \
@@ -113,10 +83,7 @@ env TREADJOY_ENVIRONMENT=local TREADJOY_MODE=research \
   .venv/bin/python manage.py runserver
 ```
 
-For the configured PostgreSQL profile, apply migrations explicitly before
-starting the server.
-
-Apply migrations and start a selected local mode:
+Configured PostgreSQL profile:
 
 ```sh
 env TREADJOY_ENVIRONMENT=local TREADJOY_MODE=commerce \
@@ -125,34 +92,17 @@ env TREADJOY_ENVIRONMENT=local TREADJOY_MODE=commerce \
   .venv/bin/python manage.py runserver
 ```
 
-For research, use its separate database configuration and neutralize any
-Stripe values inherited from a commerce `.env`:
+Research mode with Stripe explicitly neutralized:
 
 ```sh
 env TREADJOY_ENVIRONMENT=local TREADJOY_MODE=research \
   STRIPE_SECRET_KEY= STRIPE_WEBHOOK_SECRET= \
   .venv/bin/python manage.py runserver
-```
-
-Commerce deployments should run the idempotent reservation cleanup command
-from the managed-origin scheduler:
-
-```sh
-.venv/bin/python manage.py release_expired_reservations
-```
-
-Legacy Stripe payload contraction is deliberately backup-gated. First verify
-the bounded audit backfill and a restorable backup; without the confirmation
-flag the command reports aggregate row counts and changes nothing:
-
-```sh
-.venv/bin/python manage.py purge_legacy_stripe_payloads
-.venv/bin/python manage.py purge_legacy_stripe_payloads --confirm-backup
 ```
 
 ## Verification
 
-Run mode checks and migration-drift detection before handing off a change:
+Before handing off a change, run the relevant checks for the affected deployment mode:
 
 ```sh
 env TREADJOY_ENVIRONMENT=local TREADJOY_MODE=commerce \
@@ -169,126 +119,27 @@ env TREADJOY_ENVIRONMENT=local TREADJOY_MODE=research \
 .venv/bin/python -m pip check
 ```
 
-The required GitHub checks run commerce and research against PostgreSQL,
-collect static files, audit both dependency locks, and scan complete Git
-history for secrets. Local SQLite-only success does not prove row-locking or
-concurrency behavior. Reproduce the PostgreSQL jobs using the restricted-role
-procedure in `docs/ci.md`; do not grant the runtime role `CREATEDB` merely to
-make Django's default test runner convenient.
+The full CI path uses PostgreSQL-backed validation for both modes and verifies critical research/commerce boundaries.
 
-After migrating a research database, run the read-only capability check:
+## Security and privacy
 
-```sh
-env TREADJOY_ENVIRONMENT=local TREADJOY_MODE=research \
-  STRIPE_SECRET_KEY= STRIPE_WEBHOOK_SECRET= \
-  .venv/bin/python manage.py check_research_boundary
-env TREADJOY_ENVIRONMENT=local TREADJOY_MODE=research \
-  STRIPE_SECRET_KEY= STRIPE_WEBHOOK_SECRET= \
-  .venv/bin/python manage.py check_research_engagement
-```
+This project treats security and privacy as launch gates, not cleanup tasks.
 
-The command must pass in PostgreSQL CI and the exact release environment. It
-fails on commerce mode, commerce routes/imports/settings, or any residual
-cart/order database state.
+Important rules:
 
-Research email is delivered and synchronized only by explicit jobs:
+- Do not commit secrets, credentials, `.env` files, or production payloads.
+- Keep local development and production configuration separate.
+- Do not collect or store raw card data.
+- Enforce server-side authorization and validation for all mutations.
+- Keep research data restricted to the approved research scope.
+- Treat customer, order, address, and provider payload data as sensitive.
 
-```sh
-.venv/bin/python manage.py deliver_research_email --limit 100
-.venv/bin/python manage.py sync_research_resend --limit 100
-.venv/bin/python manage.py enforce_research_retention
-```
+See the documentation in `docs/` for the detailed operating policy, privacy posture, and release verification expectations.
 
-The retention command changes nothing without `--apply` plus a matching
-effective policy version. Local/CI use a deterministic fake email adapter.
+## Change discipline
 
-Before any public release, run `manage.py check_release_content` in the exact
-deployment-mode environment. A nonzero result is a release blocker; see
-`docs/release-content-checklist.md`.
+Work one approved implementation phase at a time. Preserve working behavior unless a verified issue requires change. Add or update tests for business logic and permission/security-sensitive behavior, and keep migrations and deployment documentation aligned with the code.
 
-For presentation changes, follow `docs/visual-regression.md`. Use only
-synthetic data in a disposable local database, capture both deployment modes
-at desktop and `390x844`, and inspect viewport images rather than relying on
-route status alone. The Phase 6 images are intentionally not committed because
-they include development placeholders. Manual screenshots do not replace
-accessibility testing or production-like Core Web Vitals traces.
+## Notes
 
-## Commerce Stripe Webhook
-
-The commerce deployment's signed webhook endpoint is:
-
-`/orders/stripe/webhook/`
-
-The current implementation handles:
-
-- `checkout.session.completed`
-- `checkout.session.async_payment_succeeded`
-- `checkout.session.expired`
-- `checkout.session.async_payment_failed`
-- `payment_intent.succeeded` (audit only; it does not mutate orders)
-- `refund.created`
-- `refund.updated`
-- `refund.failed`
-
-Checkout creates an immutable server-side quote and 30-minute reservation,
-then creates hosted Checkout after the database commit using a stable
-idempotency key. Webhooks and the bounded manual success-page check both
-retrieve the authoritative Session and call the same reconciler. Durable
-orders and full addresses are created only for paid or financially meaningful
-review records; mismatches never overwrite the expected quote or commit
-inventory. Research does not register this route and must not possess Stripe
-credentials. Production webhook subscription, scheduler, restricted-key,
-alerting/replay, PostgreSQL race, and backup/payload-purge acceptance are still
-deployment gates.
-
-When current paid-order allocation reports insufficient inventory, use the
-Django admin allocation queue for human review. Initiate a full refund in
-Stripe Dashboard, notify the customer outside the application, and record that
-notification with the queue action by its displayed deadline. Refund webhooks
-update the local audit record.
-
-## Order Operations
-
-Ordinary admin forms treat order totals, immutable snapshots, Stripe IDs,
-payments/refunds, inventory allocations, and status history as read-only and
-disable deletion of material commerce records. Staff may move an eligible paid
-order to processing through the guarded action. Record carrier tender and
-delivery on a Shipment; those timestamps are the only ordinary staff path to
-shipped and delivered. Cancellation and refund decisions remain human-reviewed
-workflows—do not directly edit status fields.
-
-Migrations `0022`–`0024` are expand/backfill/constraint migrations. Before a
-later contract migration removes the legacy address relationship or event
-`note`, verify aggregate backfill completeness on PostgreSQL, take and test a
-restorable backup, deploy the compatibility reads for one release, and observe
-production. Roll back application reads rather than reversing the historical
-backfill.
-
-## Preorder Batch Operations
-
-Preorder capacity is managed in **Products → Preorder batches** in Django
-admin. Only superusers can create or change a batch.
-
-1. Create the batch in `draft` with its customer-facing carrier-tender window
-   and total production capacity.
-2. Add an allocation for every active product variant. Combined SKU capacity
-   must cover the batch total.
-3. Save, then reopen the batch and change it to `open` with a reason. An open
-   batch makes that product preorder-only.
-4. Use `paused` to stop new checkouts without discarding existing carts. Reopen
-   it to resume sales, or use terminal `closed` when the offer is over.
-
-Every status and capacity change is audited. Capacity cannot be reduced below
-confirmed commitments, and the promised shipping window becomes read-only
-after the first confirmed payment. Stripe refunds do not restore preorder
-capacity; that release belongs to the future typed pre-tender cancellation
-workflow.
-
-## Change Discipline
-
-Work one explicitly approved implementation phase at a time. Preserve working
-behavior unless a verified correctness, security, privacy, historical-truth,
-or measured-performance problem requires change. Use expand/backfill/verify/
-contract migrations for destructive cleanup, update the living Markdown with
-each phase, and wait for owner `next` approval before starting another roadmap
-task.
+This repository is intended for development and review under controlled conditions. It is not a finished public storefront, and it should not be treated as production-ready infrastructure until the relevant operational, security, and payment gates are complete.

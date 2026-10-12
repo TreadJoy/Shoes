@@ -5,13 +5,16 @@
 {% block content %}
 <div class="how-it-works-page{% if not is_commerce_mode %} research-editorial-page{% endif %}">
     {% if is_commerce_mode %}
-        <section class="brand-hero">
-            <p class="eyebrow">The Modular System</p>
-            <h1>Change the Parts. Keep the Shoe.</h1>
-            <p>
-                TreadJoy is developing a modular shoe system built around
-                compatible, interchangeable components.
-            </p>
+        <section class="brand-hero how-it-works-hero">
+            <div class="how-it-works-hero-copy">
+                <p class="eyebrow">The Modular System</p>
+                <h1>Change the Parts. Keep the Shoe.</h1>
+                <p>
+                    TreadJoy is developing a modular shoe system built around
+                    compatible, interchangeable components.
+                </p>
+            </div>
+            {% include "partials/night_grid_exploded_hero.html" %}
         </section>
 
         <section class="content-card">
@@ -40,12 +43,7 @@
                     description or availability statement.
                 </p>
             </div>
-            <div class="research-page-mark" aria-hidden="true">
-                <span class="research-page-mark-number">01</span>
-                <span class="research-page-mark-label">Concept / Review</span>
-                <span class="research-page-mark-cross research-page-mark-cross-horizontal"></span>
-                <span class="research-page-mark-cross research-page-mark-cross-vertical"></span>
-            </div>
+            {% include "partials/night_grid_exploded_hero.html" %}
         </section>
 
         <section class="research-page-section" aria-labelledby="research-concept-title">

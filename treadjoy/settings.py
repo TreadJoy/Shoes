@@ -19,6 +19,7 @@ _VALID_ENVIRONMENTS = {"local", "ci", "staging", "production"}
 _VALID_INGRESS = {"direct", "cloudflare-locked"}
 _VALID_DB_SSLMODES = {"require", "verify-ca", "verify-full"}
 _PRIVATE_POC_OWNER_EMAIL = "ethan@tread-joy.com"
+_PUBLIC_CONTACT_EMAIL = "contact@tread-joy.com"
 
 TREADJOY_ENVIRONMENT = environment.choice(
     "TREADJOY_ENVIRONMENT", _VALID_ENVIRONMENTS
@@ -36,7 +37,7 @@ if (
 TREADJOY_MODE = environment.choice("TREADJOY_MODE", _VALID_TREADJOY_MODES)
 IS_COMMERCE_MODE = TREADJOY_MODE == "commerce"
 TREADJOY_PRIVATE_POC = environment.boolean("TREADJOY_PRIVATE_POC", default=False)
-TREADJOY_CONTACT_EMAIL = _PRIVATE_POC_OWNER_EMAIL
+TREADJOY_CONTACT_EMAIL = _PUBLIC_CONTACT_EMAIL
 TREADJOY_CANONICAL_ORIGIN = (
     "https://tread-joy.com"
     if IS_COMMERCE_MODE

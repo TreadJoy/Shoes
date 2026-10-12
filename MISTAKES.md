@@ -2850,6 +2850,24 @@
   service; the page remained accessible through the browser snapshot and
   computed-style checks. Do not spend further time retrying the screenshot tool
   for this CSS-only change.
+
+## 2026-10-12 — How It Works Image Verification
+
+- The editor test runner did not discover Django tests from explicit Python file
+  paths, and the first direct Django test invocation could not create its
+  PostgreSQL test database because the configured role lacks `CREATEDB`. No
+  test database or application data was changed. Use the repository's local
+  SQLite test mode for focused view/template coverage; do not grant database
+  privileges or modify the shared database for this check.
+- A context-processor read initially targeted a nonexistent root-level path;
+  the active file is `web/core/context_processors.py`. No file was changed by
+  the failed read.
+- The first commerce test run lacked required Stripe settings and stopped before
+  test discovery; rerunning with explicit dummy test-only values passed without
+  contacting Stripe.
+- A browser regression probe queried the commerce `.home-hero` selector while
+  the active page was research mode, so it found no element. No application
+  state was changed; use `.research-hero` for this mode.
 - The first native-resolution visual-inspection request tried to transfer all
   eight Trial 05 crossover PNGs in one tool response and exceeded the tool's
   64 MiB IPC frame limit. The read-only request changed no files and does not

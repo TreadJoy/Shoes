@@ -23,6 +23,35 @@ class HomepageModeTests(TestCase):
                 self.assertContains(response, f'href="{profile_url}"', count=2)
         self.assertContains(response, 'rel="noopener noreferrer"', count=8)
 
+    def test_how_it_works_uses_the_approved_night_grid_exploded_hero(self):
+        response = self.client.get(reverse("core:how_it_works"))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(
+            response,
+            '<figure class="night-grid-exploded-hero">',
+            count=1,
+        )
+        self.assertContains(
+            response,
+            "images/heritage-court/night-grid-exploded-960.webp",
+        )
+        self.assertContains(
+            response,
+            "images/heritage-court/night-grid-exploded-1600.webp",
+        )
+        self.assertContains(
+            response,
+            'alt="Exploded TreadJoy Heritage Court Night Grid concept',
+        )
+        self.assertContains(response, "Night Grid / Exploded Study")
+        self.assertContains(
+            response,
+            "Attachment interfaces and removal mechanics are not represented or verified.",
+        )
+        if not settings.IS_COMMERCE_MODE:
+            self.assertNotContains(response, 'class="research-page-mark"')
+
     @skipUnless(settings.IS_COMMERCE_MODE, "Commerce-mode homepage test")
     def test_commerce_home_prioritizes_categories_without_waitlist(self):
         response = self.client.get(reverse("core:home"))
@@ -275,14 +304,14 @@ class HomepageModeTests(TestCase):
             self.assertContains(home, "Fun, comfortable shoes built for everyday movement.")
             self.assertNotContains(home, "Private research preview.")
             self.assertContains(about, "focused on comfort, personality")
-            self.assertContains(contact, "hello@treadjoy.com")
-            self.assertNotContains(contact, "ethan@tread-joy.com")
+            self.assertContains(contact, "mailto:contact@tread-joy.com")
+            self.assertNotContains(contact, "hello@treadjoy.com")
         else:
             self.assertContains(home, "Private research preview.")
             self.assertNotContains(home, "Fun, comfortable shoes built for everyday movement.")
             self.assertContains(about, "private development environment")
-            self.assertContains(contact, "mailto:ethan@tread-joy.com")
-            self.assertNotContains(contact, "hello@treadjoy.com")
+            self.assertContains(contact, "mailto:contact@tread-joy.com")
+            self.assertNotContains(contact, "ethan@tread-joy.com")
 
     @skipIf(settings.IS_COMMERCE_MODE, "Research-mode homepage test")
     @override_settings(

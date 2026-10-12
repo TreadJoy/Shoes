@@ -95,7 +95,7 @@ The approved deployment architecture is one tested release commit deployed to se
 - Paid-order inventory allocation uses row locks, is idempotent, and records shortage/refund-review exceptions.
 - Shipment records drive fulfillment state and guard against shipping an inventory-review order.
 - The automated suite covers meaningful catalog, preorder, cart, checkout, webhook, inventory, order, shipment, and deployment-mode behavior.
-- The current homepage/navigation shell is distinctive, responsive, and substantially aligned with the approved visual direction. Homepage primary/secondary CTAs now share squared corners, sizing, typography, and a blue/gold color hierarchy; one-off waitlist/research-button overrides were removed, and dual-mode state checks are recorded in `docs/visual-regression.md`.
+- The current homepage/navigation shell is distinctive, responsive, and substantially aligned with the approved visual direction. Homepage primary/secondary CTAs now share squared corners, sizing, typography, and a blue/gold color hierarchy; one-off waitlist/research-button overrides were removed. The approved responsive Night Grid exploded-study figure is shared between the homepage and How It Works page; dual-mode visual checks are recorded in `docs/visual-regression.md`.
 
 ### Major problems and production risks
 
@@ -583,8 +583,9 @@ P1 storefront, email, accessibility, SEO, performance, monitoring, and admin-usa
   deployment-owned canonical origin, `noindex`/`nofollow` directives, safe
   Open Graph/X metadata on non-sensitive routes, and a no-store `robots.txt`
   that blocks private or session-bearing paths. Privacy, terms, and
-  accessibility pages are explicitly non-effective placeholders; the sole
-  contact is `ethan@tread-joy.com`; media remains blank; and social destinations
+  accessibility pages are explicitly non-effective placeholders; the public
+  contact is `contact@tread-joy.com` while the private POC retains its separate
+  owner-only operational mailbox; media remains blank; and social destinations
   are named for TreadJoy without inventing unverified handles. Research copy
   makes no public product, community, impact, or availability claim. Focused
   Django tests and local 390px/1280px browser checks passed with no horizontal

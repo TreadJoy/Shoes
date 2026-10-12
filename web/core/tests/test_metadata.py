@@ -95,15 +95,14 @@ class ResearchContentAndMetadataTests(TestCase):
                 response = self.client.get(reverse(route_name))
                 self.assertEqual(response.status_code, 200)
                 self.assertContains(response, title)
-                self.assertContains(response, "ethan@tread-joy.com")
+                self.assertContains(response, "contact@tread-joy.com")
 
         response = self.client.get(reverse("core:contact"))
-        self.assertContains(response, "mailto:ethan@tread-joy.com")
-        self.assertNotContains(response, "hello@treadjoy.com")
+        self.assertContains(response, "mailto:contact@tread-joy.com")
+        self.assertNotContains(response, "ethan@tread-joy.com")
 
-    def test_research_supporting_pages_use_editorial_shell_and_owner_mailbox(self):
+    def test_research_supporting_pages_use_editorial_shell_and_public_contact(self):
         for route_name in (
-            "core:how_it_works",
             "core:about",
             "core:contact",
             "waitlist:join_waitlist",
@@ -122,7 +121,7 @@ class ResearchContentAndMetadataTests(TestCase):
                 response = self.client.get(reverse(route_name))
                 self.assertContains(response, "research-policy-page")
                 self.assertContains(response, pending_copy)
-                self.assertContains(response, "ethan@tread-joy.com")
+                self.assertContains(response, "contact@tread-joy.com")
 
     def test_social_destinations_use_configured_links_without_fake_targets(self):
         response = self.client.get(reverse("core:home"))
