@@ -1,3 +1,4 @@
+from django.conf import settings
 from django.shortcuts import render, get_object_or_404
 from django.db.models import Prefetch, Q
 
@@ -23,6 +24,17 @@ def _catalog_queryset():
     )
 
 
+def _research_catalog_queryset():
+    return Product.objects.only(
+        "name",
+        "slug",
+        "description",
+        "audience",
+        "category",
+        "image",
+    )
+
+
 def _price_summary(product, variants):
     active_variants = [variant for variant in variants if variant.is_active]
     prices = [variant.current_price() for variant in active_variants]
@@ -42,11 +54,16 @@ def _price_summary(product, variants):
 
 
 def product_list(request):
-    products = _catalog_queryset().filter(is_active=True)
+    is_commerce_mode = settings.IS_COMMERCE_MODE
+    products = (
+        _catalog_queryset().filter(is_active=True)
+        if is_commerce_mode
+        else _research_catalog_queryset().filter(is_active=True)
+    )
     audience = request.GET.get("audience", "")
     category = request.GET.get("category", "")
     query = request.GET.get("q", "").strip()[:100]
-    sale_only = request.GET.get("sale") == "1"
+    sale_only = is_commerce_mode and request.GET.get("sale") == "1"
 
     valid_audiences = {choice[0] for choice in Product.AUDIENCE_CHOICES}
     valid_categories = {choice[0] for choice in Product.CATEGORY_CHOICES}
@@ -71,11 +88,12 @@ def product_list(request):
         ).distinct()
 
     if query:
-        products = products.filter(
-            Q(name__icontains=query)
-            | Q(description__icontains=query)
-            | Q(variants__color__icontains=query)
-        ).distinct()
+        search_filter = Q(name__icontains=query) | Q(description__icontains=query)
+        if is_commerce_mode:
+            search_filter |= Q(variants__color__icontains=query)
+        products = products.filter(search_filter)
+        if is_commerce_mode:
+            products = products.distinct()
 
     if query:
         catalog_heading = f'Search results for “{query}”'
@@ -92,6 +110,10 @@ def product_list(request):
 
     catalog_items = []
     for product in products:
+        if not is_commerce_mode:
+            catalog_items.append({"product": product})
+            continue
+
         variants = list(product.variants.all())
         for variant in variants:
             # Reuse the parent instance so availability can use its prefetched
@@ -141,11 +163,17 @@ def product_list(request):
 
 
 def product_detail(request, slug):
+    is_commerce_mode = settings.IS_COMMERCE_MODE
     product = get_object_or_404(
-        _catalog_queryset(),
+        _catalog_queryset() if is_commerce_mode else _research_catalog_queryset(),
         slug=slug,
         is_active=True,
     )
+    if not is_commerce_mode:
+        return render(request, "products/product_detail.html", {
+            "product": product,
+        })
+
     variants = list(product.variants.all())
     for variant in variants:
         variant.product = product

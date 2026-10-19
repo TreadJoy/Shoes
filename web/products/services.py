@@ -12,6 +12,131 @@ from .models import (
 
 STOCKED = "stocked"
 PREORDER = "preorder"
+HERITAGE_COURT_V1 = "heritage_court_v1"
+HERITAGE_COURT_COMPONENTS = (
+    (
+        "FRONT_SHELL",
+        "Front Shell",
+        "Visual group identified as the front shell in the current prototype. Attachment and removal mechanics are unverified.",
+        "unverified",
+    ),
+    (
+        "BOOTIE_AND_SOLE",
+        "Bootie and Sole",
+        "The bootie and sole stay together as one visual group, designated permanent in the current prototype.",
+        "permanent",
+    ),
+    (
+        "TONGUE",
+        "Tongue",
+        "Visual group identified as the tongue in the current prototype. Attachment and removal mechanics are unverified.",
+        "unverified",
+    ),
+    (
+        "LACES",
+        "Laces",
+        "Visual group identified as the laces in the current prototype. Interchangeability is unverified.",
+        "unverified",
+    ),
+    (
+        "BACK_PANEL",
+        "Back Panel",
+        "Visual group identified as the back panel in the current prototype. Attachment and removal mechanics are unverified.",
+        "unverified",
+    ),
+    (
+        "LOGO_HOLDER",
+        "Logo Holder",
+        "Visual group identified as the logo holder in the current prototype. Attachment and removal mechanics are unverified.",
+        "unverified",
+    ),
+    (
+        "BACK_LOOP",
+        "Back Loop",
+        "Visual group identified as the back loop in the current prototype. Its function and interchangeability are unverified.",
+        "unverified",
+    ),
+)
+HERITAGE_COURT_COMPONENT_CODES = tuple(
+    component[0] for component in HERITAGE_COURT_COMPONENTS
+)
+
+
+def component_bom_issues(variant, *, assignments=None):
+    """Return field-addressable issues for an opted-in Heritage Court BOM."""
+    product = getattr(variant, "product", None)
+    if product is None or product.component_standard != HERITAGE_COURT_V1:
+        return {}
+
+    if assignments is None:
+        assignments = (
+            list(
+                variant.components.select_related(
+                    "part_type",
+                    "part_variant__part",
+                    "part_variant__compatibility_group",
+                )
+            )
+            if variant.pk
+            else []
+        )
+
+    expected = {
+        code: (display_order, status)
+        for display_order, (code, _name, _description, status)
+        in enumerate(HERITAGE_COURT_COMPONENTS, start=1)
+    }
+    by_code = {code: [] for code in expected}
+    issues = []
+
+    for assignment in assignments:
+        part_type = assignment.part_type
+        code = part_type.code
+        if code not in expected:
+            issues.append(
+                f"{code} is a legacy or unexpected type; only the seven "
+                "Heritage Court v1 slots are allowed."
+            )
+            continue
+        by_code[code].append(assignment)
+        _display_order, expected_status = expected[code]
+        if not part_type.is_active:
+            issues.append(f"{code} is inactive.")
+        if part_type.interchangeability_status != expected_status:
+            issues.append(f"{code} has an unsupported evidence state.")
+
+        part_variant = assignment.part_variant
+        part = part_variant.part
+        if not part.is_active:
+            issues.append(f"The part assigned to {code} is inactive.")
+        if not part_variant.is_active:
+            issues.append(f"The part variant assigned to {code} is inactive.")
+        if part.part_type_id != part_type.pk:
+            issues.append(f"The part assigned to {code} has a different type.")
+        if variant.compatibility_group_id is None:
+            issues.append("A compatibility group is required for the shoe variant.")
+        elif part_variant.compatibility_group_id != variant.compatibility_group_id:
+            issues.append(f"The part variant assigned to {code} is incompatible.")
+        if not part_variant.compatibility_group.is_active:
+            issues.append(
+                f"The compatibility group assigned to {code} is inactive."
+            )
+
+    for code in HERITAGE_COURT_COMPONENT_CODES:
+        count = len(by_code[code])
+        if count == 0:
+            issues.append(f"Missing required component slot: {code}.")
+        elif count != 1:
+            issues.append(f"Component slot {code} must be assigned exactly once.")
+
+    return {"is_active": issues} if issues else {}
+
+
+def validate_heritage_court_bom(variant):
+    """Raise model validation errors unless an opted-in BOM is ready."""
+    issues = component_bom_issues(variant).get("is_active", [])
+    if issues:
+        raise ValidationError({"is_active": issues})
 
 
 class AvailabilityError(ValueError):
@@ -125,6 +250,14 @@ def validate_cart_items_for_checkout(cart_items):
                 f"{variant.product.name} — {variant.color}, "
                 f"Size {variant.size} is no longer available."
             )
+
+        if variant.product.component_standard == HERITAGE_COURT_V1:
+            try:
+                validate_heritage_court_bom(variant)
+            except ValidationError as error:
+                raise AvailabilityError(
+                    "This product is not ready for purchase."
+                ) from error
 
         availability = variant_availability(variant)
         fulfillment_types.add(availability.fulfillment_type)

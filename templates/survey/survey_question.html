@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% load static %}
 
 {% block title %}Survey Question {{ question_number }} | TreadJoy{% endblock %}
 
@@ -6,7 +7,7 @@
 
 <div class="survey-page">
 
-    <div class="survey-card survey-question-card">
+    <div class="survey-card survey-question-card{% if is_visual_direction_step %} survey-question-card-visual{% endif %}">
         <div class="survey-progress-header">
             <p class="eyebrow">TreadJoy Research Survey</p>
             <p class="survey-progress-label" id="survey-progress-label">Step {{ question_number }} of {{ total_questions }}</p>
@@ -29,14 +30,45 @@
                     {% if field.field.widget.input_type == "radio" %}
                         <fieldset class="survey-choice-group"{% if field.help_text or field.errors %} aria-describedby="{% if field.help_text %}{{ field.auto_id }}_helptext{% endif %}{% if field.help_text and field.errors %} {% endif %}{% if field.errors %}{{ field.auto_id }}_error{% endif %}"{% endif %}>
                             <legend class="visually-hidden">{{ field.label }}</legend>
-                            <div class="survey-choice-grid">
-                                {% for subwidget in field.subwidgets %}
-                                    <label class="survey-choice-card" for="{{ subwidget.id_for_label }}">
-                                        {{ subwidget.tag }}
-                                        <span>{{ subwidget.choice_label }}</span>
-                                    </label>
-                                {% endfor %}
-                            </div>
+                            {% if field.name == "visual_direction_preference" %}
+                                <div class="survey-choice-grid survey-choice-grid-visual">
+                                    {% for option in visual_direction_options %}
+                                        <label class="survey-choice-card survey-choice-card-visual" for="id_visual_direction_preference_{{ forloop.counter0 }}">
+                                            <input
+                                                type="radio"
+                                                name="visual_direction_preference"
+                                                value="{{ option.value }}"
+                                                id="id_visual_direction_preference_{{ forloop.counter0 }}"
+                                                class="survey-choice-input"
+                                                {% if selected_visual_direction == option.value %}checked{% endif %}
+                                                {% if field.errors %}aria-invalid="true" aria-describedby="{{ field.auto_id }}_error"{% if forloop.first %} autofocus{% endif %}{% endif %}
+                                            >
+                                            <img
+                                                src="{% static option.image_960 %}"
+                                                srcset="{% static option.image_960 %} 960w, {% static option.image_1600 %} 1600w"
+                                                sizes="(min-width: 1024px) 20rem, (min-width: 768px) 42vw, 88vw"
+                                                width="960"
+                                                height="540"
+                                                decoding="async"
+                                                alt="{{ option.alt }}"
+                                            >
+                                            <span class="survey-visual-choice-copy">
+                                                <strong>{{ option.label }}</strong>
+                                                <small>{{ option.description }}</small>
+                                            </span>
+                                        </label>
+                                    {% endfor %}
+                                </div>
+                            {% else %}
+                                <div class="survey-choice-grid">
+                                    {% for subwidget in field.subwidgets %}
+                                        <label class="survey-choice-card" for="{{ subwidget.id_for_label }}">
+                                            {{ subwidget.tag }}
+                                            <span>{{ subwidget.choice_label }}</span>
+                                        </label>
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
                             {% if field.help_text %}<p class="form-help" id="{{ field.auto_id }}_helptext">{{ field.help_text }}</p>{% endif %}
                             {% if field.errors %}<ul class="errorlist" id="{{ field.auto_id }}_error">{% for error in field.errors %}<li>{{ error }}</li>{% endfor %}</ul>{% endif %}
                         </fieldset>

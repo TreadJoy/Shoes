@@ -3,6 +3,7 @@ from django.http import HttpResponse, HttpResponseNotAllowed
 from django.shortcuts import render
 
 from web.products.models import PartType
+from web.products.services import HERITAGE_COURT_COMPONENT_CODES
 
 from .youtube import build_homepage_video
 
@@ -14,8 +15,18 @@ def home(request):
     if not settings.IS_COMMERCE_MODE and request.method != "GET":
         return HttpResponseNotAllowed(["GET"])
 
+    types_by_code = {
+        part_type.code: part_type
+        for part_type in PartType.objects.filter(
+            code__in=HERITAGE_COURT_COMPONENT_CODES,
+        )
+    }
     context = {
-        "modular_part_types": PartType.objects.filter(is_active=True)[:6],
+        "modular_part_types": [
+            types_by_code[code]
+            for code in HERITAGE_COURT_COMPONENT_CODES
+            if code in types_by_code
+        ],
         "homepage_video": build_homepage_video(
             settings.HOMEPAGE_YOUTUBE_VIDEO_ID,
             settings.HOMEPAGE_YOUTUBE_TITLE,

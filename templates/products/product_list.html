@@ -89,16 +89,18 @@
                             </span>
                         {% endif %}
 
-                        <span class="catalog-card-badges">
-                            {% if item.on_sale and is_commerce_mode %}
-                                <span class="product-badge product-badge-sale">Sale</span>
-                            {% endif %}
-                            {% if item.is_preorder %}
-                                <span class="product-badge product-badge-preorder">{{ item.availability_label }}</span>
-                            {% elif not item.has_available_variants %}
-                                <span class="product-badge product-badge-sold-out">Sold Out</span>
-                            {% endif %}
-                        </span>
+                        {% if is_commerce_mode %}
+                            <span class="catalog-card-badges">
+                                {% if item.on_sale %}
+                                    <span class="product-badge product-badge-sale">Sale</span>
+                                {% endif %}
+                                {% if item.is_preorder %}
+                                    <span class="product-badge product-badge-preorder">{{ item.availability_label }}</span>
+                                {% elif not item.has_available_variants %}
+                                    <span class="product-badge product-badge-sold-out">Sold Out</span>
+                                {% endif %}
+                            </span>
+                        {% endif %}
                     </a>
 
                     <div class="catalog-card-body">
@@ -111,23 +113,25 @@
                             </h2>
                         </div>
 
-                        {% if item.on_sale %}
-                            <p class="product-price">
-                                <span class="old-price">${{ item.compare_at_price }}</span>
-                                {% if item.price_min == item.price_max %}
-                                    <strong>${{ item.price_min }}</strong>
-                                {% else %}
-                                    <strong>${{ item.price_min }}–${{ item.price_max }}</strong>
-                                {% endif %}
-                            </p>
-                        {% else %}
-                            <p class="product-price">
-                                {% if item.price_min == item.price_max %}
-                                    ${{ item.price_min }}
-                                {% else %}
-                                    ${{ item.price_min }}–${{ item.price_max }}
-                                {% endif %}
-                            </p>
+                        {% if is_commerce_mode %}
+                            {% if item.on_sale %}
+                                <p class="product-price">
+                                    <span class="old-price">${{ item.compare_at_price }}</span>
+                                    {% if item.price_min == item.price_max %}
+                                        <strong>${{ item.price_min }}</strong>
+                                    {% else %}
+                                        <strong>${{ item.price_min }}–${{ item.price_max }}</strong>
+                                    {% endif %}
+                                </p>
+                            {% else %}
+                                <p class="product-price">
+                                    {% if item.price_min == item.price_max %}
+                                        ${{ item.price_min }}
+                                    {% else %}
+                                        ${{ item.price_min }}–${{ item.price_max }}
+                                    {% endif %}
+                                </p>
+                            {% endif %}
                         {% endif %}
 
                         {% if item.product.description %}

@@ -1,10 +1,13 @@
 from django.conf import settings
-from django.db import models
+from django.db import models, transaction
 from django.db.models import Q
 from django.core.exceptions import ValidationError
 
 
 class Product(models.Model):
+
+    class ComponentStandard(models.TextChoices):
+        HERITAGE_COURT_V1 = "heritage_court_v1", "Heritage Court v1 (visual BOM)"
 
     AUDIENCE_CHOICES = [
         ("men", "Men"),
@@ -28,6 +31,16 @@ class Product(models.Model):
     )
     description = models.TextField(
         blank=True
+    )
+    component_standard = models.CharField(
+        max_length=40,
+        choices=ComponentStandard.choices,
+        blank=True,
+        default="",
+        db_comment=(
+            "Opt-in component taxonomy for product-level BOM validation. "
+            "Blank products retain their existing component behavior."
+        ),
     )
     price = models.DecimalField(
         max_digits=8,
@@ -70,6 +83,12 @@ class Product(models.Model):
     class Meta:
         constraints = [
             models.CheckConstraint(
+                condition=models.Q(
+                    component_standard__in=("", "heritage_court_v1")
+                ),
+                name="product_component_standard_valid",
+            ),
+            models.CheckConstraint(
                 check=models.Q(price__gte=0),
                 name="product_price_nonnegative",
             ),
@@ -88,6 +107,63 @@ class Product(models.Model):
                 name="product_sale_price_not_above_price",
             ),
         ]
+
+    def clean(self):
+        super().clean()
+        if (
+            self.pk
+            and self.component_standard == self.ComponentStandard.HERITAGE_COURT_V1
+        ):
+            from .services import component_bom_issues
+
+            issues = []
+            for variant in self.variants.filter(is_active=True).prefetch_related(
+                "components__part_type",
+                "components__part_variant__part",
+                "components__part_variant__compatibility_group",
+            ):
+                variant.product = self
+                issues.extend(component_bom_issues(variant).get("is_active", []))
+            if issues:
+                raise ValidationError({
+                    "component_standard": (
+                        "Deactivate incomplete variants before applying the "
+                        "Heritage Court standard. " + " ".join(issues)
+                    )
+                })
+
+    def save(self, *args, **kwargs):
+        if (
+            self.pk
+            and self.component_standard == self.ComponentStandard.HERITAGE_COURT_V1
+        ):
+            from .services import component_bom_issues
+
+            with transaction.atomic():
+                Product.objects.select_for_update().get(pk=self.pk)
+                variants = list(
+                    self.variants.filter(is_active=True)
+                    .select_related("product")
+                    .prefetch_related(
+                        "components__part_type",
+                        "components__part_variant__part",
+                        "components__part_variant__compatibility_group",
+                    )
+                    .order_by("pk")
+                    .select_for_update()
+                )
+                for variant in variants:
+                    variant.product = self
+                    issues = component_bom_issues(variant).get("is_active", [])
+                    if issues:
+                        raise ValidationError({
+                            "component_standard": (
+                                "Deactivate incomplete variants before applying "
+                                "the Heritage Court standard. " + " ".join(issues)
+                            )
+                        })
+                return super().save(*args, **kwargs)
+        return super().save(*args, **kwargs)
 
     def current_price(self):
         if self.sale_price is not None:
@@ -197,12 +273,42 @@ class CompatibilityGroup(models.Model):
     def __str__(self):
         return self.code
 
+
+class PartTypeQuerySet(models.QuerySet):
+    def delete(self):
+        from .services import HERITAGE_COURT_COMPONENT_CODES
+
+        protected_codes = list(
+            self.filter(code__in=HERITAGE_COURT_COMPONENT_CODES)
+            .order_by("code")
+            .values_list("code", flat=True)
+        )
+        if protected_codes:
+            raise ValidationError(
+                "Canonical Heritage Court component types cannot be deleted: "
+                + ", ".join(protected_codes)
+                + "."
+            )
+        return super().delete()
+
+
+class PartTypeManager(models.Manager.from_queryset(PartTypeQuerySet)):
+    pass
+
+
 class PartType(models.Model):
     """
     Controlled list of modular component categories.
 
     Examples: tongue, logo, sole, outer shell, back panel, and laces.
     """
+
+    class InterchangeabilityStatus(models.TextChoices):
+        PERMANENT = "permanent", "Permanent"
+        UNVERIFIED = "unverified", "Unverified"
+
+    objects = PartTypeManager()
+
     code = models.CharField(
         max_length=30,
         unique=True,
@@ -220,6 +326,15 @@ class PartType(models.Model):
         default=0,
         db_comment="Order in which to display the part type in the admin UI.",
     )
+    interchangeability_status = models.CharField(
+        max_length=15,
+        choices=InterchangeabilityStatus.choices,
+        default=InterchangeabilityStatus.UNVERIFIED,
+        db_comment=(
+            "Evidence state for whether this visual component group is "
+            "interchangeable in the physical shoe."
+        ),
+    )
     is_active = models.BooleanField(
         default=True,
         db_comment="Whether the part type is available for selection.",
@@ -230,12 +345,30 @@ class PartType(models.Model):
     updated_at = models.DateTimeField(
         auto_now=True,
     )
+
     class Meta:
         ordering = [
             "display_order",
             "code",
         ]
         db_table_comment = "Controlled lookup table of modular component categories."
+        constraints = [
+            models.CheckConstraint(
+                condition=models.Q(
+                    interchangeability_status__in=("permanent", "unverified")
+                ),
+                name="part_type_interchangeability_status_valid",
+            ),
+        ]
+
+    def delete(self, *args, **kwargs):
+        from .services import HERITAGE_COURT_COMPONENT_CODES
+
+        if self.code in HERITAGE_COURT_COMPONENT_CODES:
+            raise ValidationError(
+                "Canonical Heritage Court component types cannot be deleted."
+            )
+        return super().delete(*args, **kwargs)
 
     def __str__(self):
         return self.name
@@ -500,6 +633,17 @@ class ProductVariant(models.Model):
         ]
         ordering = ["product", "color", "size"]
 
+    def clean(self):
+        super().clean()
+        if self.is_active and (
+            self.product_id or "product" in self._state.fields_cache
+        ):
+            from .services import component_bom_issues
+
+            issues = component_bom_issues(self).get("is_active", [])
+            if issues:
+                raise ValidationError({"is_active": " ".join(issues)})
+
     def current_price(self):
         if self.selling_price is not None:
             return self.selling_price
@@ -516,17 +660,136 @@ class ProductVariant(models.Model):
         return self.product.price if self.product.price > effective_price else None
 
     def save(self, *args, **kwargs):
-        if self.selling_price is None and self.product_id:
-            product = getattr(self, "product", None)
-            if product is None:
-                product = Product.objects.get(pk=self.product_id)
-            self.selling_price = (
-                self.price_override
-                if self.price_override is not None
-                else product.current_price()
-            )
-            if self.compare_at_price is None and product.price > self.selling_price:
-                self.compare_at_price = product.price
+        update_fields = kwargs.get("update_fields")
+        relation_is_being_saved = update_fields is None or bool(
+            {"product", "product_id"}.intersection(update_fields)
+        )
+
+        # Read a candidate parent before locking. The saved row is re-read
+        # after the lock; if a concurrent reassignment made this candidate
+        # stale, retry with the now-current parent instead of validating
+        # against a stale Product object.
+        persisted = None
+        if self.pk and not self._state.adding:
+            persisted = type(self).objects.filter(pk=self.pk).values(
+                "is_active",
+                "product_id",
+            ).first()
+
+        candidate_product_id = (
+            self.product_id
+            if relation_is_being_saved or persisted is None
+            else persisted["product_id"]
+        )
+        possible_old_product_id = persisted["product_id"] if persisted else None
+        original_product_id = self.product_id
+        original_product = self._state.fields_cache.get("product")
+
+        while candidate_product_id:
+            product_ids = {
+                product_id
+                for product_id in (candidate_product_id, possible_old_product_id)
+                if product_id is not None
+            }
+            retry_with_product_ids = None
+            with transaction.atomic():
+                locked_products = {
+                    product.pk: product
+                    for product in Product.objects.select_for_update()
+                    .filter(pk__in=product_ids)
+                    .order_by("pk")
+                }
+                persisted_now = None
+                if self.pk and not self._state.adding:
+                    persisted_now = (
+                        type(self).objects.select_for_update()
+                        .filter(pk=self.pk)
+                        .values("is_active", "product_id")
+                        .first()
+                    )
+                    if persisted_now is None:
+                        raise ProductVariant.DoesNotExist
+
+                target_product_id = (
+                    self.product_id
+                    if relation_is_being_saved
+                    else persisted_now["product_id"]
+                    if persisted_now is not None
+                    else self.product_id
+                )
+                actual_old_product_id = (
+                    persisted_now["product_id"] if persisted_now is not None else None
+                )
+                if target_product_id not in locked_products:
+                    raise Product.DoesNotExist(
+                        f"Product {target_product_id} does not exist."
+                    )
+                required_product_ids = {
+                    product_id
+                    for product_id in (target_product_id, actual_old_product_id)
+                    if product_id is not None
+                }
+                if not required_product_ids <= set(locked_products):
+                    retry_with_product_ids = {
+                        product_id
+                        for product_id in required_product_ids
+                        if product_id is not None
+                    }
+                else:
+                    product = locked_products[target_product_id]
+                    is_active = (
+                        self.is_active
+                        if persisted_now is None or update_fields is None
+                        or "is_active" in update_fields
+                        else persisted_now["is_active"]
+                    )
+                    self.product = product
+                    try:
+                        if self.selling_price is None:
+                            self.selling_price = (
+                                self.price_override
+                                if self.price_override is not None
+                                else product.current_price()
+                            )
+                            if (
+                                self.compare_at_price is None
+                                and product.price > self.selling_price
+                            ):
+                                self.compare_at_price = product.price
+
+                        if is_active:
+                            from .services import (
+                                HERITAGE_COURT_V1,
+                                validate_heritage_court_bom,
+                            )
+
+                            if product.component_standard == HERITAGE_COURT_V1:
+                                validate_heritage_court_bom(self)
+                        return super().save(*args, **kwargs)
+                    finally:
+                        if not relation_is_being_saved:
+                            self.product_id = original_product_id
+                            if original_product is None:
+                                self._state.fields_cache.pop("product", None)
+                            else:
+                                self._state.fields_cache["product"] = original_product
+
+            if retry_with_product_ids is not None:
+                other_product_ids = retry_with_product_ids - {
+                    candidate_product_id
+                }
+                possible_old_product_id = (
+                    next(iter(other_product_ids))
+                    if len(other_product_ids) == 1
+                    else None
+                )
+                if relation_is_being_saved:
+                    candidate_product_id = self.product_id
+                else:
+                    candidate_product_id = next(iter(retry_with_product_ids))
+                continue
+
+        # Preserve Django's usual FK validation for missing/unsaved parents.
         return super().save(*args, **kwargs)
 
     def __str__(self):
@@ -779,6 +1042,33 @@ class PreorderBatchEvent(models.Model):
     def __str__(self):
         return f"{self.batch.code}: {self.get_event_type_display()}"
 
+class ProductVariantComponentQuerySet(models.QuerySet):
+    def delete(self):
+        from .services import HERITAGE_COURT_V1
+
+        with transaction.atomic():
+            variant_ids = list(
+                self.order_by().values_list("product_variant_id", flat=True).distinct()
+            )
+            list(
+                ProductVariant.objects.select_for_update()
+                .filter(pk__in=variant_ids)
+                .order_by("pk")
+            )
+            protected = self.filter(
+                product_variant__is_active=True,
+                product_variant__product__component_standard=HERITAGE_COURT_V1,
+            )
+            if protected.exists():
+                raise ValidationError({
+                    "part_type": (
+                        "Required Heritage Court component slots cannot be "
+                        "removed while the variant is active."
+                    )
+                })
+            return super().delete()
+
+
 class ProductVariantComponent(models.Model):
     """
     Assigns one modular part SKU to one component slot in a
@@ -788,6 +1078,8 @@ class ProductVariantComponent(models.Model):
     of materials. It does not represent a customer's customized
     order selection.
     """
+
+    objects = ProductVariantComponentQuerySet.as_manager()
 
     product_variant = models.ForeignKey(
         ProductVariant,
@@ -898,14 +1190,131 @@ class ProductVariantComponent(models.Model):
                     "The selected part variant is not compatible "
                     "with this product variant."
                 )
+        if (
+            self.product_variant_id
+            and self.product_variant.product.component_standard
+            == Product.ComponentStandard.HERITAGE_COURT_V1
+        ):
+            from .services import (
+                HERITAGE_COURT_COMPONENT_CODES,
+                component_bom_issues,
+            )
+
+            if self.part_type_id:
+                if self.part_type.code not in HERITAGE_COURT_COMPONENT_CODES:
+                    errors["part_type"] = (
+                        "This legacy or unexpected component type is not part "
+                        "of the Heritage Court v1 BOM."
+                    )
+                elif not self.part_type.is_active:
+                    errors["part_type"] = "This component type is inactive."
+            if self.part_variant_id:
+                if not self.part_variant.is_active:
+                    errors["part_variant"] = "This part variant is inactive."
+                elif not self.part_variant.part.is_active:
+                    errors["part_variant"] = "This part design is inactive."
+                elif not self.part_variant.compatibility_group.is_active:
+                    errors["part_variant"] = "This compatibility group is inactive."
+
+            if self.product_variant.is_active and not errors:
+                assigned = list(
+                    self.product_variant.components.select_related(
+                        "part_type",
+                        "part_variant__part",
+                        "part_variant__compatibility_group",
+                    )
+                )
+                if self.pk:
+                    assigned = [
+                        self if component.pk == self.pk else component
+                        for component in assigned
+                    ]
+                else:
+                    assigned.append(self)
+                active_issues = component_bom_issues(
+                    self.product_variant,
+                    assignments=assigned,
+                ).get("is_active", [])
+                if active_issues:
+                    errors.setdefault("part_type", " ".join(active_issues))
         if errors:
             raise ValidationError(errors)
 
     def save(self, *args, **kwargs):
         # Django does not automatically run full_clean() during save().
         # Calling it here protects normal application and admin writes.
-        self.full_clean()
-        return super().save(*args, **kwargs)
+        with transaction.atomic():
+            previous_variant_id = None
+            if self.pk:
+                previous_variant_id = type(self).objects.filter(
+                    pk=self.pk
+                ).values_list("product_variant_id", flat=True).first()
+            variant_ids = {
+                variant_id
+                for variant_id in (
+                    previous_variant_id,
+                    self.product_variant_id,
+                )
+                if variant_id is not None
+            }
+            locked_variants = {
+                variant.pk: variant
+                for variant in (
+                    ProductVariant.objects.select_for_update()
+                    .select_related("product")
+                    .filter(pk__in=variant_ids)
+                    .order_by("pk")
+                )
+            }
+            actual_previous_variant_id = previous_variant_id
+            if self.pk and previous_variant_id is not None:
+                actual_previous_variant_id = (
+                    type(self).objects.select_for_update()
+                    .filter(pk=self.pk)
+                    .values_list("product_variant_id", flat=True)
+                    .first()
+                )
+                if actual_previous_variant_id != previous_variant_id:
+                    raise ValidationError({
+                        "product_variant": (
+                            "This component assignment changed while it was "
+                            "being edited. Reload it and try again."
+                        )
+                    })
+            previous_variant = locked_variants.get(actual_previous_variant_id)
+            if (
+                previous_variant is not None
+                and previous_variant.is_active
+                and previous_variant.product.component_standard
+                == Product.ComponentStandard.HERITAGE_COURT_V1
+                and actual_previous_variant_id != self.product_variant_id
+            ):
+                raise ValidationError({
+                    "product_variant": (
+                        "Required Heritage Court component slots cannot be "
+                        "moved while the variant is active."
+                    )
+                })
+            self.full_clean()
+            return super().save(*args, **kwargs)
+
+    def delete(self, *args, **kwargs):
+        with transaction.atomic():
+            variant = ProductVariant.objects.select_for_update().select_related(
+                "product"
+            ).get(pk=self.product_variant_id)
+            if (
+                variant.is_active
+                and variant.product.component_standard
+                == Product.ComponentStandard.HERITAGE_COURT_V1
+            ):
+                raise ValidationError({
+                    "part_type": (
+                        "Required Heritage Court component slots cannot be "
+                        "removed while the variant is active."
+                    )
+                })
+            return super().delete(*args, **kwargs)
     def __str__(self):
         return(
             f"{self.product_variant.sku} - "

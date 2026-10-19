@@ -1,6 +1,382 @@
 # Verification Limitations
 
+## 2026-10-19 — isolated trim is not a drop-in replacement
+
+- The clean trim study passes its isolated thickness screens, but the context
+  check finds 10.758 mm³ intersecting M09 and provisional, unmatched end loops.
+  Do not translate a local thickness pass into assembly acceptance. Preserve
+  the study separately and resolve the boundaries before integrating it.
+
+## 2026-10-19 — AP-01 rectangular strip replacement rejected
+
+- Trial 34 removed the old cut-cap defect but a wider rectangular removal
+  boundary exposed thin ends and created visible trim notches/panel transitions.
+  Local p05 is 1.347939 mm against the 1.6 mm target. Retain Trial 32; do not
+  enlarge the cut again. Build a continuous join from shared boundary curves
+  and validate that isolated join before full-shoe packaging.
+- Initial source inspection used the nonexistent `clean_medial_core.py` name.
+  No files changed. File discovery identified `clean_medial_remnant.py`; use
+  discovered source names rather than reconstructed names from memory.
+
+## 2026-10-19 — AP-01 trim-cap repair rejected
+
+- Trial 33's 0.2 mm tapered top rise did not resolve the cut boundary; it left
+  shorter sampled slivers (local minimum 0.000630 mm). Preserve it as rejected
+  evidence, retain Trial 32, and reconstruct the intersecting boundary instead
+  of raising another patch. The maintained builder defaults to zero cap rise.
+- The prior dense trim screen excluded the transition ends. Its one-chord
+  finding was local, not whole-trim clearance. The expanded Trial 32 audit finds
+  65 sub-1.6 mm samples, including both ends. Future trim checks use the expanded
+  selection and do not treat global p05 or tiny face area as a minimum-wall pass.
+
+## 2026-10-18 — AP-01 interrupted evidence handoff
+
+- Trial 31's longitudinal taper removed abrupt patch ends but left a visible
+  lower lip because its outer side remained nearly vertical. The medial
+  render caught this despite passing directional section checks. Trial 32
+  adds a quintic vertical inward taper below Z31.5 mm; review both directions
+  of a blended repair before calling its transition smooth.
+
+- Trial 30's final assembly CAD snapshot could not execute because automatic
+  approval review reached its usage limit. The command did not run. Existing
+  individual CAD snapshots and Blender assembly review remain available;
+  the experiment was already rejected on appearance. Preserve that limitation
+  while completing its evidence manifest; do not describe the missing snapshot
+  as reviewed or retry by bypassing approval.
+
+## 2026-10-16 — AP-01 source-sole backing depth
+
+- Trial 30 passes the selected local thickness screen but the medial render
+  shows a conspicuous raised band at the bounded repair. Rejected on appearance;
+  Trial 27 remains the current candidate. Replace abrupt patch endpoints with
+  a smooth, source-guided trim transition instead of stacking local bands.
+- Trial 30's Blender STL import removed two degenerate triangles. Numeric
+  checks use saved STL, not the modified display derivative; do not claim
+  the `.blend` is topology-identical or a printable master.
+- Trial 29 reused the widened backing region as the upper-remnant removal
+  region, unnecessarily reaching into the bootie wall. Rejected before
+  adoption. Trial 30 uses separate removal and backing regions so wider
+  hidden support cannot authorize wider upper-wall removal.
+- Trial 28 reproduced the source cupsole surface locally, but its inward
+  boundary at X−36.5 mm left 13/48 checked normal chords below 1.6 mm and a
+  short residual trim skin. Matching the visual source is not sufficient
+  wall validation. Retain the failed local evidence; Trial 29 tests backing
+  extended to X−32 mm and a 0.35 mm per-axis source allowance, with matching
+  overlay relief. Neither candidate is automatically approved for printing.
+
+## 2026-10-16 — AP-01 medial cleanup cut height
+
+- The first cut-edge ray screen used 20 mm rays, shorter than much of the
+  solid sole. Its 2/169 hit coverage was partial, not a passing thickness
+  check. A retained 100 mm rerun covers 169/169 and still identifies two
+  short edge chords that must not be silently waived.
+- Trial 26 removed the diagnosed thin skin but its Z28 mm cutter also notched
+  the sole's upper trim. Saved-file topology passed, illustrating that it
+  cannot certify appearance fidelity. The medial render caught the regression.
+  Keep Trial 26 as rejected evidence; Trial 27 starts from Trial 25 with its
+  cut floor raised to Z32 mm. Do not overwrite the failed or prior checkpoints.
+
+## 2026-10-16 — AP-01 medial-quarter backing hypothesis rejected
+
+- The rear-edge reinforcement approach cannot be repeated blindly at the
+  medial quarter. Read-only material-ray checks found actual M09 material
+  behind all six thin C01 samples, leaving insufficient room for 1.6 mm
+  inward-only backing. No failing geometry was built or released. Repair
+  the shared boundary deliberately; do not fuse independent modules or
+  report a small sampled p05 improvement as resolution of these thin skins.
+
+## 2026-10-16 — AP-01 local rear-edge backing
+
+- Near-coincident Boolean subtraction reported a tiny negative removed volume
+  and addition bounds extending well outside the repair patch. These are not
+  meaningful physical-volume/location claims. The raw results are retained;
+  an independent saved-vertex locality check, bounds comparison, topology and
+  removal checks are required before reporting the repair as localized.
+
+## 2026-10-15 — AP-01 rear backing and badge resurfacing
+
+- Trial 18's concealed rear-core backing failed the post-Boolean topology gate.
+  The partial output remains diagnostic only. A 0.005 mm simplification is
+  tested on the next candidate to remove near-coincident Boolean slivers;
+  topology and wall checks must pass again before adoption.
+- Trial 19 still created disconnected backing skins. Trial 20 instead fused
+  individual convex backing prisms; only near-zero/negative-volume numerical
+  remnants remained (total absolute volume below 0.001 mm³). Trial 21 records
+  and removes only those remnants under an explicit 0.001 mm³ bound.
+- Trial 21 passed in-memory topology but failed ASCII STL reload: tiny Boolean
+  edges merged during the consumer's vertex processing. The export now tries
+  bounded simplification at 0.01/0.02/0.04 mm and accepts only a watertight,
+  positive-volume, single-body saved-file round-trip, recording the chosen value.
+- Trial 22 still failed every bounded STL simplification attempt. Trial 23
+  therefore preserves the Boolean intermediate as NPZ and requires an explicit
+  0.20 mm voxel regularization of C01, followed by new envelope, wall, geometry,
+  and removal checks. This broadens the changed region and cannot be called
+  protected-exterior fidelity merely because the image looks smoother.
+- Trial 23 also failed the overlay STL reload after the badge-seat Boolean.
+  Trial 24 therefore routes both C01 and M09 through explicit 0.20 mm voxel
+  regularization; eyelets and clearance paths must be rechecked, not inherited.
+- A read-only process-status command was denied by the sandbox while waiting
+  for Blender. No escalation was needed: the existing execution session
+  returned normal completion and both regularized meshes reported zero
+  nonmanifold edges. This does not replace saved-file validation.
+- Trial 24's first regularized export found two C01 fragments totaling about
+  0.000323 mm³. The same explicit 0.001 mm³ numerical-remnant ceiling is now
+  applied and recorded at that export stage; substantive fragments still fail.
+
+## 2026-10-15 — AP-01 bounded fairing and display colors
+
+- Trial 14's upper-core subtractive fairing failed the strict one-component
+  check before export. That incomplete revision is retained, not released.
+  The next attempt records every fragment volume and rejects any total above
+  0.001 mm³; it does not silently discard meaningful disconnected material.
+- Display colors distinguish ownership only. They do not certify surface
+  repair, printer material assignments, thickness, or manufacturing readiness.
+- Trials 15/16 still detached about 0.011 mm³ during the nearly coincident
+  Boolean intersection, exceeding the explicit fragment allowance. Both were
+  rejected. Trial 17 instead retains the original face connectivity with an
+  0.08 mm vertex-motion cap; it requires fresh interference/removal checks
+  because it is not purely subtractive.
+- Trial 17 still has unresolved local wall samples; C01 minimum is 0.041 mm
+  versus Trial 13's 0.068 mm. The fairing is not a thickness improvement claim.
+  Blender discarded 24 and 2 degenerate triangles during review imports;
+  its saved scene is a display derivative, not authoritative printable geometry.
+
+## 2026-10-15 — AP-01 independent-part removal audit
+
+- A roadmap update initially used an outdated neighboring heading date and
+  failed its exact-context check. The current file was reread and the narrow
+  insertion reapplied without replacing concurrent catalog documentation.
+- The first checksum read ran before the asynchronous sealing process had
+  finished and found no new manifest. It was retried after completion; this
+  timing error did not alter geometry or prior checkpoint evidence.
+
+- Trial 10's independent STL bodies and negligible static overlap did not prove
+  physical removability. New withdrawal checks found heel/core collision at
+  0.5 mm, tongue/core and tongue/overlay collisions at 0.5 mm, and overlay/core
+  collision at 0.1 mm. The earlier checkpoint already withheld removal approval;
+  it must not be reused as evidence that assembled pieces can separate.
+- The first swept-relief sequence removed the tongue before the overlay and
+  cut open eyelet rims. Trials 11/12 are rejected diagnostic evidence. The
+  revised order removes badge, heel, overlay, then tongue; explicit bore/rim
+  checks now guard the 14-eyelet requirement.
+- Trial 11's binary STL export collapsed tiny Boolean edges despite valid
+  in-memory solids. Export now tests the round-tripped payload, simplifies at
+  0.01 mm and can preserve precision with ASCII STL. Trial 13's five saved
+  files pass connectedness, closure and positive-volume checks.
+- C01 thickness sampling emitted numerical barycentric warnings for tiny
+  triangles. Recorded percentile results are screening evidence only; local
+  minima, source-fidelity masks and continuous minimum-wall certification remain
+  open. Conservative box-kernel motion relief does not certify the specified
+  constant-normal gap or final socket diameters.
+
+## 2026-10-14 — AP-01 appearance-prototype trials (not released)
+
+- Trial 01 exposed sole-envelope overshoot, a distorted badge projection,
+  detached tongue-label geometry and export slivers. Those candidates remain
+  private diagnostic evidence; sole smoothing was removed, badge backing was
+  rebuilt from its front surface, and fragile labels were omitted.
+- Blender decimation of the dense voxel derivative stalled; only the owned
+  conversion process was terminated. Shared-topology voxel exports followed
+  by Manifold simplification replaced that step. Restricted runtime/cache
+  attempts needed the approved local execution path; no application dependency
+  or public service was changed.
+- Trial 03 stopped because the rear registration ray missed M09. A measured
+  ray-grid check moved the site from x=29 to x=33 mm. No failed trial was
+  overwritten. Trial 04 showed that subtracting the overlay from the badge
+  destroyed its backing; Trial 05 preserves the badge and cuts its seat instead.
+- Saved Trial 05 STLs are individually watertight, positive-volume, connected
+  bodies, but thickness sampling fails C01 (p05 0.760 mm) and M04 (0.784 mm)
+  against the approved 1.6 mm unsupported-wall limit. C01/M09 intersection
+  volume is 1.131 mm3. Visual review still shows boundary waviness. The package
+  is NOT_RELEASED, not printable approval. Inward-backing and exact-intersection
+  repairs are being trialed without relaxing acceptance criteria.
+- The installed P2S preset is named `0.16mm High Quality`, not the initially
+  drafted `0.16mm Optimal`; the preparation script now uses the observed name.
+  No AP-01 slice or print has been authorized by a validation pass.
+- Trial 07's stronger backing exposed a disconnected upper heel receiver;
+  the single-body assertion correctly stopped export. A concealed pedestal
+  connects that receiver to the visual cavity floor in subsequent trials.
+- Trial 10 passes coarse p05 wall screening after quarter backing, but its
+  local minima (as low as 0.060 mm) and visible scalloped boundaries remain
+  unresolved. An empty coarse-check failure list is not a full-plan pass;
+  `REVIEW.md` explicitly rejects print release and names the remaining work.
+
+## 2026-10-13 — Planning-time database-check invocation
+
+- An initial attempt to run `showmigrations` and `makemigrations --check` with
+  `DATABASE_URL=sqlite:///db.sqlite3` failed during settings validation because
+  application migrations and tests require a PostgreSQL URL. No connection or
+  database write occurred, and the existing `db.sqlite3` was not migrated or
+  treated as test evidence. Use the configured disposable PostgreSQL test
+  database for this change instead.
+
+## 2026-10-14 — Heritage Court verification attempts
+
+- A read-only settings diagnostic printed Django's full configured database
+  settings, including the database password, into tool output. The value is
+  intentionally omitted here and must be treated as exposed. The diagnostic
+  itself only imported settings. Two focused test invocations supplied a
+  synthetic `DATABASE_URL` but omitted explicit `DB_NAME`, `DB_USER`,
+  `DB_PASSWORD`, `DB_HOST`, and `DB_PORT` overrides; repository `.env` values
+  therefore took precedence over the URL defaults. Django's test-database
+  creation attempt using that configured connection was denied by PostgreSQL.
+  No test database was created and no application records were changed. The
+  owner was notified and authorized completion before credential rotation;
+  remaining test work uses only a task-created isolated cluster with every
+  database setting explicitly overridden. Rotation and log review remain owner
+  follow-up steps.
+- The first resumed focused commerce rerun found two test-fixture errors: its
+  RequestFactory request lacked an authenticated admin user, and a bulk-delete
+  fixture attempted to activate a one-slot rather than complete Heritage Court
+  BOM. Only the isolated disposable test database was used; both fixtures were
+  corrected before rerunning, and no application database was contacted.
+- The corrected focused rerun exposed one more RequestFactory setup gap:
+  fallback messages storage needed a session mapping. Only the isolated test
+  database was used; the fixture now supplies one before its next rerun.
+- The first full commerce rerun found that a preceding migration
+  TransactionTestCase had flushed canonical part-type fixtures before the
+  protected bulk-delete admin test. The test now seeds its own canonical rows;
+  only the isolated test database was used and no application database was
+  contacted.
+- The first full research-mode PostgreSQL run exposed two homepage-test issues:
+  an earlier migration `TransactionTestCase` had flushed seeded lookup rows in
+  the preserved `--keepdb` database, and a page-wide placeholder assertion
+  matched approved image placeholders outside the component list. The homepage
+  rendering and checkout snapshot fixtures now seed their own canonical lookup
+  rows, and the homepage assertion is scoped to the list's empty-state marker;
+  no application data was changed.
+- A sandboxed retry of the research suite could not reach the isolated
+  loopback PostgreSQL cluster (`Operation not permitted`). The approved host
+  retry reached the temporary test database and exposed the two test issues
+  above. No configured application database was accessed or changed.
+- The final commerce-suite rerun found the same flushed-lookup issue in the
+  seven-code Checkout snapshot fixture. The helper now creates its canonical
+  test lookup rows, and its focused PostgreSQL test passed; no application
+  database or provider was changed.
+- Sandbox-local PostgreSQL access was denied on the first migration-state
+  check, then the host-side connection succeeded. The focused commerce test run
+  reached Django's PostgreSQL runner but could not create its configured
+  `treadjoy_ci_test` database because the local application role correctly
+  lacks `CREATEDB`; no application records were changed. Supply a pre-created,
+  disposable PostgreSQL test database as documented in `docs/ci.md` before
+  treating the commerce or research suite as verified.
+- The first focused test discovery used the checkout's research-mode defaults,
+  so importing commerce-only test modules stopped discovery before tests ran.
+  An explicit commerce override then exposed the expected absent local Stripe
+  settings; CI-mode synthetic provider settings are required for commerce test
+  configuration.
+- The first local-preview tab open used an unsupported visibility option; the
+  corrected Chrome tab then reported connection refused on port 8001. No local
+  server was running, so the requested browser viewport checks could not be
+  performed and no browser state was changed.
+- The commerce browser preview could not bind port 8000 because another local
+  process already owns it. That process was left untouched; the preview uses
+  port 8002 instead, while research runs on 8001.
+- The first bootstrap command sent role and database creation as one
+  multi-statement `psql` request; PostgreSQL rejected `CREATE DATABASE` inside
+  that implicit transaction. A read-only check confirmed the request left no
+  role or database behind. Bootstrap commands were separated before retrying.
+- The first focused PostgreSQL run exposed duplicate fixture part/SKU values
+  across missing-slot subtests and a migration-reversal test that assumed seed
+  lookup rows survived Django's test flush. A rerun against the preserved test
+  database then exposed model tests depending on migration-seeded rows after
+  that flush. Fixtures now use unique IDs, model tests seed their own types,
+  and the reversal test explicitly rebuilds historical state; neither failed
+  run is treated as passing evidence. Full suites start from fresh disposable
+  test databases.
+
+## 2026-10-13 — Research-mode audit and survey update
+
+- Both requested independent critique runs stopped at the account usage limit,
+  so the retained critique is explicitly a single-context UI/UX review rather
+  than claimed multi-reviewer agreement.
+- The first restricted local-server bind returned `Operation not permitted`;
+  the approved host-path server run succeeded. No public service was started.
+- The browser harness did not expose its performance API, so this work does not
+  claim Lighthouse, Core Web Vitals, or production performance evidence.
+- An initial contrast helper used an unsupported `parseFloat` path, and a title
+  probe used an unsupported `getTitle` method. Both were replaced with supported
+  DOM/computed-style inspection before conclusions were recorded.
+- A first social check tried the unconfigured TikTok handle `@treadjoy`, which
+  did not resolve. Inspecting the configured URL identified `@realtreadjoy`,
+  which resolved; the wrong handle was not recorded as a product defect.
+- One temporary browser-tab cleanup reported a session mismatch. A subsequent
+  browser inventory confirmed no audit-created in-app tabs remained.
+- The automated UI detector could not resolve Django `{% static %}` styles and
+  emitted 40 black-on-black advisories. Direct computed-style inspection showed
+  those were detector false positives; they are not reported as live defects.
+- The first focused survey test run had one assertion that expected the entire
+  card class string instead of the required modifier class. The implementation
+  rendered the modifier correctly; the test was narrowed and all survey tests
+  then passed.
+- The first research boundary commands used the checkout's reused `db.sqlite3`,
+  which contains historical commerce tables, migrations, and content types.
+  They failed closed as designed. The commands passed after migration into a
+  clean disposable research database; the contaminated local file was not used
+  as release evidence or destructively replaced.
+- An unscoped research `manage.py test` invocation reached the existing account
+  test that expects `/admin/login/` to redirect through allauth; research mode
+  currently serves the staff-admin login directly. The mode-scoped 96-test
+  research suite passed. Authentication policy was left unchanged because it
+  is outside this approved survey/UI step.
+- A sandboxed `ps` inspection was denied while checking the longer commerce
+  test process. The retained test log completed normally and reports all 300
+  tests passing; no process-control workaround was used.
+- An initial CSS symbol search treated the leading `--color-bg` pattern as a
+  command option and returned an argument error. The corrected `rg --` search
+  succeeded; no files were changed by the failed lookup.
+- The first browser inspection tried DOM evaluation on the accessibility-only
+  tab binding, which does not expose `evaluate`. Rebound the same tab through
+  its documented browser inspection API; no page state changed in the failed
+  call.
+- The sandbox denied a read-only `ps` check while investigating why the live
+  preview had not picked up the edited base template. A fresh tab reproduced
+  the stale body markup; a research-home CSS selector fallback was added so the
+  visible research landing page still updates without changing commerce.
+- A later viewport override did not resize the existing browser surface and
+  reported the default `1280x720` dimensions. Earlier phone-width evidence
+  from the same layout remains valid; reset the temporary override and do not
+  claim this last attempt as a mobile capture.
+- Two documentation patch attempts used stale gallery-matrix/survey text and
+  were rejected before changing any file. Re-read the exact addendum text and
+  apply the research-only breakpoint/background clarification against the
+  current wording.
+- The first responsive DOM probe used a nonexistent survey-grid selector and
+  the first validation probe attempted to uncheck a native radio, which the
+  browser correctly rejected. The probes were corrected to the rendered class
+  and a fresh localhost session before recording any result.
+- Stale local browser cookies produced `SuspiciousSession` warnings after the
+  disposable server secret changed between runs. Django discarded the invalid
+  session; the fresh-origin validation flow behaved correctly, and no response
+  or customer data was involved.
+
+## 2026-10-12 — Approved CAD implementation handoff
+
+- The initial task-plan discovery used `rg --files tasks` before that directory
+  existed and returned a missing-directory error. No previous task plan was
+  overwritten; the approved CAD plan and status checklist were subsequently
+  created there. No packaging failure occurred. Physical calibration cannot
+  be replaced by archive checks and remains explicitly pending.
+
 ## 2026-10-12 — P2S calibration preparation
+
+- Native Bambu controls intermittently returned noWindowsAvailable/timeouts;
+  Save As keyboard and accessibility edits did not enable Save. No native
+  project save was confirmed. Use the installed slicer's CLI for reproducible
+  local output instead of treating a dialog interaction as completion.
+- Restricted Bambu CLI runs aborted with exit 134 after logging T65535.
+  The same stock profiles completed outside the sandbox with exit 0 and valid
+  archives; T65535 remains a diagnostic from the manufacturer's end sequence,
+  not evidence by itself of a failed slice. Manufacturer G-code was preserved.
+- One retry gave the boolean --load-defaultfila a positional 1, which the CLI
+  interpreted as another input file and rejected. Omit that unnecessary flag.
+- The colored CAD 3MF groups meshes by material, so automatic arrangement
+  separated all receivers from all keys. Use the STL layout for fixed pairing.
+- Default and bundled Python lacked matplotlib. The retained support-path
+  review uses bundled Pillow instead; no plotting dependency was installed.
+- The initial supported slice placed supports on eyelet-key mating surfaces.
+  It is a diagnostic only. Rotate those keys onto their grip flanges in a
+  print-only derivative and re-slice before handoff; preserve interface sizes.
 
 - Opening the 3MF via macOS `open -a BambuStudio` returned success but left
   Bambu Studio on its home screen, including on retry. Opening the same file
@@ -3044,3 +3420,78 @@
   restricted sandbox and stopped before loading cadgen. No artifact changed.
   Rerun the same read-only retained check through the approved host execution
   path; do not relocate or duplicate the dependency cache.
+- The first final Django migration/check invocation did not provide the
+  commerce-only Stripe settings and stopped during settings validation before
+  connecting to any database. No configured credentials were displayed and no
+  database was contacted. For local checks, provide clearly synthetic test
+  Stripe values together with explicit isolated-database overrides, or run the
+  research-mode checks that intentionally require no Stripe configuration.
+- The next check used the system Anaconda Python, which lacks this project's
+  PostgreSQL driver, and stopped during Django startup. It did not connect to a
+  database. Use the repository's `.venv/bin/python` for subsequent checks.
+- The repository-venv migration check then found that the interchangeability
+  evidence-state constraint was present in migration 0014 but outside
+  `PartType.Meta` in current model code. Django correctly reported migration
+  drift; the constraint is now restored to the model state. The sandbox also
+  blocked its read-only migration-history connection to the isolated local
+  PostgreSQL service, so rerun the full check with the approved local test
+  connection.
+- The first escalated full-suite retry omitted the repository's CI settings
+  module and `CI_DB_TEST_NAME`, so Django fell back to default test database
+  names requiring database-creation rights. Commerce then used a role without
+  those rights, while the first research command also selected a nonexistent
+  role. Both runs stopped before any tests executed; no application or test
+  records were changed. Use `treadjoy.ci_settings`, the precreated test names,
+  and `--keepdb` with the cluster's existing local role.
+- The focused test retry selected `treadjoy.ci_settings` but omitted its
+  required `TREADJOY_CI=true` guard, so Django stopped during settings
+  validation without connecting to PostgreSQL. Include the explicit CI guard
+  for the next retry.
+- The next focused retry passed the CI guard but omitted the required
+  `TREADJOY_ENVIRONMENT=ci` setting and stopped before opening a database
+  connection. Include the repository's full CI settings contract, including an
+  absolute temporary `CI_STATIC_ROOT`, in further runs.
+- The first test process using the correct CI settings looped while creating
+  new variants because its retry set treated the absent prior product ID as a
+  missing lock. The isolated run was interrupted; its open transaction rolled
+  back, and no test data was committed. The lock comparison now excludes a
+  nonexistent prior relation and rejects only a genuinely missing target.
+- The first research suite invocation used unrestricted Django test discovery,
+  which imported commerce-only tests and caused research-boundary failures plus
+  references to the intentionally uninstalled cart migrations. The repository
+  CI scopes research tests to `web.core`, `web.products`, `web.survey`, and
+  `web.waitlist`; rerun using that exact scope. The separate commerce suite
+  passed all 318 tests (38 expected skips).
+- The first confirmed admin-delete regression test was denied before reaching
+  the protected queryset because per-object admin permissions hid the built-in
+  confirmation action. The component remained intact. The admin now permits
+  the confirmed bulk-action path while the model/queryset guards reject the
+  deletion with a field-specific message; individual protected-object delete
+  permission remains denied.
+- The browser helper rejected an unsupported `visible` option, and one scroll
+  attempt used a stale accessibility target. Neither changed page data. The
+  preview was opened without that option and scrolling retried against a fresh
+  coordinate target.
+- The first PostgreSQL status command reported no server while a task-created
+  cluster was already listening on its isolated port. A start retry correctly
+  refused to create a second server; a read-only port/catalog check identified
+  the existing cluster, which was then used explicitly for tests.
+- A textbook-inspection attempt called the system `pdftotext`, which is not
+  installed on this host, so extraction stopped before producing its temporary
+  text file. The source PDF was not changed. Use the bundled PDF/Python runtime
+  for subsequent read-only extraction and page inspection.
+- A read-only R reproduction wrapper tried to assign an attribute directly to
+  the arithmetic expression returning the bisection midpoint, which R parsed
+  as an invalid replacement operation. The user's submitted computation was
+  not involved or changed. Assign the midpoint to a local result first, then
+  attach audit-only iteration metadata.
+- A read-only R calculation of the NFL partial F test was blocked by macOS
+  sandbox permissions when accessing `Downloads/nfl.txt`. No file or R session
+  state changed. Rerun the same calculation through the approved read-only host
+  access path rather than copying or relocating the user's data.
+- The first focused research product-preview test run exercised the
+  commerce-only price, sale-filter, and variant-search assertions in research
+  mode, while a boundary assertion matched "Preorder" inside a fixture product
+  name. No application data was changed. Scope those behavior assertions to
+  commerce mode and check rendered availability labels instead, then rerun
+  both mode-specific suites.

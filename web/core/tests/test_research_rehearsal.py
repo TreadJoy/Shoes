@@ -62,9 +62,9 @@ class ResearchLaunchRehearsalTests(TestCase):
         self.assertEqual(ResearchOutboundEmail.objects.count(), 1)
 
         survey_steps = (
-            (1, "style_preference", "athletic"),
+            (1, "visual_direction_preference", "night_grid"),
             (2, "comfort_importance", "very_important"),
-            (3, "price_range", "100_150"),
+            (3, "price_range", "100_109"),
             (4, "favorite_brand", "Synthetic Brand"),
             (5, "additional_feedback", "Synthetic rehearsal feedback."),
         )

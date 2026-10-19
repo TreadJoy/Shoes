@@ -41,20 +41,33 @@ class SurveyAdminContractTests(TestCase):
 
     def test_export_is_formula_safe_minimal_and_audited(self):
         response_record = SurveyResponse.objects.create(
-            style_preference="athletic",
+            response_version=SurveyResponse.CURRENT_VERSION,
+            visual_direction_preference="night_grid",
             comfort_importance="very_important",
-            price_range="100_150",
+            price_range="110_120",
             favorite_brand="=HYPERLINK(\"https://example.invalid\")",
             additional_feedback="+SUM(1,1)",
+        )
+        legacy_record = SurveyResponse.objects.create(
+            response_version=SurveyResponse.LEGACY_VERSION,
+            general_style_preference="athletic",
+            comfort_importance="somewhat_important",
+            price_range="100_150",
         )
         request = self.request_for(with_export_permission=True)
 
         response = self.model_admin.export_anonymous_csv(
             request,
-            SurveyResponse.objects.filter(pk=response_record.pk),
+            SurveyResponse.objects.filter(pk__in=(response_record.pk, legacy_record.pk)),
         )
 
         payload = response.content.decode("utf-8")
+        self.assertIn(
+            "response_version,general_style_preference,visual_direction_preference",
+            payload,
+        )
+        self.assertIn("2,,night_grid,very_important,110_120", payload)
+        self.assertIn("1,athletic,,somewhat_important,100_150", payload)
         self.assertIn("'=HYPERLINK", payload)
         self.assertIn("'+SUM", payload)
         self.assertNotIn("session", payload.casefold())
@@ -63,7 +76,7 @@ class SurveyAdminContractTests(TestCase):
         self.assertEqual(response["Cache-Control"], "no-store")
         audit = SurveyExportEvent.objects.get()
         self.assertEqual(audit.actor, self.user)
-        self.assertEqual(audit.row_count, 1)
+        self.assertEqual(audit.row_count, 2)
         self.assertEqual(len(audit.file_sha256), 64)
 
     def test_survey_admin_is_read_only_and_does_not_list_free_text(self):

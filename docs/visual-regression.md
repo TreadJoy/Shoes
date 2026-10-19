@@ -75,8 +75,10 @@ For the owner-authorized Heritage Court render-study gallery, add these checks
 to both homepage-mode captures:
 
 - Capture at `390x844`, `768x1024`, and a desktop viewport at or above
-  `1280px`. Confirm the one-column, two-column, and 12-column editorial
-  compositions respectively, with no horizontal overflow or clipped caption.
+  `1280px`. Commerce retains one-, two-, and 12-column compositions at those
+  widths; research uses two columns on phone and tablet, then the 12-column
+  editorial composition on desktop. Confirm no horizontal overflow or clipped
+  caption.
 - Confirm exactly six visible figures and labels: Night Grid, Relief Contour,
   Evergreen Route, Relief / Noir, Forest / Noir, and Relief Joyfront.
 - Confirm each crop remains 16:9, preserves both shoes, and loads the expected
@@ -109,3 +111,25 @@ For the owner-authorized Night Grid exploded hero in both homepage modes:
   hero is eager/high-priority while the six lower gallery images remain lazy.
 - Confirm meaningful alternative text names the visual as an exploded concept,
   not a verified removal or assembly diagram.
+
+## Research Survey V2 Addendum
+
+For the private research survey's Heritage Court visual-direction step:
+
+- Capture `/survey/question/1/` at `390x844`, `768x1024`, and `1440x900`.
+  Confirm the six choices form one, two, and three columns respectively, with
+  no horizontal overflow or clipped prompt, image, label, or control.
+- Confirm exactly the approved Night Grid, Relief Contour, Evergreen Route,
+  Relief / Noir, Forest / Noir, and Relief Joyfront choices are present. Each
+  image must retain meaningful alternative text and load only an inventoried
+  960px or 1600px WebP derivative.
+- Select each native radio using pointer and keyboard input. Confirm checked,
+  focus-visible, validation-error, Back, and Continue states remain distinct;
+  returning from step 2 must preserve the selected V2 choice.
+- At each viewport, confirm actionable controls meet the 44 CSS-pixel target
+  baseline and the research page retains its warm near-white background and
+  cool-muted surface tokens. Under reduced motion, remove decorative movement
+  without suppressing useful focus, checked, busy, or validation feedback.
+- Complete the synthetic five-step rehearsal and verify the stored response is
+  version 2 with a blank legacy general-style value and a V2-only price code.
+  Existing V1 rows must remain readable and exportable, not reinterpreted.

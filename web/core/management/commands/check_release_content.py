@@ -36,7 +36,6 @@ EMBEDDED_METADATA_KEYS = {"exif", "xmp", "xml", "iptc", "comment"}
 PROFILE_CHOICES = ("public", "private-poc")
 PRIVATE_POC_ALLOWED_BLOCKED_SURFACES = {
     "homepage-development-media",
-    "pending-social-links",
     "research-privacy-placeholder",
     "terms-placeholder",
     "accessibility-placeholder",

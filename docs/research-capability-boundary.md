@@ -20,6 +20,12 @@ for staff only, plus these TreadJoy applications:
 - `web.waitlist` for double-opt-in research subscriptions, consent,
   suppression, provider delivery state, and aggregate abuse signals.
 
+Research product listings and details are view-only engagement pages. They
+show approved product imagery and descriptive facts, but do not render prices,
+sale/preorder/stock availability, quantities, purchasable variant choices, or
+cart/payment controls. Research product requests do not evaluate commerce
+availability or price summaries.
+
 Its public URL surface may include `/`, `/about/`, `/how-it-works/`,
 `/contact/`, `/privacy/`, `/products/`, `/survey/`, and `/waitlist/`.
 `/admin/` remains available for separately permissioned research operations.

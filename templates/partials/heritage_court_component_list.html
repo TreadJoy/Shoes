@@ -1,0 +1,15 @@
+<ol class="modular-system-steps" aria-label="Heritage Court prototype component groups in canonical order">
+    {% for part_type in modular_part_types %}
+        <li>
+            <span class="component-order">{{ forloop.counter|stringformat:"02d" }}</span>
+            <h3>{{ part_type.name }}</h3>
+            <p>{{ part_type.description }}</p>
+            <p class="component-evidence">Interchangeability: {{ part_type.get_interchangeability_status_display|lower }}.</p>
+        </li>
+    {% empty %}
+        <li class="modular-system-empty">
+            <h3>Prototype Component Groups</h3>
+            <p>Component information will appear after the product taxonomy is configured.</p>
+        </li>
+    {% endfor %}
+</ol>

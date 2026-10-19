@@ -16,9 +16,9 @@
                 <p class="eyebrow">The TreadJoy Modular System</p>
                 <h1 id="home-hero-title">A Shoe That Changes With You.</h1>
                 <p class="home-hero-intro">
-                    TreadJoy is developing modular shoes built around compatible,
-                    interchangeable components—so one pair can keep up with more
-                    of your life.
+                    The Heritage Court prototype is organized into seven visual
+                    component groups. That map describes appearance; attachment
+                    and interchangeability are not yet verified.
                 </p>
             {% else %}
                 <p class="eyebrow">TreadJoy Research Preview</p>
@@ -49,10 +49,11 @@
     <section class="home-statement" aria-labelledby="why-treadjoy-title">
         {% if is_commerce_mode %}
             <p class="eyebrow">Why TreadJoy</p>
-            <h2 id="why-treadjoy-title">One Shoe. More Ways to Make It Yours.</h2>
+            <h2 id="why-treadjoy-title">A Shoe Prototype, Studied Piece by Piece.</h2>
             <p>
-                The idea is simple: build around a compatible system instead of
-                treating every style change as a whole new shoe.
+                We are testing how seven visible groups describe the current
+                concept—not presenting a validated attachment system or parts
+                configurator.
             </p>
         {% else %}
             <p class="eyebrow">Research Preview</p>
@@ -62,7 +63,7 @@
                 research questions, and content structure.
             </p>
         {% endif %}
-        <a href="{% url 'core:how_it_works' %}" class="editorial-link">How Compatibility Works →</a>
+        <a href="{% url 'core:how_it_works' %}" class="editorial-link">How the Prototype Is Being Explored →</a>
     </section>
 
     {% include "partials/heritage_court_render_studies.html" %}
@@ -110,17 +111,18 @@
     <section class="home-modular-system" aria-labelledby="modular-system-title">
         <div class="modular-system-copy">
             {% if is_commerce_mode %}
-                <p class="eyebrow">Built Around Compatibility</p>
-                <h2 id="modular-system-title">Start With the Shoe. Change the Parts.</h2>
+                <p class="eyebrow">Seven Visual Component Groups</p>
+                <h2 id="modular-system-title">The Heritage Court Prototype, Mapped.</h2>
             {% else %}
-                <p class="eyebrow">Internal Taxonomy Preview</p>
-                <h2 id="modular-system-title">Review Component Labels.</h2>
+                <p class="eyebrow">Prototype Taxonomy Preview</p>
+                <h2 id="modular-system-title">Review the Seven Visual Groups.</h2>
             {% endif %}
             {% if is_commerce_mode %}
                 <p>
-                    Products identify the components designed for their
-                    compatibility group, so people can understand what works
-                    together before they choose.
+                    These labels organize one current shoe prototype. Only the
+                    bootie-and-sole group is designated permanent; other
+                    interchangeability remains unverified. This is not a parts
+                    configurator.
                 </p>
             {% else %}
                 <p>
@@ -128,24 +130,10 @@
                     preview. Compatibility details are not a public claim.
                 </p>
             {% endif %}
-            <a href="{% url 'core:how_it_works' %}" class="btn-secondary">See How It Works →</a>
+            <a href="{% url 'core:how_it_works' %}" class="btn-secondary">Review the Prototype →</a>
         </div>
 
-        <ol class="modular-system-steps">
-            {% for part_type in modular_part_types %}
-                <li>
-                    <span>{{ forloop.counter|stringformat:"02d" }}</span>
-                    <h3>{{ part_type.name }}</h3>
-                    <p>{{ part_type.description }}</p>
-                </li>
-            {% empty %}
-                <li class="modular-system-empty">
-                    <span>Development Placeholder</span>
-                    <h3>Modular Components</h3>
-                    <p>Component information will appear after the product taxonomy is configured.</p>
-                </li>
-            {% endfor %}
-        </ol>
+        {% include "partials/heritage_court_component_list.html" %}
     </section>
 
     <section class="home-lifestyle" aria-labelledby="lifestyle-title">
@@ -379,6 +367,20 @@
                 stay focused on what feels useful.
             </p>
         </div>
+    </section>
+
+    <section class="home-modular-system research-modular-system" aria-labelledby="research-modular-system-title">
+        <div class="modular-system-copy">
+            <p class="eyebrow">Prototype Map</p>
+            <h2 id="research-modular-system-title">Seven Visual Groups, One Shoe Prototype.</h2>
+            <p>
+                This map describes the current Heritage Court prototype's
+                appearance, not a validated attachment or sales system. The
+                bootie-and-sole group is designated permanent; interchangeability
+                for the other groups remains unverified.
+            </p>
+        </div>
+        {% include "partials/heritage_court_component_list.html" %}
     </section>
 
     {% include "partials/heritage_court_render_studies.html" %}

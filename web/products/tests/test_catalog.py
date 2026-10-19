@@ -1,5 +1,6 @@
 from decimal import Decimal
 from unittest import skipIf, skipUnless
+from unittest.mock import patch
 
 from django.conf import settings
 from django.db import connection
@@ -42,6 +43,7 @@ class ProductCatalogTests(TestCase):
             audience="women",
         )
 
+    @skipUnless(settings.IS_COMMERCE_MODE, "Commerce product pricing")
     def test_list_only_shows_active_products_and_current_product_price(self):
         response = self.client.get(reverse("products:product_list"))
 
@@ -100,6 +102,7 @@ class ProductCatalogTests(TestCase):
         self.assertContains(response, self.womens_product.name)
         self.assertNotContains(response, self.product.name)
 
+    @skipUnless(settings.IS_COMMERCE_MODE, "Commerce sale merchandising")
     def test_list_filters_sale_products(self):
         response = self.client.get(
             reverse("products:product_list"),
@@ -109,6 +112,7 @@ class ProductCatalogTests(TestCase):
         self.assertContains(response, self.product.name)
         self.assertNotContains(response, self.womens_product.name)
 
+    @skipUnless(settings.IS_COMMERCE_MODE, "Commerce product availability")
     def test_list_labels_products_without_available_variants_as_sold_out(self):
         response = self.client.get(reverse("products:product_list"))
 
@@ -121,6 +125,7 @@ class ProductCatalogTests(TestCase):
 
         self.assertContains(response, "product-badge product-badge-sale")
 
+    @skipUnless(settings.IS_COMMERCE_MODE, "Commerce variant search")
     def test_list_searches_product_and_variant_details(self):
         response = self.client.get(
             reverse("products:product_list"),
@@ -158,10 +163,14 @@ class ProductCatalogTests(TestCase):
 
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "Research Preview")
-        self.assertContains(response, "Purchasing is unavailable")
+        self.assertContains(response, "Explore the product direction")
         self.assertContains(response, "Take the Survey")
         self.assertNotContains(response, "Add to Cart")
-        self.assertNotContains(response, "product-variant-select")
+        self.assertNotContains(response, "Black")
+        self.assertNotContains(response, "Size 9")
+        self.assertNotContains(response, "Sold Out")
+        self.assertNotContains(response, "Preorder")
+        self.assertNotContains(response, "$")
 
     @skipIf(settings.IS_COMMERCE_MODE, "Research product-preview behavior")
     def test_research_list_uses_preview_language_without_sale_urgency(self):
@@ -172,6 +181,45 @@ class ProductCatalogTests(TestCase):
         self.assertContains(response, "View Product Preview")
         self.assertNotContains(response, "product-badge product-badge-sale")
         self.assertNotContains(response, "Add to Cart")
+        self.assertNotContains(response, "$")
+        self.assertNotContains(response, "Sold Out")
+        self.assertNotContains(response, "Preorder")
+        self.assertNotContains(response, "available")
+
+    @skipIf(settings.IS_COMMERCE_MODE, "Research product-preview behavior")
+    def test_research_product_pages_do_not_evaluate_commerce_availability(self):
+        with patch(
+            "web.products.views.variant_availability",
+            side_effect=AssertionError("research pages must not inspect availability"),
+        ), patch(
+            "web.products.views._price_summary",
+            side_effect=AssertionError("research pages must not inspect prices"),
+        ):
+            list_response = self.client.get(reverse("products:product_list"))
+            detail_response = self.client.get(
+                reverse("products:product_detail", args=[self.product.slug])
+            )
+
+        self.assertEqual(list_response.status_code, 200)
+        self.assertEqual(detail_response.status_code, 200)
+        self.assertContains(detail_response, self.product.description)
+        self.assertNotContains(detail_response, "80.00")
+        self.assertNotContains(detail_response, "100.00")
+        self.assertTrue(
+            {"price", "sale_price"}.issubset(
+                detail_response.context["product"].get_deferred_fields()
+            )
+        )
+
+    @skipIf(settings.IS_COMMERCE_MODE, "Research product-preview behavior")
+    def test_research_ignores_commerce_sale_filter(self):
+        response = self.client.get(
+            reverse("products:product_list"),
+            {"sale": "1"},
+        )
+
+        self.assertContains(response, self.product.name)
+        self.assertContains(response, self.womens_product.name)
 
     @skipIf(settings.IS_COMMERCE_MODE, "Research empty-catalog behavior")
     def test_research_empty_catalog_invites_survey_without_product_claims(self):

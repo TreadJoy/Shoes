@@ -11,6 +11,13 @@ navigation checks, research waitlist submissions, and commerce-route isolation.
 That evidence does not replace owner judgment of composition, motion preference,
 final media, or launch suitability.
 
+Current taxonomy note (2026-10-14): ADR 0003 supersedes the historical six-part
+grid expectation below. The current homepage must show seven ordered visual
+groups and identify the `BOOTIE_AND_SOLE` entry as permanent while the other
+six interchangeability states remain unverified in both deployment modes. The
+same ordered, evidence-labeled list is rendered from the shared component
+partial. This visual map does not prove a customer-removable system.
+
 ## Agent Chrome Preflight Record
 
 - Environment: Chrome extension runtime on macOS, 2026-08-18.
@@ -137,8 +144,9 @@ session, and keep developer tools available for the video and responsive checks.
     - Expected: large touch rows, working Men/Women accordions, Account inside
       the menu, explicit close button, Escape support, focus containment, body
       scroll lock, no horizontal page scroll, readable controlled overlaps, and
-      a non-clickable social-links placeholder. The six-part grid changes from
-      one to two to three columns without cramped copy.
+      a non-clickable social-links placeholder. The seven-group prototype map
+      changes from one to two columns at 480px and three at 1024px without
+      cramped copy or horizontal overflow.
     - Failure signs: background scroll, focus escaping behind the overlay, fake
       `#` social links, clipped headings, stretched buttons, or placeholders
       escaping their sections.
@@ -236,9 +244,10 @@ database, blank Stripe environment variables, and a unique test email address.
      URL reverses, or a crafted request changes commerce state.
 
 9. Verify brand and storytelling content remains intact.
-   - Expected: brand statement, Men/Women preview gateways, six modular parts,
-     lifestyle, video, community, impact, goals, and footer appear in the same
-     coherent order as commerce without implying availability.
+   - Expected: brand statement, Men/Women preview gateways, seven ordered
+     visual prototype groups with one permanent and six unverified evidence
+     states, lifestyle, video, community, impact, goals, and footer appear in
+     the same coherent order as commerce without implying availability.
    - Failure signs: missing story sections, a product grid, invented claims,
      unsupported dates, or purchase-oriented copy.
 

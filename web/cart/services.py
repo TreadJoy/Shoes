@@ -3,7 +3,13 @@ from dataclasses import dataclass
 from django.db import transaction
 
 from web.products.models import ProductVariant
-from web.products.services import PREORDER, variant_availability
+from web.products.services import (
+    HERITAGE_COURT_V1,
+    PREORDER,
+    validate_heritage_court_bom,
+    variant_availability,
+)
+from django.core.exceptions import ValidationError
 
 from .models import Cart, CartItem
 
@@ -103,6 +109,14 @@ def _ensure_compatible(items, fulfillment_type, preorder_batch):
 def add_variant(cart, variant_id):
     cart = _locked_cart(cart.pk)
     variant = _locked_variant(variant_id)
+    if variant.product.component_standard == HERITAGE_COURT_V1:
+        try:
+            validate_heritage_court_bom(variant)
+        except ValidationError as error:
+            raise CartMutationError(
+                "This product is not ready for purchase.",
+                product_slug=variant.product.slug,
+            ) from error
     availability = _lock_availability(variant)
     if not availability.is_available:
         if availability.fulfillment_type == PREORDER:

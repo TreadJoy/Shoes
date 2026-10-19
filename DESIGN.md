@@ -5,7 +5,7 @@ description: "An energetic editorial shoe brand with quiet, trustworthy product 
 colors:
   primary: "#4CCBF0"
   secondary: "#EDDC4F"
-  background: "#E9E1D5"
+  background: "#E7EEF0"
   surface: "#DCE5E7"
   text: "#191919"
   muted-text: "#475457"
@@ -60,7 +60,7 @@ TreadJoy should feel like a well-edited independent streetwear magazine translat
 
 ## Colors
 
-Warm stone is the page background, cool muted surfaces separate tasks, and near-black carries primary text and high-trust contrast. Sky blue and gold are expressive accents, not semantic success/error colors. Functional success, warning, danger, information, focus, and disabled colors remain separate in `static/css/style.css`. The product currently supports one light theme; forced-colors behavior remains platform-owned.
+The shared page background is a cool muted neutral; research mode overrides it with warm near-white `#F5F4F0`. Near-black carries primary text and high-trust contrast. Sky blue and gold are expressive accents, not semantic success/error colors. Functional success, warning, danger, information, focus, and disabled colors remain separate in `static/css/style.css`. The product currently supports one light theme; forced-colors behavior remains platform-owned.
 
 ## Typography
 
@@ -95,7 +95,10 @@ Research navigation omits customer accounts and commerce controls. Commerce reta
 ### Forms and overlays
 
 Product forms use `novalidate`, visible labels, inline errors, a form-level summary when needed, preserved non-sensitive input, and a clear privacy path. Consent checkboxes are unchecked and visually paired with their full statement. Textareas do not resize and must provide an adequate starting height.
-Choice fields use Django's native `<select>` owner; platform-owned popup geometry is accepted for this low-frequency English research flow.
+Choice fields keep native Django form ownership. Compact questions use ordinary
+radio cards; the Heritage Court visual-direction question adds approved imagery,
+visible names, and short descriptions while retaining native radio inputs and a
+fieldset/legend relationship. Images supplement rather than replace the text.
 
 ### Iconography
 
@@ -103,7 +106,9 @@ Existing inline SVG uses simple two-pixel strokes. Icon-only controls require vi
 
 ### Motion
 
-Transitions communicate hover, disclosure, or state change in roughly 180–220ms. Reduced-motion rules remove nonessential transforms and animation.
+Transitions communicate hover, disclosure, or state change in roughly 180–220ms.
+Reduced-motion rules target the components that actually transition or animate;
+they preserve immediate checked, focus, disclosure, error, and busy feedback.
 
 ### Content and data visualization
 

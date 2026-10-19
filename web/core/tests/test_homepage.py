@@ -5,10 +5,33 @@ from django.test import TestCase, override_settings
 from django.urls import reverse
 
 from web.products.models import PartType
+from web.products.services import (
+    HERITAGE_COURT_COMPONENTS,
+    HERITAGE_COURT_COMPONENT_CODES,
+)
 from web.waitlist.models import ResearchOutboundEmail, WaitlistSubscription
 
 
 class HomepageModeTests(TestCase):
+    def setUp(self):
+        # Data migrations seed these production lookup rows. Migration
+        # TransactionTestCases flush them on a reused --keepdb test database,
+        # so keep homepage assertions independent of suite order.
+        for order, (code, name, description, status) in enumerate(
+            HERITAGE_COURT_COMPONENTS,
+            start=1,
+        ):
+            PartType.objects.update_or_create(
+                code=code,
+                defaults={
+                    "name": name,
+                    "description": description,
+                    "display_order": order * 10,
+                    "interchangeability_status": status,
+                    "is_active": True,
+                },
+            )
+
     def test_social_profiles_render_in_shared_navigation_and_footer(self):
         response = self.client.get(reverse("core:home"))
 
@@ -22,6 +45,23 @@ class HomepageModeTests(TestCase):
             with self.subTest(profile_url=profile_url):
                 self.assertContains(response, f'href="{profile_url}"', count=2)
         self.assertContains(response, 'rel="noopener noreferrer"', count=8)
+
+    def test_homepage_keeps_inactive_canonical_types_in_prototype_order(self):
+        PartType.objects.filter(code="LACES").update(is_active=False)
+
+        response = self.client.get(reverse("core:home"))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(
+            [part_type.code for part_type in response.context["modular_part_types"]],
+            list(HERITAGE_COURT_COMPONENT_CODES),
+        )
+        laces = next(
+            part_type
+            for part_type in response.context["modular_part_types"]
+            if part_type.code == "LACES"
+        )
+        self.assertFalse(laces.is_active)
 
     def test_how_it_works_uses_the_approved_night_grid_exploded_hero(self):
         response = self.client.get(reverse("core:how_it_works"))
@@ -59,7 +99,7 @@ class HomepageModeTests(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "Shop Men →")
         self.assertContains(response, "Shop Women →")
-        self.assertContains(response, "How Compatibility Works →")
+        self.assertContains(response, "How the Prototype Is Being Explored →")
         self.assertContains(response, 'href="/products/?audience=men"')
         self.assertContains(response, 'href="/products/?audience=women"')
         self.assertContains(response, 'href="/how-it-works/"')
@@ -95,7 +135,7 @@ class HomepageModeTests(TestCase):
         self.assertEqual(response.content.count(b"Private research preview."), 1)
         self.assertNotContains(response, "Explore Men →")
         self.assertNotContains(response, "Explore Women →")
-        self.assertNotContains(response, "Development Placeholder")
+        self.assertNotContains(response, "modular-system-empty")
         self.assertNotContains(response, "YouTube Development Placeholder")
         self.assertNotContains(response, "data-video-play")
         self.assertNotContains(response, "Roadmap")
@@ -165,19 +205,27 @@ class HomepageModeTests(TestCase):
         self.assertContains(response, "Enter a valid email address")
         self.assertFalse(WaitlistSubscription.objects.exists())
 
-    def test_home_uses_the_six_authoritative_modular_part_types(self):
+    def test_home_uses_seven_ordered_heritage_court_visual_groups(self):
         response = self.client.get(reverse("core:home"))
 
-        displayed_names = [
-            part_type.name
+        displayed_codes = [
+            part_type.code
             for part_type in response.context["modular_part_types"]
         ]
-        expected_names = list(
-            PartType.objects.filter(is_active=True)
-            .values_list("name", flat=True)[:6]
-        )
-        self.assertEqual(displayed_names, expected_names)
-        self.assertEqual(len(displayed_names), 6)
+        self.assertEqual(displayed_codes, list(HERITAGE_COURT_COMPONENT_CODES))
+        self.assertEqual(len(displayed_codes), 7)
+        self.assertContains(response, "Interchangeability: permanent.", count=1)
+        self.assertContains(response, "Interchangeability: unverified.", count=6)
+        self.assertContains(response, "Interchangeability:")
+        rendered_list = response.content.decode().split(
+            '<ol class="modular-system-steps"', 1
+        )[1].split("</ol>", 1)[0]
+        self.assertEqual(rendered_list.count("<li>"), 7)
+        rendered_positions = [
+            rendered_list.index(part_type.name)
+            for part_type in response.context["modular_part_types"]
+        ]
+        self.assertEqual(rendered_positions, sorted(rendered_positions))
 
     def test_home_renders_the_approved_slot_zero_exploded_study(self):
         response = self.client.get(reverse("core:home"))

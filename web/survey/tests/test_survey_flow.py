@@ -7,9 +7,9 @@ from web.survey.models import SurveyResponse
 
 class SurveyFlowTests(TestCase):
     steps = [
-        (1, "style_preference", "athletic"),
+        (1, "visual_direction_preference", "relief_noir"),
         (2, "comfort_importance", "very_important"),
-        (3, "price_range", "100_150"),
+        (3, "price_range", "110_120"),
         (4, "favorite_brand", "Favorite Brand"),
         (5, "additional_feedback", "More color choices, please."),
     ]
@@ -37,9 +37,9 @@ class SurveyFlowTests(TestCase):
 
     def test_choice_steps_render_prompt_radio_cards_and_progress(self):
         prompts = (
-            "Which style direction feels most like you?",
+            "Which Heritage Court direction would you be most likely to wear?",
             "How important is all-day comfort when you choose shoes?",
-            "What price range feels right for a pair?",
+            "Based on the concept shown, what price range would feel reasonable for a pair?",
         )
 
         for number, prompt in enumerate(prompts, start=1):
@@ -51,15 +51,27 @@ class SurveyFlowTests(TestCase):
             self.assertEqual(response.status_code, 200)
             self.assertContains(response, prompt)
             self.assertContains(response, 'type="radio"')
-            self.assertContains(response, 'class="survey-choice-card"')
+            self.assertContains(response, "survey-choice-card")
             self.assertContains(response, f"Step {number} of 5")
             self.assertContains(response, 'role="progressbar"')
             self.assertNotContains(response, "<select")
 
+    def test_visual_direction_step_renders_six_approved_image_choices(self):
+        response = self.client.get(reverse("survey:survey_question", args=[1]))
+
+        self.assertContains(response, 'class="survey-choice-card survey-choice-card-visual"', count=6)
+        self.assertContains(response, 'name="visual_direction_preference"', count=6)
+        for value, label in SurveyResponse.VISUAL_DIRECTION_CHOICES:
+            with self.subTest(value=value):
+                self.assertContains(response, f'value="{value}"')
+                self.assertContains(response, label)
+        self.assertContains(response, "images/heritage-court/night-grid-960.webp")
+        self.assertContains(response, "Pair of TreadJoy Heritage Court concept shoes")
+
     def test_optional_steps_show_optional_label_and_feedback_guidance(self):
-        self.post_step(1, "style_preference", "athletic")
+        self.post_step(1, "visual_direction_preference", "relief_noir")
         self.post_step(2, "comfort_importance", "very_important")
-        self.post_step(3, "price_range", "100_150")
+        self.post_step(3, "price_range", "110_120")
 
         response = self.client.get(reverse("survey:survey_question", args=[4]))
         self.assertContains(response, "Is there a shoe or apparel brand you return to?")
@@ -74,19 +86,19 @@ class SurveyFlowTests(TestCase):
         self.assertContains(response, "Do not include names")
 
     def test_back_preserves_valid_answer_and_returns_to_previous_step(self):
-        self.post_step(1, "style_preference", "athletic")
+        self.post_step(1, "visual_direction_preference", "relief_noir")
         self.post_step(2, "comfort_importance", "very_important")
 
         response = self.client.post(
             reverse("survey:survey_question", args=[3]),
-            {"price_range": "100_150", "navigation": "back"},
+            {"price_range": "110_120", "navigation": "back"},
         )
         self.assertRedirects(
             response,
             reverse("survey:survey_question", args=[2]),
         )
         response = self.client.get(reverse("survey:survey_question", args=[3]))
-        self.assertContains(response, 'value="100_150"')
+        self.assertContains(response, 'value="110_120"')
 
     def test_each_valid_step_redirects_to_next_and_keeps_session_draft(self):
         for number, field_name, value in self.steps[:-1]:
@@ -97,22 +109,41 @@ class SurveyFlowTests(TestCase):
             )
 
         draft = self.client.session["survey_draft"]
-        self.assertEqual(draft["style_preference"], "athletic")
-        self.assertEqual(draft["favorite_brand"], "Favorite Brand")
+        self.assertEqual(draft["response_version"], SurveyResponse.CURRENT_VERSION)
+        self.assertEqual(
+            draft["answers"]["visual_direction_preference"],
+            "relief_noir",
+        )
+        self.assertEqual(draft["answers"]["favorite_brand"], "Favorite Brand")
         self.assertFalse(SurveyResponse.objects.exists())
 
     def test_invalid_choice_does_not_advance(self):
-        response = self.post_step(1, "style_preference", "invented-choice")
+        response = self.post_step(
+            1,
+            "visual_direction_preference",
+            "invented-choice",
+        )
 
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "Select a valid choice")
         self.assertContains(response, "autofocus")
         self.assertContains(response, 'aria-invalid="true"')
-        self.assertContains(response, 'id="id_style_preference_error"')
+        self.assertContains(response, 'id="id_visual_direction_preference_error"')
         self.assertContains(response, "Choose an answer")
-        self.assertNotIn("style_preference", self.client.session.get(
-            "survey_draft", {}
-        ))
+        self.assertNotIn("survey_draft", self.client.session)
+
+    def test_legacy_flat_session_draft_is_discarded_and_restarts_at_step_one(self):
+        session = self.client.session
+        session["survey_draft"] = {
+            "style_preference": "athletic",
+            "comfort_importance": "very_important",
+        }
+        session.save()
+
+        response = self.client.get(reverse("survey:survey_question", args=[3]))
+
+        self.assertRedirects(response, reverse("survey:survey_question", args=[1]))
+        self.assertNotIn("survey_draft", self.client.session)
 
     def test_skipping_a_required_prior_step_redirects_to_first_missing_step(self):
         response = self.client.get(
@@ -139,9 +170,11 @@ class SurveyFlowTests(TestCase):
         survey = SurveyResponse.objects.get()
         self.assertFalse(hasattr(survey, "user"))
         self.assertFalse(hasattr(survey, "session_key"))
-        self.assertEqual(survey.style_preference, "athletic")
+        self.assertEqual(survey.response_version, SurveyResponse.CURRENT_VERSION)
+        self.assertEqual(survey.general_style_preference, "")
+        self.assertEqual(survey.visual_direction_preference, "relief_noir")
         self.assertEqual(survey.comfort_importance, "very_important")
-        self.assertEqual(survey.price_range, "100_150")
+        self.assertEqual(survey.price_range, "110_120")
         self.assertEqual(survey.favorite_brand, "Favorite Brand")
         self.assertEqual(
             survey.additional_feedback,
@@ -167,22 +200,31 @@ class SurveyFlowTests(TestCase):
 
     def test_second_completion_within_24_hours_is_rate_limited(self):
         self.complete_survey()
-        response = self.post_step(1, "style_preference", "athletic")
+        response = self.post_step(1, "visual_direction_preference", "night_grid")
         self.assertEqual(response.status_code, 429)
         self.assertIn("Retry-After", response)
 
     def test_sixty_first_step_post_in_an_hour_is_rate_limited(self):
         url = reverse("survey:survey_question", args=[1])
         for _ in range(60):
-            self.client.post(url, {"style_preference": "invented-choice"})
-        response = self.client.post(url, {"style_preference": "athletic"})
+            self.client.post(
+                url,
+                {"visual_direction_preference": "invented-choice"},
+            )
+        response = self.client.post(
+            url,
+            {"visual_direction_preference": "night_grid"},
+        )
         self.assertEqual(response.status_code, 429)
         self.assertIn("Retry-After", response)
 
     def test_honeypot_writes_no_response_or_submitted_text(self):
         response = self.client.post(
             reverse("survey:survey_question", args=[1]),
-            {"style_preference": "athletic", "company_website": "secret bot text"},
+            {
+                "visual_direction_preference": "night_grid",
+                "company_website": "secret bot text",
+            },
         )
         self.assertRedirects(response, reverse("survey:survey_thank_you"))
         self.assertFalse(SurveyResponse.objects.exists())

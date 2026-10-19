@@ -281,8 +281,13 @@ class ResearchRenderedSurfaceTests(TestCase):
             response = self.client.get(
                 reverse("products:product_detail", args=[product.slug])
             )
-            self.assertContains(response, "Purchasing is unavailable")
             self.assertContains(response, "Research Preview")
+            self.assertContains(response, "Explore the product direction")
+            self.assertNotContains(response, "Sold Out")
+            self.assertNotContains(response, "product-badge-preorder")
+            self.assertNotContains(response, "Preorder Timing")
+            self.assertNotContains(response, "Preorder Paused")
+            self.assertNotContains(response, "$")
 
         self.assertFalse(
             any(

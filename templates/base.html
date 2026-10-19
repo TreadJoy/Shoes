@@ -28,7 +28,7 @@
     <script src="{% static 'js/navigation.js' %}" defer></script>
     {% block extra_head %}{% endblock %}
 </head>
-<body>
+<body{% if not is_commerce_mode %} class="mode-research"{% endif %}>
 
     <a class="skip-link" href="#main-content">Skip to main content</a>
 

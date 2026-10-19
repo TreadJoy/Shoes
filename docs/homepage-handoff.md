@@ -12,6 +12,13 @@ This document tracks the 20 deliverables required by the approved homepage
 prompt. It is deliberately explicit about missing evidence and must not be read
 as acceptance of the wider storefront.
 
+Current taxonomy note (2026-10-14): ADR 0003 and the current shared template
+supersede this historical snapshot's six-component wording. The live section
+uses the same seven ordered Heritage Court visual groups with explicit evidence
+states in commerce and research; it does not claim verified attachment or
+removal mechanics. Re-run the browser checks below against the current release
+candidate.
+
 ## 1. Files Changed
 
 Configuration and documentation:

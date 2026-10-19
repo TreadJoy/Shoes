@@ -121,6 +121,7 @@ class ReleaseContentCommandTests(TestCase):
             call_command("check_release_content", stderr=output)
 
         self.assertIn("blocked-content-surface:homepage-development-media", output.getvalue())
+        self.assertNotIn("pending-social-links", output.getvalue())
 
     def test_private_poc_profile_accepts_known_placeholder_surfaces(self):
         with TemporaryDirectory() as temporary_directory:
@@ -131,7 +132,6 @@ class ReleaseContentCommandTests(TestCase):
                     {"id": surface_id, "public_release": False}
                     for surface_id in (
                         "homepage-development-media",
-                        "pending-social-links",
                         "research-privacy-placeholder",
                         "terms-placeholder",
                         "accessibility-placeholder",

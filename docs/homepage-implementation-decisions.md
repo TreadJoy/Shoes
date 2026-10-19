@@ -182,6 +182,20 @@ When Figma MCP access returns:
   uses one, two, and asymmetric 12-column arrangements respectively, has no
   horizontal overflow, and retains a visible keyboard focus indicator.
 
+## Research Survey and Social Follow-up — 2026-10-13
+
+- The owner approved the configured Instagram, X, YouTube, and TikTok URLs.
+  The release inventory no longer treats shared social navigation as a pending
+  content surface. This resolves that content decision only; the homepage and
+  public-launch gates remain independently blocked.
+- The research survey now asks which of the six approved Heritage Court visual
+  directions a participant would be most likely to wear. This is an anonymous
+  flow-validation signal, not a product-selection or purchase-intent decision.
+- Historical broad-style responses remain V1 records. V2 responses store one
+  stable render-direction code and use price bands centered on the approved
+  $90–$120 working hypothesis. No identity field or analytics tracker was
+  added.
+
 ## Night Grid Exploded Slot 00 — 2026-10-09
 
 ### Revision — 2026-10-10
@@ -240,3 +254,21 @@ The earlier Trial 02 acceptance below is historical and superseded.
 - The release-content scan reports only the pre-existing
   `homepage-development-media` and `pending-social-links` blockers; neither new
   exploded derivative creates an asset-level blocker.
+
+## Current Prototype Taxonomy — 2026-10-13
+
+ADR 0003 supersedes the historical six-part homepage/catalog description. Both
+deployment modes render the active canonical seven groups from one shared list
+partial in fixed order:
+Front Shell, Bootie and Sole, Tongue, Laces, Back Panel, Logo Holder, and Back
+Loop. It reads the labels, descriptions, and `permanent`/`unverified` evidence
+states from the product taxonomy rather than duplicating them in copy. The
+section explicitly describes visual grouping, not validated interchangeability
+or a component configurator. This changes no CAD or QA evidence: the Night Grid
+exploded image remains art direction and does not establish attachment,
+removal, manufacturing, or printability.
+
+The section is shared across research and commerce. The responsive grid remains
+one column by default, two columns from 480px, and three columns from 1024px;
+each entry includes its evidence label so the qualification is not lost when
+the image is viewed without the page copy.

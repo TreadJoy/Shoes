@@ -10,6 +10,7 @@ if not settings.IS_COMMERCE_MODE:
     raise SkipTest("Cart tests require the commerce deployment mode.")
 
 from web.cart.models import Cart, CartItem
+from web.cart.services import CartMutationError, add_variant
 from web.cart import views as cart_views
 from web.products.models import Product, ProductVariant
 
@@ -103,6 +104,34 @@ class CartFlowTests(TestCase):
         response = self.add_item()
         self.assertRedirects(response, reverse("cart:cart_detail"))
         self.assertEqual(CartItem.objects.get().quantity, 1)
+
+    def test_add_to_cart_rejects_an_incomplete_heritage_court_bom(self):
+        product = Product.objects.create(
+            name="Prototype Shoe",
+            slug="prototype-shoe",
+            price=Decimal("100.00"),
+            component_standard="heritage_court_v1",
+        )
+        variant = ProductVariant.objects.create(
+            product=product,
+            sku="TJ-PROTOTYPE-090-BLK",
+            size="9",
+            color="Black",
+            stock_quantity=3,
+            is_active=False,
+        )
+        ProductVariant.objects.filter(pk=variant.pk).update(is_active=True)
+        cart = Cart.objects.create(session_key="prototype-incomplete-cart")
+
+        with self.assertRaises(CartMutationError) as raised:
+            add_variant(cart, variant.pk)
+
+        self.assertEqual(
+            str(raised.exception),
+            "This product is not ready for purchase.",
+        )
+        self.assertEqual(raised.exception.product_slug, product.slug)
+        self.assertFalse(CartItem.objects.filter(cart=cart).exists())
 
     def test_cart_item_mutation_is_scoped_to_current_cart(self):
         self.add_item()

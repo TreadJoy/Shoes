@@ -282,15 +282,6 @@
       ],
       "reason": "The slot 00 Night Grid exploded hero and Heritage Court render-study gallery are approved and inventoried; lifestyle, category, community, impact, video, and roadmap media slots remain explicit development placeholders.",
       "public_release": false
-    },
-    {
-      "id": "pending-social-links",
-      "paths": [
-        "templates/partials/header.html",
-        "templates/partials/footer.html"
-      ],
-      "reason": "Social destinations remain pending approval.",
-      "public_release": false
     }
   ],
   "blocked_catalog_slugs": [

@@ -39,41 +39,45 @@
         <div class="product-detail-info">
             <div class="product-detail-status-row">
                 <p class="product-category">{{ product.get_category_display }}</p>
-                {% if preorder_batch %}
-                    <span class="product-badge product-badge-preorder">{{ availability_label }}</span>
-                {% elif not has_available_variants %}
-                    <span class="product-badge product-badge-sold-out">Sold Out</span>
-                {% elif on_sale and is_commerce_mode %}
-                    <span class="product-badge product-badge-sale">Sale</span>
+                {% if is_commerce_mode %}
+                    {% if preorder_batch %}
+                        <span class="product-badge product-badge-preorder">{{ availability_label }}</span>
+                    {% elif not has_available_variants %}
+                        <span class="product-badge product-badge-sold-out">Sold Out</span>
+                    {% elif on_sale %}
+                        <span class="product-badge product-badge-sale">Sale</span>
+                    {% endif %}
                 {% endif %}
             </div>
 
             <h1>{{ product.name }}</h1>
 
-            {% if on_sale %}
-                <p class="product-detail-price">
-                    <span class="old-price">${{ compare_at_price }}</span>
-                    {% if price_min == price_max %}
-                        <strong>${{ price_min }}</strong>
-                    {% else %}
-                        <strong>${{ price_min }}–${{ price_max }}</strong>
-                    {% endif %}
-                </p>
-            {% else %}
-                <p class="product-detail-price">
-                    {% if price_min == price_max %}
-                        ${{ price_min }}
-                    {% else %}
-                        ${{ price_min }}–${{ price_max }}
-                    {% endif %}
-                </p>
+            {% if is_commerce_mode %}
+                {% if on_sale %}
+                    <p class="product-detail-price">
+                        <span class="old-price">${{ compare_at_price }}</span>
+                        {% if price_min == price_max %}
+                            <strong>${{ price_min }}</strong>
+                        {% else %}
+                            <strong>${{ price_min }}–${{ price_max }}</strong>
+                        {% endif %}
+                    </p>
+                {% else %}
+                    <p class="product-detail-price">
+                        {% if price_min == price_max %}
+                            ${{ price_min }}
+                        {% else %}
+                            ${{ price_min }}–${{ price_max }}
+                        {% endif %}
+                    </p>
+                {% endif %}
             {% endif %}
 
             {% if product.description %}
                 <p class="product-detail-description">{{ product.description }}</p>
             {% endif %}
 
-            {% if preorder_batch %}
+            {% if is_commerce_mode and preorder_batch %}
                 <div class="preorder-notice" role="status">
                     {% if preorder_batch.status == "open" %}
                         <strong>Preorder Timing</strong>
@@ -136,12 +140,12 @@
                 <aside class="research-product-panel" aria-labelledby="research-product-title">
                     <p class="eyebrow">Research Preview</p>
                     <h2 id="research-product-title">Help Shape What Comes Next.</h2>
-                    <p>Purchasing is unavailable on this research site.</p>
+                    <p>Explore the product direction, then tell us what matters to you.</p>
                     <a href="{% url 'survey:survey_welcome' %}" class="btn-primary">Take the Survey →</a>
                 </aside>
             {% endif %}
 
-            <dl class="product-meta-list">
+            <dl class="product-meta-list{% if not is_commerce_mode %} research-product-meta-list{% endif %}">
                 <div>
                     <dt>Audience</dt>
                     <dd>{{ product.get_audience_display }}</dd>
@@ -150,10 +154,12 @@
                     <dt>Category</dt>
                     <dd>{{ product.get_category_display }}</dd>
                 </div>
-                <div>
-                    <dt>Options</dt>
-                    <dd>{{ product.variants.count }}</dd>
-                </div>
+                {% if is_commerce_mode %}
+                    <div>
+                        <dt>Options</dt>
+                        <dd>{{ product.variants.count }}</dd>
+                    </div>
+                {% endif %}
             </dl>
 
             <aside class="modular-product-note">

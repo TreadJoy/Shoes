@@ -535,7 +535,7 @@
     line-height: 0.95;
 }
 
-/* Six authoritative modular component types. */
+/* Seven canonical Heritage Court prototype component groups. */
 .home-modular-system {
     display: grid;
     gap: var(--space-7);
@@ -544,6 +544,10 @@
     padding-top: var(--space-9);
     padding-bottom: var(--space-9);
     border-top: var(--border-width-strong) solid var(--color-text);
+}
+
+.research-modular-system .modular-system-copy {
+    position: static;
 }
 
 .modular-system-copy > p:not(.eyebrow) {
@@ -595,6 +599,13 @@
 .modular-system-steps p {
     margin: var(--space-3) 0 0;
     color: var(--color-text-muted);
+}
+
+.modular-system-steps .component-evidence {
+    padding-top: var(--space-3);
+    border-top: 1px solid currentColor;
+    font-size: var(--font-size-sm);
+    font-weight: 700;
 }
 
 /* Editorial lifestyle overlap */
@@ -1170,11 +1181,13 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-    .home-page *,
-    .home-page *::before,
-    .home-page *::after {
-        scroll-behavior: auto !important;
-        transition-duration: 0.01ms !important;
+    .category-entry,
+    .video-play-control {
+        transition: none;
+    }
+
+    .category-entry:hover {
+        transform: none;
     }
 }
 
@@ -1204,8 +1217,8 @@
     position: relative;
     display: grid;
     gap: var(--space-7);
-    padding-top: clamp(3.5rem, 9vw, 8rem);
-    padding-bottom: clamp(3.5rem, 9vw, 8rem);
+    padding-top: clamp(2.75rem, 6vw, 5rem);
+    padding-bottom: clamp(2.75rem, 6vw, 5rem);
     isolation: isolate;
 }
 
@@ -1228,10 +1241,10 @@
 }
 
 .research-hero-copy h1 {
-    max-width: 11ch;
+    max-width: 12ch;
     margin: 0;
-    font-size: clamp(3.1rem, 2rem + 7vw, 7rem);
-    line-height: 0.92;
+    font-size: clamp(3rem, 5.6vw, 6rem);
+    line-height: 0.96;
     letter-spacing: -0.04em;
 }
 
@@ -1417,6 +1430,30 @@
     background: var(--color-bg);
 }
 
+.research-home .home-render-studies {
+    padding-block: clamp(3rem, 6vw, 5rem);
+}
+
+.research-home .render-studies-intro {
+    gap: var(--space-5);
+    margin-bottom: var(--space-6);
+}
+
+.research-home .home-render-studies h2 {
+    max-width: 22ch;
+    font-size: clamp(2rem, 3.3vw, 3.5rem);
+    line-height: 1;
+}
+
+.research-home .render-studies-grid {
+    max-width: 60rem;
+    gap: var(--space-5) var(--space-4);
+}
+
+.research-home .render-studies-footer {
+    margin-top: var(--space-6);
+}
+
 @media (min-width: 768px) {
     .research-hero {
         grid-template-columns: minmax(0, 7fr) minmax(14rem, 5fr);
@@ -1468,12 +1505,26 @@
 
 @media (min-width: 1024px) {
     .research-hero {
-        min-height: 42rem;
+        min-height: 34rem;
     }
 
     .research-story {
         padding-right: max(var(--gutter), calc((100vw - var(--container-content)) / 2 + var(--gutter)));
         padding-left: max(var(--gutter), calc((100vw - var(--container-content)) / 2 + var(--gutter)));
+    }
+}
+
+@media (max-width: 767px) {
+    .research-home .render-studies-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .research-home .research-hero {
+        gap: var(--space-5);
+    }
+
+    .research-home .research-hero-media .night-grid-exploded-hero {
+        width: min(100%, 21.5rem);
     }
 }
 
@@ -1500,9 +1551,7 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-    .research-home *,
-    .research-home *::before,
-    .research-home *::after {
-        transform: none !important;
+    .research-hero-media {
+        transform: none;
     }
 }

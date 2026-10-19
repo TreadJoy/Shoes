@@ -8,6 +8,7 @@ from zoneinfo import ZoneInfo
 import holidays
 import stripe
 from django.conf import settings
+from django.core.exceptions import ValidationError
 from django.db import transaction
 from django.db.models import Min, Sum
 from django.utils import timezone
@@ -18,7 +19,12 @@ from web.products.models import (
     PreorderVariantAllocation,
     ProductVariant,
 )
-from web.products.services import validate_cart_items_for_checkout, variant_availability
+from web.products.services import (
+    HERITAGE_COURT_V1,
+    validate_cart_items_for_checkout,
+    validate_heritage_court_bom,
+    variant_availability,
+)
 
 from .models import (
     CheckoutAttempt,
@@ -158,6 +164,13 @@ def create_checkout_attempt(cart, *, user, email, eligibility_state):
         variant = ProductVariant.objects.select_for_update().select_related(
             "product"
         ).get(pk=item.variant_id)
+        if variant.product.component_standard == HERITAGE_COURT_V1:
+            try:
+                validate_heritage_court_bom(variant)
+            except ValidationError as error:
+                raise ReservationError(
+                    "This product is not ready for purchase."
+                ) from error
         availability = variant_availability(variant)
         active_reserved = InventoryReservation.objects.filter(
             variant=variant,

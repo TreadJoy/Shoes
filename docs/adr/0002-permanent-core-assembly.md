@@ -1,9 +1,15 @@
 ---
-status: accepted
+status: superseded
 date: 2026-10-11
+superseded_by: 0003-seven-piece-heritage-court-visual-bom.md (product/catalog taxonomy only)
 ---
 
 # Join The Sole And Structural Chassis As A Permanent Core Assembly
+
+> Superseded for current product/catalog taxonomy by ADR 0003. The engineering
+> statements below remain revision-specific historical evidence; this record
+> does not establish the current seven-group visual BOM or prove physical
+> attachment/removal behavior.
 
 The owner approved a permanent union of the sole, carrier, bootie, structural chassis, and fit-critical reinforcement for Heritage Court V3 engineering development. This product contract supersedes the earlier concept of a customer-removable M08 sole. Because TreadJoy reserves **module** for customer-interchangeable assemblies, the union is named **Permanent Core Assembly** and identified as `TJ-HC3-C01`.
 

@@ -1,7 +1,10 @@
 from django import forms
 from django.conf import settings
-from django.contrib import admin
+from django.contrib.admin.actions import delete_selected
+from django.contrib import admin, messages
+from django.core.exceptions import ValidationError
 from django.db import transaction
+from django.forms.models import BaseInlineFormSet
 from .models import (
     CompatibilityGroup,
     Part,
@@ -14,7 +17,12 @@ from .models import (
     ProductVariant,
     ProductVariantComponent,
 )
-from .services import update_preorder_variant_capacity
+from .services import (
+    HERITAGE_COURT_COMPONENT_CODES,
+    HERITAGE_COURT_V1,
+    component_bom_issues,
+    update_preorder_variant_capacity,
+)
 
 
 class PreorderBatchAdminForm(forms.ModelForm):
@@ -87,18 +95,49 @@ class ProductVariantComponentInline(admin.TabularInline):
         "part_type",
         "part_variant",
     )
+
+    def get_formset(self, request, obj=None, **kwargs):
+        class ProtectedComponentFormSet(BaseInlineFormSet):
+            def clean(self):
+                super().clean()
+                blocked = False
+                for form in self.forms:
+                    if (
+                        not form.cleaned_data.get("DELETE")
+                        or not form.instance.pk
+                    ):
+                        continue
+                    variant = self.instance
+                    if (
+                        variant.is_active
+                        and variant.product.component_standard == HERITAGE_COURT_V1
+                    ):
+                        form.add_error(
+                            "part_type",
+                            "Required Heritage Court component slots cannot be "
+                            "removed while the variant is active.",
+                        )
+                        blocked = True
+                if blocked:
+                    raise ValidationError(
+                        "Required Heritage Court component slots cannot be "
+                        "removed while the variant is active."
+                    )
+
+        kwargs["formset"] = ProtectedComponentFormSet
+        return super().get_formset(request, obj, **kwargs)
+
+
 @admin.register(PartType)
 class PartTypeAdmin(admin.ModelAdmin):
+    actions = ("delete_selected_part_types",)
     list_display = (
         "code",
         "name",
         "display_order",
+        "interchangeability_status",
         "is_active",
         "updated_at",
-    )
-    list_editable = (
-        "display_order",
-        "is_active",
     )
     search_fields = (
         "code",
@@ -109,6 +148,43 @@ class PartTypeAdmin(admin.ModelAdmin):
         "display_order",
         "code",
     )
+
+    def get_readonly_fields(self, request, obj=None):
+        if obj and obj.code in HERITAGE_COURT_COMPONENT_CODES:
+            return ("code", "display_order", "interchangeability_status")
+        return super().get_readonly_fields(request, obj)
+
+    def has_delete_permission(self, request, obj=None):
+        if obj and obj.code in HERITAGE_COURT_COMPONENT_CODES:
+            return False
+        return super().has_delete_permission(request, obj)
+
+    def get_deleted_objects(self, objs, request):
+        objs = list(objs)
+        result = super().get_deleted_objects(objs, request)
+        if (
+            super().has_delete_permission(request)
+            and any(obj.code in HERITAGE_COURT_COMPONENT_CODES for obj in objs)
+        ):
+            deleted, model_count, perms_needed, protected = result
+            perms_needed.discard(self.opts.verbose_name)
+            return deleted, model_count, perms_needed, protected
+        return result
+
+    @admin.action(
+        description="Delete selected part types",
+        permissions=["delete"],
+    )
+    def delete_selected_part_types(self, request, queryset):
+        try:
+            with transaction.atomic():
+                return delete_selected(self, request, queryset)
+        except ValidationError as error:
+            self.message_user(
+                request,
+                "Part type: " + " ".join(error.messages),
+                level=messages.ERROR,
+            )
 
 
 class PartVariantInline(admin.TabularInline):
@@ -215,6 +291,7 @@ class ProductAdmin(admin.ModelAdmin):
         "name",
         "category",
         "audience",
+        "component_standard",
         "price",
         "sale_price",
         "total_stock_display",
@@ -225,6 +302,7 @@ class ProductAdmin(admin.ModelAdmin):
     list_filter = (
         "category",
         "audience",
+        "component_standard",
         "is_active",
         "is_featured",
     )
@@ -287,6 +365,7 @@ class ProductVariantAdmin(admin.ModelAdmin):
     list_display = (
         "sku",
         "product",
+        "component_bom_readiness",
         "size",
         "compatibility_group",
         "color",
@@ -317,8 +396,28 @@ class ProductVariantAdmin(admin.ModelAdmin):
         ProductVariantComponentInline,
     ]
 
+    def get_queryset(self, request):
+        return super().get_queryset(request).prefetch_related(
+            "components__part_type",
+            "components__part_variant__part",
+            "components__part_variant__compatibility_group",
+        )
+
+    @admin.display(description="Component BOM readiness")
+    def component_bom_readiness(self, obj):
+        if obj.product.component_standard != HERITAGE_COURT_V1:
+            return "Not required"
+        issues = component_bom_issues(
+            obj,
+            assignments=list(obj.components.all()),
+        ).get("is_active", [])
+        if not issues:
+            return "Ready"
+        return "Not ready: " + " ".join(issues)
+
 @admin.register(ProductVariantComponent)
 class ProductVariantComponentAdmin(admin.ModelAdmin):
+    actions = ("delete_selected_components",)
     list_display = (
         "product_variant",
         "part_type",
@@ -350,6 +449,49 @@ class ProductVariantComponentAdmin(admin.ModelAdmin):
         "part_type",
         "part_variant",
     )
+
+    def has_delete_permission(self, request, obj=None):
+        if (
+            obj is not None
+            and obj.product_variant.is_active
+            and obj.product_variant.product.component_standard == HERITAGE_COURT_V1
+        ):
+            return False
+        return super().has_delete_permission(request, obj)
+
+    def get_deleted_objects(self, objs, request):
+        objs = list(objs)
+        result = super().get_deleted_objects(objs, request)
+        if (
+            super().has_delete_permission(request)
+            and any(
+                obj.product_variant.is_active
+                and obj.product_variant.product.component_standard
+                == HERITAGE_COURT_V1
+                for obj in objs
+            )
+        ):
+            deleted, model_count, perms_needed, protected = result
+            perms_needed.discard(self.opts.verbose_name)
+            return deleted, model_count, perms_needed, protected
+        return result
+
+    @admin.action(
+        description="Delete selected component assignments",
+        permissions=["delete"],
+    )
+    def delete_selected_components(self, request, queryset):
+        try:
+            with transaction.atomic():
+                return delete_selected(self, request, queryset)
+        except ValidationError as error:
+            messages_by_field = getattr(error, "message_dict", {})
+            field_errors = messages_by_field.get("part_type", error.messages)
+            self.message_user(
+                request,
+                "Part type: " + " ".join(field_errors),
+                level=messages.ERROR,
+            )
 
 
 @admin.register(PreorderBatch)

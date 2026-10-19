@@ -15,9 +15,32 @@ def _safe_csv_cell(value):
 
 @admin.register(SurveyResponse)
 class SurveyResponseAdmin(admin.ModelAdmin):
-    list_display = ("created_at", "style_preference", "comfort_importance", "price_range")
-    list_filter = ("style_preference", "comfort_importance", "price_range", "created_at")
-    fields = ("style_preference", "comfort_importance", "price_range", "favorite_brand", "additional_feedback", "created_at")
+    list_display = (
+        "created_at",
+        "response_version",
+        "general_style_preference",
+        "visual_direction_preference",
+        "comfort_importance",
+        "price_range",
+    )
+    list_filter = (
+        "response_version",
+        "general_style_preference",
+        "visual_direction_preference",
+        "comfort_importance",
+        "price_range",
+        "created_at",
+    )
+    fields = (
+        "response_version",
+        "general_style_preference",
+        "visual_direction_preference",
+        "comfort_importance",
+        "price_range",
+        "favorite_brand",
+        "additional_feedback",
+        "created_at",
+    )
     readonly_fields = fields
     actions = ("export_anonymous_csv",)
 
@@ -37,14 +60,27 @@ class SurveyResponseAdmin(admin.ModelAdmin):
     def export_anonymous_csv(self, request, queryset):
         output = io.StringIO(newline="")
         writer = csv.writer(output)
-        writer.writerow(("style_preference", "comfort_importance", "price_range", "favorite_brand", "additional_feedback", "created_at_utc"))
+        writer.writerow(
+            (
+                "response_version",
+                "general_style_preference",
+                "visual_direction_preference",
+                "comfort_importance",
+                "price_range",
+                "favorite_brand",
+                "additional_feedback",
+                "created_at_utc",
+            )
+        )
         row_count = 0
         for response in queryset.order_by("created_at"):
             writer.writerow(
                 tuple(
                     _safe_csv_cell(value)
                     for value in (
-                        response.style_preference,
+                        response.response_version,
+                        response.general_style_preference,
+                        response.visual_direction_preference,
                         response.comfort_importance,
                         response.price_range,
                         response.favorite_brand,

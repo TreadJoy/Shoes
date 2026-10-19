@@ -20,6 +20,8 @@ from django.utils import timezone
 from web.cart.models import Cart, CartItem
 from web.orders.models import (
     CheckoutAttempt,
+    CheckoutQuoteComponent,
+    CheckoutQuoteLine,
     InventoryReservation,
     Order,
     Payment,
@@ -27,7 +29,19 @@ from web.orders.models import (
 )
 from web.orders import views as order_views
 from web.orders.services import ReservationError, create_checkout_attempt
-from web.products.models import Product, ProductVariant
+from web.products.models import (
+    CompatibilityGroup,
+    Part,
+    PartType,
+    PartVariant,
+    Product,
+    ProductVariant,
+    ProductVariantComponent,
+)
+from web.products.services import (
+    HERITAGE_COURT_COMPONENTS,
+    HERITAGE_COURT_COMPONENT_CODES,
+)
 
 
 class OrderRouteTests(SimpleTestCase):
@@ -105,6 +119,73 @@ class CheckoutFlowTests(TestCase):
             )
         return response, create
 
+    def create_heritage_variant(self, *, complete_bom):
+        # Migration TransactionTestCases can flush the data-migration lookup
+        # rows in a preserved --keepdb database; this checkout fixture owns
+        # the taxonomy rows it needs.
+        for order, (code, name, description, status) in enumerate(
+            HERITAGE_COURT_COMPONENTS,
+            start=1,
+        ):
+            PartType.objects.update_or_create(
+                code=code,
+                defaults={
+                    "name": name,
+                    "description": description,
+                    "display_order": order * 10,
+                    "interchangeability_status": status,
+                    "is_active": True,
+                },
+            )
+
+        product = Product.objects.create(
+            name="Heritage Court prototype",
+            slug="heritage-court-prototype",
+            price=Decimal("110.00"),
+            component_standard="heritage_court_v1",
+        )
+        group = CompatibilityGroup.objects.create(
+            code="HC-TEST-090-STD",
+            name="Heritage Court test size 9",
+            platform_code="HC-TEST",
+            platform_version=1,
+            internal_size_code="S090",
+            width_code="STD",
+        )
+        variant = ProductVariant.objects.create(
+            product=product,
+            compatibility_group=group,
+            sku="HC-TEST-090-BLK",
+            size="9",
+            color="Black",
+            stock_quantity=4,
+            is_active=False,
+        )
+        if complete_bom:
+            for code in HERITAGE_COURT_COMPONENT_CODES:
+                part_type = PartType.objects.get(code=code)
+                part = Part.objects.create(
+                    part_type=part_type,
+                    code=f"HC-{code}",
+                    name=f"Heritage Court {part_type.name}",
+                )
+                part_variant = PartVariant.objects.create(
+                    part=part,
+                    compatibility_group=group,
+                    sku=f"HC-{code}-090",
+                )
+                ProductVariantComponent.objects.create(
+                    product_variant=variant,
+                    part_type=part_type,
+                    part_variant=part_variant,
+                )
+            variant.is_active = True
+            variant.save()
+        else:
+            ProductVariant.objects.filter(pk=variant.pk).update(is_active=True)
+            variant.refresh_from_db()
+        return product, variant
+
     def paid_session(self, attempt=None, **overrides):
         attempt = attempt or CheckoutAttempt.objects.get()
         session = {
@@ -171,6 +252,52 @@ class CheckoutFlowTests(TestCase):
             reservation.status,
             InventoryReservation.Status.ACTIVE,
         )
+
+    def test_incomplete_heritage_bom_creates_no_checkout_or_provider_state(self):
+        product, variant = self.create_heritage_variant(complete_bom=False)
+        self.client.get(reverse("cart:cart_detail"))
+        cart = Cart.objects.get(session_key=self.client.session.session_key)
+        CartItem.objects.create(cart=cart, variant=variant, quantity=1)
+
+        with patch(
+            "web.orders.views.create_stripe_checkout_session"
+        ) as create_provider_session:
+            response = self.client.post(
+                reverse("orders:checkout"),
+                self.checkout_data(),
+                follow=True,
+            )
+
+        self.assertContains(response, "This product is not ready for purchase.")
+        self.assertEqual(CheckoutAttempt.objects.count(), 0)
+        self.assertEqual(CheckoutQuoteLine.objects.count(), 0)
+        self.assertEqual(CheckoutQuoteComponent.objects.count(), 0)
+        self.assertEqual(InventoryReservation.objects.count(), 0)
+        self.assertEqual(Order.objects.count(), 0)
+        create_provider_session.assert_not_called()
+
+    def test_heritage_checkout_snapshots_all_seven_canonical_component_codes(self):
+        _product, variant = self.create_heritage_variant(complete_bom=True)
+        cart = Cart.objects.create(session_key="heritage-checkout-test-cart")
+        CartItem.objects.create(cart=cart, variant=variant, quantity=1)
+
+        attempt = create_checkout_attempt(
+            cart,
+            user=None,
+            email="prototype@example.com",
+            eligibility_state="IL",
+        )
+
+        line = attempt.quote_lines.get()
+        snapshot_codes = list(
+            line.component_snapshots.order_by("part_type_code")
+            .values_list("part_type_code", flat=True)
+        )
+        self.assertEqual(
+            set(snapshot_codes),
+            set(HERITAGE_COURT_COMPONENT_CODES),
+        )
+        self.assertEqual(len(snapshot_codes), 7)
 
     def test_ambiguous_stripe_failure_keeps_checkout_reservation_for_retry(self):
         self.add_item()

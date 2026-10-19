@@ -70,8 +70,202 @@ STEP, STL, unsliced 3MF and an imported-solid FCStd review document; prior
 geometric checks passed. The owner authorized calibration with PLA Basic at
 Milwaukee Public Library. The twelve pending trials and nominal dimensions are
 in `design/active/treadjoy-heritage-court-v3/cad/calibration/RUN-001.md`.
-Actual nozzle, plate, slicing and physical results remain pending. Full shoe
+On the owner's instruction, standard 0.4 mm / Textured PEI settings were selected
+and a PLA Basic slice completed at 1h 48m 16s / 49.87 g estimated. The four
+eyelet keys were reoriented for printing to avoid support contact on mating
+heads, without changing dimensions. The handoff is in `cad/calibration/P2S-PLA-FINAL/`
+within the private design track. The two-hour target is a planning assumption,
+not a confirmed library limit. Actual hardware match and physical results
+remain pending. Full shoe
 CAD is incomplete; a reviewed right US men's 9 last is required before fit freeze.
+
+**Owner-approved implementation — 2026-10-12:** the eight-stage engineering
+plan is recorded in `tasks/plan.md`, with gated status in `tasks/todo.md`.
+Stage 1's digital library handoff is packaged as the private
+`cad/releases/rev-a-stage1-library-01.zip` (25 entries; archive CRC and exact
+payload comparison passed; SHA-256 manifest included). Its selected slice is
+unchanged. Actual library setup, first physical run, selected-candidate repeat
+print, and owner acceptance remain pending. Do not proceed to Stage 2 merely
+because the files are packaged. No printer was contacted or started, no
+last was acquired, and no full-shoe engineering validation is claimed.
+
+### AP-01 appearance-first prototype — 2026-10-14
+
+**In progress, not released.** The owner-approved AP-01 plan supersedes the
+coupon-first sequence above. Its contract is retained privately in
+`design/active/treadjoy-heritage-court-v3/cad/ap01/PLAN.md`. Existing coupon
+evidence remains unchanged and deferred. Trial 08 remains untouched; its
+45-object right-shoe master is extracted using OWNER_EDIT and explicit mm
+conversion into a separate Blender/Python mesh pipeline, not engineering CAD.
+
+Five saved Trial 05 STL bodies and an assembled review 3MF exist. Their assembled
+envelope is 102.882 × 288.142 × 133.396 mm, within the approved overall tolerance.
+All five saved STLs are watertight, connected and positive-volume. Thickness,
+interference and visual-surface checks still reject this candidate; repairs
+continue in immutable trials. Hidden labels, complete exterior-deviation and
+clearance measurements, final DfAM, plate orientations/slicing and print handoff
+remain open. No AP-01 print was started. Physical acceptance, reviewed last and
+all functional interface engineering remain unsatisfied gates.
+
+**2026-10-14 AP-01 checkpoint update:** `cad/ap01/revisions/trial-10/REVIEW.md`
+records five connected/watertight saved STLs, an assembled review 3MF and
+independent module snapshots. Assembly envelope is 102.882 × 288.141 × 133.374
+mm. Inward backing raises every module's sampled wall p05 above 1.6 mm and the
+largest measured intersection falls to 0.000110 mm³. Local sampled minima still
+range down to 0.060 mm; these are unresolved, not waived. Visual review rejects
+scalloped shared boundaries and irregular receiver/panel junctions. Status
+remains **In progress / NOT_RELEASED**. No slicing or physical pass is claimed.
+
+**2026-10-15 AP-01 separate-part checkpoint (private CAD only):** the owner
+explicitly requires removable pieces to be made independently of the bootie and
+each other. Trial 13 preserves five independent STL bodies and five matching
+named 3MF objects. Saved-file continuous motion checks have zero measured
+collision for badge → heel → overlay → tongue removal, leaving C01 in place;
+344 pair-pose checks also pass. Fourteen bore/rim occupancy screens pass.
+This does not approve printing: local thin regions, visible relief ledges/gaps,
+surface fidelity, exact nominal interfaces, labels and slicing remain open.
+See private `cad/ap01/revisions/trial-13/REVIEW.md`. No catalog or public asset
+change is included, and no physical removal or fit test has occurred.
+
+**2026-10-15 AP-01 viewing/refinement checkpoint (private CAD only):** Trial 17
+adds subtle per-module colors to Blender/3MF/GLB reviews and a bounded 0.08 mm
+upper-core fairing. The four removable STL meshes remain byte-identical to
+Trial 13. Five-body identity, 14-eyelet screens, static intersections and all
+four continuous removal sweeps pass again. Color/container checks and inspected
+CAD snapshots are recorded. Local wall minima remain unresolved (C01 sampled
+minimum 0.041 mm); visible seam/collar defects persist. Trials 14–16 failed
+and are retained. This is not an appearance acceptance or print release.
+See private `cad/ap01/revisions/trial-17/REVIEW.md`. Neutral PLA stays the baseline.
+
+**2026-10-15 AP-01 print-surface refinement (private CAD only):** Trial 24
+reconstructs the badge front, recuts its overlay seat, and adds concealed rear
+core backing. C01/M09 received documented 0.20 mm regularization after rejected
+Boolean/STL trials. Five saved independent bodies, static overlap, 14 eyelet
+screens and all four continuous removal paths pass. Badge-front sampled source
+deviation is 0.014 mm p95 / 0.023 mm maximum. Three rear-location material chords
+improved to 1.956–2.000 mm; another remains 0.830 mm. Local thin samples, collar
+and seam defects, changed core topology, full source fidelity, precise temporary
+interfaces, labels and slicing remain unresolved. No print release is granted.
+See private `cad/ap01/revisions/trial-24/REVIEW.md`; prior checkpoints are intact.
+
+**2026-10-16 AP-01 local rear-edge checkpoint (private CAD only):** Trial 25
+adds tapered backing at the diagnosed rear opening edge without another global
+remesh. The target directional chord increased from 0.830 to 3.088 mm; all 81
+parallel chords across a 3 × 3 mm local patch exceed 2.714 mm. This is a local
+screen, not full minimum-wall certification. Four removable STL modules are
+byte-identical to Trial 24; all checked core vertices outside the 5.01 mm local
+radius coincide with prior vertices. Bounds and Euler number are unchanged.
+Five-body saved-file checks, static overlap and all four continuous removal
+paths pass. Other local thin regions, collar/panel defects, feature/fidelity
+audit, temporary clearances, labels and slicing remain open. No print release.
+See private `cad/ap01/revisions/trial-25/REVIEW.md`.
+
+**2026-10-16 AP-01 medial-quarter diagnosis (private CAD only):** A new
+reproducible saved-mesh audit confirms six C01 normal material chords of
+0.062–0.245 mm. M09 occupies the space immediately behind these residual
+skins. With a directional 0.35 mm gap allowance, only 0.179–0.828 mm of
+total +X thickness is available at the six locations; a 1.6 mm inward-only
+backing therefore conflicts with M09. These are local directional screens,
+not exhaustive thickness/normal-clearance certificates. No geometry changed;
+Trial 25 remains the latest sealed model. Next repair must review C01/M09
+shared-boundary ownership together, preserve separate bodies, and revalidate
+walls, exterior deviation and removal paths. Evidence and source hashes:
+private `cad/ap01/audits/medial-quarter-001/medial-quarter.json`.
+
+**2026-10-16 AP-01 medial cleanup candidate (private CAD only):** Trial 27
+removes the six diagnosed overlapping C01 skin locations without changing
+the four removable modules, palette, core bounds or Euler number. The core
+remains one watertight positive-volume body; all ten static pair overlaps
+are zero. Trial 26 is rejected because its lower cut notched the sole trim;
+Trial 27 raises the cut floor to Z32 mm and preserves more of that trim.
+Saved core/assembly snapshots were reviewed. A small trim-edge transition
+remains; targeted cut-edge screening still finds two short edge chords, and
+global sampled minimum walls remain below the 1.6 mm contract. This is an
+appearance improvement, not a print release or full wall/fidelity pass.
+See private `cad/ap01/revisions/trial-27/REVIEW.md`.
+
+**2026-10-16 AP-01 medial trim experiments (private CAD only):** Trials 28–30
+tested a source-shaped cupsole restoration with matching M09 relief. Trial 28
+remained too thin; Trial 29 widened upper-wall removal unintentionally and was
+rejected; Trial 30 corrected that scope and passed 48 local thickness chords
+(minimum 2.359 mm), five-body topology, static clearance and 14-eyelet screens.
+However, its rendered raised trim band fails appearance review. None replaces
+Trial 27. Trial 30's global wall minima remain below target, and continuous
+removal sweeps were not rerun after rejection. Next work is a smooth trim
+transition with bounded source deviation, not another rectangular patch.
+Evidence: private `cad/ap01/revisions/trial-30/REVIEW.md`. No print release.
+
+**2026-10-18 AP-01 curved trim candidate (private CAD only):** Trial 32
+adds a continuously curved medial rim with longitudinal and lower-wall tapers,
+using Trial 27's sole edge and Trial 08's cupsole slope. Matching M09 relief
+keeps its ownership independent. Saved core/overlay and medial assembly views
+were reviewed; the earlier raised lower lip is blended into the sole wall.
+Five saved bodies are watertight with zero static overlap and unchanged overall
+dimensions. All 14 eyelets pass their occupancy/bore screens. The two original
+short-edge locations now have vertical material chords of 29.774 and 3.850 mm.
+A denser 1,876-face normal screen still finds one 0.091 mm chord at the old
+cut boundary; global wall minima remain unresolved. Trial 31 is superseded
+because its lower lip remained visible. Trial 30's interrupted evidence was
+sealed with its missing assembly snapshot explicitly recorded. No print release.
+Trial 32's separation-007 audit passes all four continuous translation sweeps
+and 344 sampled pair-poses in the order M06 → M04 → M09 → M05, with a
+0.01 mm conservative sweep margin. Eyelets-007 passes all 14 bore/rim screens.
+These are digital geometry checks, not physical assembly or strength acceptance.
+See private `cad/ap01/revisions/trial-32/REVIEW.md`.
+
+**2026-10-19 AP-01 trim-boundary audit and rejected Trial 33:** Repeated
+probes confirm Trial 32's cut-cap sliver is real (0.0547–0.0950 mm), not a
+ray-start artifact. A 0.2 mm tapered cap rise leaves still-short boundary
+chords; Trial 33 is rejected, and the builder's default retains Trial 32's
+zero-rise profile. An expanded screen including both transition ends finds
+65 sub-1.6 mm chords in Trial 32 (minimum 0.03395 mm) and 64 in Trial 33
+(minimum 0.000630 mm). These are different face samples, not paired changes.
+The previous one-chord result covered a narrower region. Next repair must
+reconstruct the intersecting boundary, not merely add another raised patch.
+Five-body topology/static separation, overall bounds and viewing colors pass
+for Trial 33; removal sweeps/eyelets were not rerun after wall rejection.
+No print release. See private `cad/ap01/revisions/trial-33/REVIEW.md`.
+
+**2026-10-19 AP-01 strip replacement, Trial 34 rejected:** Removing the old
+strip before inserting the curved loft eliminates the sampled old cut-cap
+sliver, but creates thin join regions and visible trim-end/panel discontinuities.
+The expanded 3,810-face local screen finds 202 sub-1.6 mm chords (minimum
+0.011221 mm, p05 1.347939 mm). This fails the wall target independently of
+the appearance regression. All four removable STL files are byte-identical to
+Trial 32, five-body topology/static intersections pass, and bounds/colors are
+unchanged. Trial 32 remains retained. Do not enlarge another rectangular cut:
+build shared boundary curves and validate the isolated transition before full
+assembly packaging. Private evidence: `cad/ap01/revisions/trial-34/REVIEW.md`.
+
+**2026-10-19 AP-01 isolated trim section study:** `studies/trim-join-001`
+builds a single continuous 2.4 × 4.0 mm rounded-section loft before integrating
+with the shoe. The saved watertight body passes 139 section checks, all 5,680
+face-centroid normals (minimum 1.861 mm), and DfAM sampling (minimum 2.099 mm,
+p05 2.380 mm) against the 1.6 mm wall target. Its end caps are provisional,
+not matched shoe boundary loops. Context checks find 10.758 mm³ of M09 overlap:
+it cannot be inserted unchanged. Next match the end boundaries and resolve that
+conflict, then remeasure the actual joined region before full-shoe export.
+Trial 32 remains untouched; no new shoe revision or print release is claimed.
+
+### Heritage Court product-domain taxonomy — 2026-10-14
+
+ADR 0003 is the accepted product/catalog decision and supersedes ADR 0002's
+catalog taxonomy only. The product-domain `heritage_court_v1` BOM now uses seven
+ordered visual groups: `FRONT_SHELL` (unverified), `BOOTIE_AND_SOLE`
+(permanent in this prototype), `TONGUE` (unverified), `LACES` (unverified),
+`BACK_PANEL` (unverified), `LOGO_HOLDER` (unverified), and `BACK_LOOP`
+(unverified). Its schema and reversible lookup-data migrations do not repoint
+legacy part references or rewrite Checkout/order snapshots. An opted-in active
+variant requires one active, compatible part assignment per slot; incomplete
+inactive drafts are allowed. Cart and Checkout revalidate readiness. Finished
+SKU stock and preorder allocation remain the only sellable-stock authorities.
+
+This is a visual taxonomy, not a validation of CAD attachment interfaces,
+removal mechanics, manufacturability, customer configurability, or physical
+inventory units. The engineering CAD/calibration record above and its QA files
+remain revision-specific historical evidence. No Heritage Court product, SKU,
+price, stock, image, material, component quantity, or compatibility record was
+created by this implementation.
 
 ### Current architecture
 
@@ -80,7 +274,11 @@ TreadJoy is a Django 5.2 and PostgreSQL application rendered with Django templat
 The codebase supports two fail-closed modes selected by TREADJOY_MODE:
 
 - **Commerce** registers cart and order applications/routes and requires Stripe configuration.
-- **Research** excludes commerce applications/routes, rejects Stripe credentials, and emphasizes survey/waitlist/customer-learning flows.
+- **Research** excludes commerce applications/routes, rejects Stripe credentials, and
+  emphasizes survey/waitlist/customer-learning flows. Product previews are view-only
+  engagement pages: they omit prices, sale/preorder/stock availability, purchasable
+  variant choices, and cart/payment controls, and do not evaluate commerce
+  availability or price summaries.
 
 The approved deployment architecture is one tested release commit deployed to separate research and commerce origins and PostgreSQL databases. Cloudflare provides DNS, edge TLS, proxy/CDN, WAF controls, and R2 media; managed infrastructure runs Django and PostgreSQL.
 
@@ -112,11 +310,12 @@ The approved deployment architecture is one tested release commit deployed to se
 - The reviewed dependency inputs and hash-locked runtime/development manifests are reproducible; Phase 1 removed the Google/social extra and refreshed both locks and the license inventory.
 - GitHub runs separate commerce/research PostgreSQL jobs, a dependency audit, and full-history secret scanning. The repository now includes a SHA-pinned research release workflow with immutable artifact metadata, protected staging/production promotion jobs, and explicit rollback operations. The latest hosted run failed in the research PostgreSQL job on a nullable-row lock query; the fix is verified locally but remains unpublished pending owner authorization to push to `main`.
 - Production configuration includes `STATIC_ROOT`, manifest static storage, and an R2 media backend contract. Repository health/readiness, structured logging, redaction, alert definitions, and incident runbooks are present. The private Render/Cloudflare POC was verified in September, but its database's recorded expiration has passed and current external state is unverified. Public research approval, R2 resources, provider monitoring, analytics, backup/PITR procedure, restore drill, migration release process, and rollback evidence remain incomplete.
-- The catalog has been quarantined to its safe empty state, while homepage and
-  social sections remain explicitly labeled development placeholders that block
-  release until approved factual replacements exist.
-- Product detail lacks production imagery, size/fit, materials, care, compatibility explanation, shipping/returns context, and other purchase-confidence content.
-- SEO support is deployment-aware but incomplete: recorded private-POC evidence showed noindex/robots controls and safe canonical/Open Graph/X metadata, while a public sitemap, approved structured data/content, verified social destinations, production error-page review, and measurement are still absent.
+- The catalog has been quarantined to its safe empty state. The homepage still
+  contains explicit development placeholders that block public release. The
+  owner approved the four configured social destinations on 2026-10-13, so
+  shared social navigation is no longer a pending content surface.
+- Product detail lacks launch-ready imagery, size/fit, materials, care, shipping/returns context, and other purchase-confidence content. The Heritage Court seven-group visual map is not validated compatibility guidance and cannot substitute for that evidence.
+- SEO support is deployment-aware but incomplete: recorded private-POC evidence showed noindex/robots controls and safe canonical/Open Graph/X metadata. The configured social destinations are owner-approved, with X, YouTube, and TikTok independently resolved and Instagram limited by its login wall; a public sitemap, approved structured data/content, production error-page review, and measurement are still absent.
 
 ### Missing or intentionally deferred functionality
 
@@ -142,7 +341,10 @@ Customer configurators, standalone component sales, reviews, advanced promotions
 - A targeted catalog probe with five products and three variants each rendered successfully in 18 queries; 15 were repeated preorder-batch lookups. This is the cleanup program's performance baseline, not an accepted budget.
 - Phase 0 collected 134 static files in a disposable directory, found no known vulnerabilities in either hash-locked dependency manifest, and found no leaks across all 48 reachable Git commits or the changed-document credential-pattern scan.
 - Phase 1 removed the verified dead/authentication paths without schema changes. On 2026-08-28 both deployment-mode checks passed; the isolated SQLite suites passed 160 commerce tests (9 skipped) and 86 research tests (6 skipped); both refreshed locks installed with hashes and passed `pip check` and `pip-audit`; disposable `collectstatic` copied 134 files; and full-history Gitleaks again found no leaks. The release-content command could not reach the sandboxed local PostgreSQL instance in this environment, so its previously recorded two expected content blockers remain authoritative.
-- The commerce release-content command still fails on exactly the two documented homepage-media and pending-social-link blockers. That is an expected public-release stop, not a Phase 0 regression.
+- At that phase, the commerce release-content command failed on the two
+  documented homepage-media and pending-social-link blockers. The social
+  surface was resolved on 2026-10-13; the homepage-media blocker remains an
+  expected public-release stop, not a regression.
 - Browser evidence recorded in the older homepage documents remains historical. Phase 6 added a current manual viewport baseline for the required commerce/research and mobile/desktop matrix, but no current Core Web Vitals, network waterfall, Lighthouse accessibility result, or automated visual-regression service exists yet.
 - No secret or customer values were printed. Aggregate preflight counts only are recorded below; the repository's prior contained-exposure history still makes rotation and incident discipline mandatory.
 
@@ -257,7 +459,7 @@ P1 storefront, email, accessibility, SEO, performance, monitoring, and admin-usa
 - **Priority / status:** P0 — Complete and accepted.
 - **Objective:** Ensure no test/customer-like data, unapproved image, hidden metadata, or development claim can enter a public release.
 - **Why it matters:** Publishing identifiable or unlicensed media creates privacy, trust, and legal risk; test catalog content makes a real store appear fraudulent or unfinished.
-- **Current state:** The tracked test imagery and public test catalog have been quarantined, and the public catalog renders its safe empty state. Homepage and social placeholders remain intentionally documented release blockers pending approved factual content.
+- **Current state:** The tracked test imagery and public test catalog have been quarantined, and the public catalog renders its safe empty state. Homepage development media remains an intentionally documented release blocker pending approved factual content; the owner approved the four configured social destinations on 2026-10-13.
 - **Required work:** Inventory all committed/database-referenced assets and public copy; record owner/license/consent and permitted use; remove the tracked test image and launch-path test records; strip unnecessary EXIF from approved assets; create safe deterministic development fixtures/placeholders that cannot be mistaken for production content; add a pre-release content checklist.
 - **Dependencies:** None.
 - **Affected areas:** media, static/images, product records/fixtures, templates, seed/setup documentation, Git history review.
@@ -447,6 +649,30 @@ P1 storefront, email, accessibility, SEO, performance, monitoring, and admin-usa
 - **Objective:** Deploy research mode through Cloudflare to a managed Django/PostgreSQL origin with repeatable release and recovery.
 - **Why it matters:** The research site is the first public validation surface and the production architecture rehearsal for commerce.
 - **Current state:** `tread-joy.com` has been purchased through Cloudflare as the intended base domain. The repository contains a release workflow, Render staging Blueprint, WSGI/build/start/migration/job/backup scripts, rollback adapter, and a review-gated Cloudflare/R2 policy. September evidence records a disposable Free Render Postgres 17 database in Ohio, three least-privilege roles, a migrated Render research origin, and a private Cloudflare Access/Worker edge. The database's recorded October 3 expiration has passed; current provider, DNS, certificate, and edge state must be re-verified before reuse. Durable recovery, monitoring, R2, public-launch approval, and current end-to-end acceptance remain open. Repository health/observability foundations are documented under A1.3.
+- **Implementation evidence (2026-10-13):** The research-mode UI/UX review
+  found strong responsive structure and research/commerce separation, plus a
+  confirmed footer-contact contrast defect and a mismatch between the six
+  displayed Heritage Court directions and the generic first survey question.
+  The owner approved a private-preview-only correction: a versioned five-step
+  survey now measures one image-backed direction, retains legacy broad-style
+  responses without reinterpretation, refines price bands around the approved
+  $90–$120 hypothesis, and keeps anonymous, formula-safe audited export. Shared
+  background/surface tokens now match the approved brand values; footer
+  contrast/touch targets and scoped reduced-motion behavior are corrected. The
+  four configured social URLs are owner-approved and the pending-social release
+  surface is removed. This work creates no deployment, public-launch approval,
+  analytics, identity collection, provider resource, or commerce capability.
+  Verification passed 96 mode-scoped research tests with seven intentional
+  skips, all 300 commerce tests with 42 intentional skips, migration-drift and
+  CSV-shape checks, and both research boundary commands against a clean
+  disposable research database. Browser checks at `390x844`, `768x1024`, and
+  `1440x900` confirmed one/two/three visual-choice columns, no horizontal
+  overflow, a 44 CSS-pixel minimum audited target, 10.41:1 footer-link
+  contrast, validation autofocus/ARIA wiring, keyboard selection, and Back
+  restoration. The unscoped all-app research invocation still reaches a
+  pre-existing commerce-oriented account test whose admin-login expectation
+  conflicts with the research URL configuration; no authentication policy was
+  changed inside this approved survey/UI step.
 - **Required work:** Select an approved research hostname plus managed origin/vendor/region; provision a separate research database and least-privilege roles; configure Cloudflare DNS, Full strict TLS, WAF/rate rules, origin lock-down, static/media caching, and an R2 custom domain; configure secrets, email, logs, health checks, migrations, backups/PITR, restore and rollback; publish approved research privacy/terms/accessibility/contact content and basic canonical/robots/social metadata; complete keyboard, WCAG 2.2 AA, responsive, and performance launch checks; deploy one immutable release artifact and run launch/rollback rehearsals.
 - **Dependencies:** A0.1–A0.3, A1.1–A1.4, A2.1, and A2.2.
 - **Affected areas:** Hosting/IaC or deployment config, Cloudflare, R2/storage, database, CI/CD, settings, operations docs.
@@ -991,7 +1217,7 @@ P1 storefront, email, accessibility, SEO, performance, monitoring, and admin-usa
 - **Priority / status:** P1 — Not started.
 - **Objective:** Make approved public content discoverable without indexing private, duplicate, test, or mode-inappropriate pages.
 - **Why it matters:** Search visibility and trustworthy previews support validation/conversion, while incorrect indexing can expose customer or placeholder content.
-- **Current state:** Shared templates now provide deployment-owned descriptions, canonical URLs, noindex/index robots directives, and Open Graph/X metadata; `/robots.txt` is mode-aware and private/transactional paths are excluded. A public sitemap, truthful structured data, approved social images/destinations, branded production 404/500 review, and measurement remain incomplete.
+- **Current state:** Shared templates now provide deployment-owned descriptions, canonical URLs, noindex/index robots directives, and Open Graph/X metadata; `/robots.txt` is mode-aware and private/transactional paths are excluded. The configured social destinations are owner-approved, but approved social preview images, a public sitemap, truthful structured data, branded production 404/500 review, and measurement remain incomplete.
 - **Required work:** Define indexable URL policy per mode; add canonical and robots directives, sitemap and robots.txt, Product/Offer/Breadcrumb/Organization structured data only from authoritative fields, Open Graph/Twitter metadata with approved images, semantic heading/link cleanup, clean pagination/query handling, favicon/manifest as appropriate, and branded accessible 404/500 pages; register webmaster tools after the applicable public hostname and production DNS/TLS are active.
 - **Dependencies:** A7.1–A7.3 and activated production hostnames from A2.3/A9.1.
 - **Affected areas:** base/product/catalog/core templates, context processors, sitemap/robots/error views, URLs, settings, static media.
