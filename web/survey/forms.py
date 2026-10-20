@@ -4,10 +4,18 @@ from .models import SurveyResponse
 
 
 SURVEY_PROMPTS = {
-    "visual_direction_preference": "Which Heritage Court direction would you be most likely to wear?",
-    "comfort_importance": "How important is all-day comfort when you choose shoes?",
-    "price_range": "Based on the concept shown, what price range would feel reasonable for a pair?",
-    "favorite_brand": "Is there a shoe or apparel brand you return to?",
+    "visual_direction_preference": "Which sneaker design do you prefer?",
+    "comfort_importance": "How important is comfort when you choose shoes?",
+    "price_range": "What price range would be reasonable for this sneaker?",
+    "recruitment_source": "How did you hear about this survey?",
+    "overall_appeal": "How appealing is this to you?",
+    "modularity_value": "How interesting is this idea to you?",
+    "wearing_occasion": "When would you wear a shoe like this?",
+    "purchase_likelihood": "How likely would you be to buy this?",
+    "annual_purchases": "How many pairs of shoes do you usually buy in a year?",
+    "age_band": "Which age range are you in?",
+    "gender": "Which gender best describes you?",
+    "favorite_brand": "What's your favorite shoe or clothing brand?",
     "additional_feedback": "Anything else you want us to know?",
 }
 
@@ -91,7 +99,71 @@ class ComfortImportanceForm(SurveyStepForm):
 class PriceRangeForm(SurveyStepForm):
     price_range = forms.ChoiceField(
         label=SURVEY_PROMPTS["price_range"],
-        choices=SurveyResponse.CURRENT_PRICE_CHOICES,
+        choices=SurveyResponse.V3_PRICE_CHOICES,
+        widget=forms.RadioSelect(attrs={"class": "survey-choice-input"}),
+    )
+
+
+class RecruitmentSourceForm(SurveyStepForm):
+    recruitment_source = forms.ChoiceField(
+        label=SURVEY_PROMPTS["recruitment_source"],
+        choices=SurveyResponse.RECRUITMENT_SOURCE_CHOICES,
+        widget=forms.RadioSelect(attrs={"class": "survey-choice-input"}),
+    )
+
+
+class OverallAppealForm(SurveyStepForm):
+    overall_appeal = forms.ChoiceField(
+        label=SURVEY_PROMPTS["overall_appeal"],
+        choices=SurveyResponse.APPEAL_CHOICES,
+        widget=forms.RadioSelect(attrs={"class": "survey-choice-input"}),
+    )
+
+
+class ModularityValueForm(SurveyStepForm):
+    modularity_value = forms.ChoiceField(
+        label=SURVEY_PROMPTS["modularity_value"],
+        choices=SurveyResponse.MODULARITY_VALUE_CHOICES,
+        widget=forms.RadioSelect(attrs={"class": "survey-choice-input"}),
+    )
+
+
+class WearingOccasionForm(SurveyStepForm):
+    wearing_occasion = forms.ChoiceField(
+        label=SURVEY_PROMPTS["wearing_occasion"],
+        choices=SurveyResponse.WEARING_OCCASION_CHOICES,
+        widget=forms.RadioSelect(attrs={"class": "survey-choice-input"}),
+    )
+
+
+class PurchaseLikelihoodForm(SurveyStepForm):
+    purchase_likelihood = forms.ChoiceField(
+        label=SURVEY_PROMPTS["purchase_likelihood"],
+        choices=SurveyResponse.PURCHASE_LIKELIHOOD_CHOICES,
+        widget=forms.RadioSelect(attrs={"class": "survey-choice-input"}),
+    )
+
+
+class AnnualPurchasesForm(SurveyStepForm):
+    annual_purchases = forms.ChoiceField(
+        label=SURVEY_PROMPTS["annual_purchases"],
+        choices=SurveyResponse.SHOE_PURCHASE_FREQUENCY_CHOICES,
+        widget=forms.RadioSelect(attrs={"class": "survey-choice-input"}),
+    )
+
+
+class AgeBandForm(SurveyStepForm):
+    age_band = forms.ChoiceField(
+        label=SURVEY_PROMPTS["age_band"],
+        choices=SurveyResponse.AGE_BAND_CHOICES,
+        widget=forms.RadioSelect(attrs={"class": "survey-choice-input"}),
+    )
+
+
+class GenderForm(SurveyStepForm):
+    gender = forms.ChoiceField(
+        label=SURVEY_PROMPTS["gender"],
+        choices=SurveyResponse.GENDER_CHOICES,
         widget=forms.RadioSelect(attrs={"class": "survey-choice-input"}),
     )
 
@@ -118,6 +190,14 @@ SURVEY_STEPS = {
     1: ("visual_direction_preference", VisualDirectionPreferenceForm),
     2: ("comfort_importance", ComfortImportanceForm),
     3: ("price_range", PriceRangeForm),
-    4: ("favorite_brand", FavoriteBrandForm),
-    5: ("additional_feedback", AdditionalFeedbackForm),
+    4: ("recruitment_source", RecruitmentSourceForm),
+    5: ("overall_appeal", OverallAppealForm),
+    6: ("modularity_value", ModularityValueForm),
+    7: ("wearing_occasion", WearingOccasionForm),
+    8: ("purchase_likelihood", PurchaseLikelihoodForm),
+    9: ("annual_purchases", AnnualPurchasesForm),
+    10: ("age_band", AgeBandForm),
+    11: ("gender", GenderForm),
+    12: ("favorite_brand", FavoriteBrandForm),
+    13: ("additional_feedback", AdditionalFeedbackForm),
 }

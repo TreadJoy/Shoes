@@ -31,6 +31,12 @@ or deploy Cloudflare rules; those remain approval/A2.3 gates.
 - Superuser is break-glass; assigning groups and verifying least privilege is
   a release task.
 
+The active V3 survey records product-research answers, including an age band
+and gender response; gender includes a "Prefer not to say" option. These fields
+remain on the anonymous survey response and are not copied to a customer
+profile or linked to waitlist identity. The public privacy notice must describe
+this collection before V3 is activated publicly.
+
 ## Provider and secrets
 
 Resend 2.42.0 is hash-locked. Ordinary web delivery uses the send key; webhook

@@ -9,9 +9,17 @@ class SurveyFlowTests(TestCase):
     steps = [
         (1, "visual_direction_preference", "relief_noir"),
         (2, "comfort_importance", "very_important"),
-        (3, "price_range", "110_120"),
-        (4, "favorite_brand", "Favorite Brand"),
-        (5, "additional_feedback", "More color choices, please."),
+        (3, "price_range", "100_125"),
+        (4, "recruitment_source", "social_media"),
+        (5, "overall_appeal", "very_appealing"),
+        (6, "modularity_value", "very_interesting"),
+        (7, "wearing_occasion", "everyday_casual"),
+        (8, "purchase_likelihood", "probably_would"),
+        (9, "annual_purchases", "3_5"),
+        (10, "age_band", "25_30"),
+        (11, "gender", "prefer_not_to_say"),
+        (12, "favorite_brand", "Favorite Brand"),
+        (13, "additional_feedback", "More color choices, please."),
     ]
 
     def post_step(self, number, field_name, value):
@@ -34,6 +42,9 @@ class SurveyFlowTests(TestCase):
             response,
             reverse("survey:survey_question", args=[1]),
         )
+        self.assertContains(response, "asks for your age range and gender")
+        self.assertContains(response, "Prefer not to say")
+        self.assertContains(response, "in written feedback")
 
     def test_choice_steps_render_prompt_radio_cards_and_progress(self):
         prompts = (
@@ -52,7 +63,7 @@ class SurveyFlowTests(TestCase):
             self.assertContains(response, prompt)
             self.assertContains(response, 'type="radio"')
             self.assertContains(response, "survey-choice-card")
-            self.assertContains(response, f"Step {number} of 5")
+            self.assertContains(response, f"Step {number} of 13")
             self.assertContains(response, 'role="progressbar"')
             self.assertNotContains(response, "<select")
 
@@ -69,17 +80,16 @@ class SurveyFlowTests(TestCase):
         self.assertContains(response, "Pair of TreadJoy Heritage Court concept shoes")
 
     def test_optional_steps_show_optional_label_and_feedback_guidance(self):
-        self.post_step(1, "visual_direction_preference", "relief_noir")
-        self.post_step(2, "comfort_importance", "very_important")
-        self.post_step(3, "price_range", "110_120")
+        for number, field_name, value in self.steps[:11]:
+            self.post_step(number, field_name, value)
 
-        response = self.client.get(reverse("survey:survey_question", args=[4]))
+        response = self.client.get(reverse("survey:survey_question", args=[12]))
         self.assertContains(response, "Is there a shoe or apparel brand you return to?")
         self.assertContains(response, "Your answer")
         self.assertContains(response, "Optional")
 
-        self.post_step(4, "favorite_brand", "Favorite Brand")
-        response = self.client.get(reverse("survey:survey_question", args=[5]))
+        self.post_step(12, "favorite_brand", "Favorite Brand")
+        response = self.client.get(reverse("survey:survey_question", args=[13]))
         self.assertContains(response, "Anything else you want us to know?")
         self.assertContains(response, "Your feedback")
         self.assertContains(response, "Optional")
@@ -91,14 +101,14 @@ class SurveyFlowTests(TestCase):
 
         response = self.client.post(
             reverse("survey:survey_question", args=[3]),
-            {"price_range": "110_120", "navigation": "back"},
+            {"price_range": "100_125", "navigation": "back"},
         )
         self.assertRedirects(
             response,
             reverse("survey:survey_question", args=[2]),
         )
         response = self.client.get(reverse("survey:survey_question", args=[3]))
-        self.assertContains(response, 'value="110_120"')
+        self.assertContains(response, 'value="100_125"')
 
     def test_each_valid_step_redirects_to_next_and_keeps_session_draft(self):
         for number, field_name, value in self.steps[:-1]:
@@ -157,7 +167,7 @@ class SurveyFlowTests(TestCase):
 
     def test_out_of_range_step_is_not_found(self):
         response = self.client.get(
-            reverse("survey:survey_question", args=[6])
+            reverse("survey:survey_question", args=[14])
         )
 
         self.assertEqual(response.status_code, 404)
@@ -174,7 +184,15 @@ class SurveyFlowTests(TestCase):
         self.assertEqual(survey.general_style_preference, "")
         self.assertEqual(survey.visual_direction_preference, "relief_noir")
         self.assertEqual(survey.comfort_importance, "very_important")
-        self.assertEqual(survey.price_range, "110_120")
+        self.assertEqual(survey.price_range, "100_125")
+        self.assertEqual(survey.recruitment_source, "social_media")
+        self.assertEqual(survey.overall_appeal, "very_appealing")
+        self.assertEqual(survey.modularity_value, "very_interesting")
+        self.assertEqual(survey.wearing_occasion, "everyday_casual")
+        self.assertEqual(survey.purchase_likelihood, "probably_would")
+        self.assertEqual(survey.annual_purchases, "3_5")
+        self.assertEqual(survey.age_band, "25_30")
+        self.assertEqual(survey.gender, "prefer_not_to_say")
         self.assertEqual(survey.favorite_brand, "Favorite Brand")
         self.assertEqual(
             survey.additional_feedback,
@@ -192,7 +210,7 @@ class SurveyFlowTests(TestCase):
     def test_additional_feedback_is_capped_and_warns_against_personal_information(self):
         for number, field_name, value in self.steps[:-1]:
             self.post_step(number, field_name, value)
-        response = self.post_step(5, "additional_feedback", "x" * 1001)
+        response = self.post_step(13, "additional_feedback", "x" * 1001)
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "at most 1000 characters")
         self.assertContains(response, "Do not include names")

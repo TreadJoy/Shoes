@@ -44,7 +44,15 @@ class SurveyAdminContractTests(TestCase):
             response_version=SurveyResponse.CURRENT_VERSION,
             visual_direction_preference="night_grid",
             comfort_importance="very_important",
-            price_range="110_120",
+            price_range="100_125",
+            recruitment_source="direct",
+            overall_appeal="very_appealing",
+            modularity_value="very_interesting",
+            wearing_occasion="everyday_casual",
+            purchase_likelihood="probably_would",
+            annual_purchases="3_5",
+            age_band="25_30",
+            gender="prefer_not_to_say",
             favorite_brand="=HYPERLINK(\"https://example.invalid\")",
             additional_feedback="+SUM(1,1)",
         )
@@ -63,10 +71,18 @@ class SurveyAdminContractTests(TestCase):
 
         payload = response.content.decode("utf-8")
         self.assertIn(
-            "response_version,general_style_preference,visual_direction_preference",
+            "response_version,general_style_preference,visual_direction_preference,"
+            "comfort_importance,price_range,recruitment_source,overall_appeal,"
+            "modularity_value,wearing_occasion,purchase_likelihood,annual_purchases,"
+            "age_band,gender",
             payload,
         )
-        self.assertIn("2,,night_grid,very_important,110_120", payload)
+        self.assertIn(
+            "3,,night_grid,very_important,100_125,direct,very_appealing,"
+            "very_interesting,everyday_casual,probably_would,3_5,25_30,"
+            "prefer_not_to_say",
+            payload,
+        )
         self.assertIn("1,athletic,,somewhat_important,100_150", payload)
         self.assertIn("'=HYPERLINK", payload)
         self.assertIn("'+SUM", payload)

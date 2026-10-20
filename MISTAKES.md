@@ -1,5 +1,38 @@
 # Verification Limitations
 
+## 2026-10-19 — survey admin test patch context mismatch
+
+- An admin-export test patch targeted a header assertion whose surrounding
+  lines did not match the current file, so the patch was rejected without
+  changing the file. Read the actual test block and reapply against its current
+  contents instead of assuming the earlier output is unchanged.
+
+## 2026-10-19 — system Python lacks PostgreSQL driver
+
+- The first survey migration-generation command used the system Python and
+  failed during Django startup because neither psycopg driver was installed.
+  No migration was generated. Use the repository's `.venv` for Django
+  commands; do not install packages into the system interpreter.
+
+## 2026-10-19 — generic test runner did not recognize Django tests
+
+- The generic file-based test runner reported no tests for the Django test
+  modules and did not execute them. Invoke the repository's Django test
+  command through `.venv/bin/python manage.py test` for these modules.
+
+## 2026-10-19 — configured PostgreSQL cannot create test database
+
+- The focused Django test command discovered the survey tests but the
+  configured PostgreSQL role was denied permission to create a test database.
+  No tests ran. Check for a repository-supported local test profile before
+  retrying; do not grant database privileges or modify shared database state.
+
+## 2026-10-19 — Ruff was pointed at a Django template
+
+- A lint command passed the survey template directory to Ruff, which correctly
+  reported Django template syntax as invalid Python. The Python files had
+  already passed lint; rerun Ruff only against Python sources.
+
 ## 2026-10-19 — Git metadata write required host approval
 
 - The first `git switch main` attempt was blocked by the workspace sandbox
