@@ -1,5 +1,12 @@
 # Verification Limitations
 
+## 2026-10-19 — Git metadata write required host approval
+
+- The first `git switch main` attempt was blocked by the workspace sandbox
+  before Git could create `.git/index.lock`; no repository state changed. The
+  approved command succeeded through the host execution path. Use that path
+  for branch operations when the workspace grants read-only access to `.git`.
+
 ## 2026-10-19 — isolated trim is not a drop-in replacement
 
 - The clean trim study passes its isolated thickness screens, but the context
