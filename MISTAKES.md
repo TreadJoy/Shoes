@@ -1,5 +1,12 @@
 # Verification Limitations
 
+## 2026-10-19 — temporary survey server unavailable for visual check
+
+- Reloading the shared survey page for CSS verification failed with
+  `ERR_CONNECTION_REFUSED`; the temporary server was no longer running. The
+  desktop header width and survey image sizing therefore remain visually
+  unverified. Reopen the page after starting the server and check both layouts.
+
 ## 2026-10-19 — survey admin test patch context mismatch
 
 - An admin-export test patch targeted a header assertion whose surrounding

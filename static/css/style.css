@@ -864,6 +864,7 @@ input[type="radio"] {
 
     .header-inner {
         min-height: 5rem;
+        max-width: none;
         gap: var(--space-6);
     }
 
@@ -1625,9 +1626,8 @@ input[type="radio"] {
 
 .survey-choice-card-visual img {
     width: 100%;
-    aspect-ratio: 16 / 9;
+    height: auto;
     border-radius: calc(var(--radius-md) - var(--border-width-strong));
-    object-fit: cover;
 }
 
 .survey-visual-choice-copy {
