@@ -3,9 +3,10 @@
 ## 2026-10-19 — temporary survey server unavailable for visual check
 
 - Reloading the shared survey page for CSS verification failed with
-  `ERR_CONNECTION_REFUSED`; the temporary server was no longer running. The
-  desktop header width and survey image sizing therefore remain visually
-  unverified. Reopen the page after starting the server and check both layouts.
+  `ERR_CONNECTION_REFUSED`; the temporary server was unavailable at that
+  moment. After it became available, a fresh browser session confirmed natural
+  survey-image proportions and a full-width desktop header. The browser's
+  916px-wide layout viewport remained below the 1024px desktop breakpoint.
 
 ## 2026-10-19 — survey admin test patch context mismatch
 

@@ -1496,6 +1496,10 @@ input[type="radio"] {
     max-width: 68rem;
 }
 
+.survey-question-card-visual .survey-form {
+    max-width: none;
+}
+
 .visually-hidden {
     position: absolute;
     width: 1px;
